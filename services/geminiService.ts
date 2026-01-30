@@ -31,18 +31,31 @@ export const generateCommunityNews = async (topic: string): Promise<string> => {
   }
 };
 
-export const moderateContent = async (text: string, imageBase64?: string): Promise<{ safe: boolean; reason?: string }> => {
+export const generateCreativeCaption = async (context: string): Promise<string> => {
+  try {
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: `Write a short, engaging, cyberpunk-style social media caption based on these keywords or context: "${context || 'tech future'}". Include trending hashtags.`,
+    });
+    return response.text || "Error generating caption.";
+  } catch (error) {
+    console.error("Caption Error:", error);
+    return "Neural Link Unstable.";
+  }
+};
+
+export const moderateContent = async (text: string, media?: { data: string, mimeType: string }): Promise<{ safe: boolean; reason?: string }> => {
   try {
     const parts: any[] = [{ text: "Analyze this content. If it contains nudity, violence, hate speech, or illegal acts, reply with 'UNSAFE: [Reason]'. If it is safe, reply 'SAFE'." }];
     
     if (text) parts.push({ text: `Text content: ${text}` });
     
-    if (imageBase64) {
+    if (media) {
       // Remove data URL prefix if present for the API
-      const base64Data = imageBase64.split(',')[1] || imageBase64;
+      const base64Data = media.data.split(',')[1] || media.data;
       parts.push({
         inlineData: {
-          mimeType: 'image/jpeg',
+          mimeType: media.mimeType,
           data: base64Data
         }
       });
