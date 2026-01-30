@@ -16,12 +16,14 @@
           extend: {
             colors: {
               zenith: {
-                bg: '#05070a',
-                surface: '#0d1117',
-                green: '#00ff88',
-                greenDim: 'rgba(0, 255, 136, 0.15)',
-                text: '#e6edf3',
-                dim: '#8b949e'
+                bg: 'var(--z-bg)',
+                surface: 'var(--z-surface)',
+                glass: 'var(--z-glass)',
+                green: 'var(--z-primary)',
+                greenDim: 'var(--z-primary-dim)',
+                greenGlow: 'var(--z-primary-glow)',
+                text: 'var(--z-text)',
+                dim: 'var(--z-dim)'
               }
             },
             fontFamily: {
@@ -31,11 +33,26 @@
             animation: {
               'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
               'fade-in': 'fadeIn 0.5s ease-out forwards',
+              'scale-up': 'scaleUp 3s ease-out forwards',
+              'expand-line': 'expandLine 2s ease-in-out 0.5s forwards',
+              'fade-out': 'fadeOut 0.5s ease-out forwards',
             },
             keyframes: {
               fadeIn: {
                 '0%': { opacity: '0', transform: 'translateY(10px)' },
                 '100%': { opacity: '1', transform: 'translateY(0)' },
+              },
+              scaleUp: {
+                '0%': { transform: 'scale(0.8)', opacity: '0' },
+                '20%': { opacity: '1' },
+                '100%': { transform: 'scale(1.1)' },
+              },
+              expandLine: {
+                '0%': { width: '0%' },
+                '100%': { width: '200px' },
+              },
+              fadeOut: {
+                'to': { opacity: '0', visibility: 'hidden' }
               }
             }
           }
@@ -43,15 +60,36 @@
       }
     </script>
     <style>
+      :root {
+        --z-bg: #05070a;
+        --z-surface: #0a0e14;
+        --z-glass: rgba(13, 17, 23, 0.6);
+        --z-primary: #00ff88;
+        --z-primary-dim: rgba(0, 255, 136, 0.15);
+        --z-primary-glow: rgba(0, 255, 136, 0.4);
+        --z-text: #e6edf3;
+        --z-dim: #8b949e;
+      }
+
       body {
-        background-color: #05070a;
-        color: #e6edf3;
+        background-color: var(--z-bg);
+        color: var(--z-text);
+        transition: background-color 0.5s ease, color 0.5s ease;
+      }
+      .glass-card {
+        background: var(--z-glass);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--z-primary-dim);
+        transition: border-color 0.3s ease;
+      }
+      .glass-card:hover {
+        border-color: var(--z-primary);
       }
       /* Custom Scrollbar */
       ::-webkit-scrollbar { width: 6px; }
-      ::-webkit-scrollbar-track { background: #05070a; }
+      ::-webkit-scrollbar-track { background: var(--z-bg); }
       ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
-      ::-webkit-scrollbar-thumb:hover { background: #00ff88; }
+      ::-webkit-scrollbar-thumb:hover { background: var(--z-primary); }
     </style>
   <script type="importmap">
 {
