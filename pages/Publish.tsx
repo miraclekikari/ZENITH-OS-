@@ -21,6 +21,18 @@ const Publish: React.FC = () => {
     });
   };
 
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
@@ -31,13 +43,13 @@ const Publish: React.FC = () => {
     e.preventDefault();
     setDragActive(false);
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setFiles(Array.from(e.dataTransfer.files));
+      setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-       setFiles(Array.from(e.target.files));
+       setFiles(prev => [...prev, ...Array.from(e.target.files)]);
     }
   };
 
@@ -143,25 +155,44 @@ const Publish: React.FC = () => {
                 </button>
               </div>
             ) : (
-              <div className="w-full h-full p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="w-full h-full p-4 grid grid-cols-2 md:grid-cols-3 gap-4 overflow-y-auto max-h-[500px] scrollbar-thin">
                 {files.map((file, i) => (
-                  <div key={i} className="relative group aspect-square bg-zenith-surface rounded-xl overflow-hidden border border-zenith-greenDim">
+                  <div key={i} className="relative group aspect-square bg-zenith-surface rounded-xl overflow-hidden border border-zenith-greenDim hover:border-zenith-green transition-all shadow-lg">
                     {file.type.startsWith('image/') ? (
-                      <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="preview" />
+                      <>
+                        <img src={URL.createObjectURL(file)} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" alt="preview" />
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-3 pt-6">
+                            <div className="text-xs font-bold text-white truncate">{file.name}</div>
+                            <div className="text-[10px] text-zenith-green font-mono">{formatFileSize(file.size)}</div>
+                        </div>
+                      </>
                     ) : (
-                      <div className="w-full h-full flex flex-col items-center justify-center text-zenith-dim">
-                        <i className="fas fa-file-alt text-4xl mb-2"></i>
-                        <span className="text-xs px-2 text-center truncate w-full">{file.name}</span>
+                      <div className="w-full h-full flex flex-col items-center justify-center text-zenith-dim p-4 relative">
+                        <i className="fas fa-file-alt text-4xl mb-3 text-zenith-dim group-hover:text-white transition-colors"></i>
+                        <span className="text-xs font-bold text-white truncate w-full text-center">{file.name}</span>
+                        <span className="text-[10px] text-zenith-green mt-1 font-mono">{formatFileSize(file.size)}</span>
                       </div>
                     )}
+                    
                     <button 
-                      onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
-                      className="absolute top-2 right-2 bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); removeFile(i); }}
+                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500/20 hover:bg-red-500 border border-red-500/50 hover:border-red-500 text-red-500 hover:text-white flex items-center justify-center transition-all z-10 backdrop-blur-sm group-hover:scale-110"
+                      title="Cancel / Remove File"
                     >
                       <i className="fas fa-times"></i>
                     </button>
                   </div>
                 ))}
+                
+                {/* Add More Button */}
+                <div 
+                  onClick={() => inputRef.current?.click()}
+                  className="aspect-square rounded-xl border-2 border-dashed border-zenith-greenDim hover:border-zenith-green hover:bg-zenith-greenDim/10 flex flex-col items-center justify-center cursor-pointer transition-all"
+                >
+                   <input ref={inputRef} type="file" multiple className="hidden" onChange={handleChange} />
+                   <i className="fas fa-plus text-2xl text-zenith-green mb-2"></i>
+                   <span className="text-xs text-zenith-dim font-bold">ADD MORE</span>
+                </div>
               </div>
             )}
           </div>

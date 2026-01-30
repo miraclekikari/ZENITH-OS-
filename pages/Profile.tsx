@@ -1,14 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Post, UserProfile } from '../types';
 import { DB } from '../services/storageService';
+import { SkillMatrix } from '../components/SkillMatrix';
 
 const Profile: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'grid' | 'list' | 'saved' | 'tagged'>('grid');
+  const [activeTab, setActiveTab] = useState<'grid' | 'list' | 'saved' | 'neural'>('grid');
   const [isEditing, setIsEditing] = useState(false);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
-    setUser(DB.getUser());
+    const currentUser = DB.getUser();
+    setUser(currentUser);
+    
+    if (currentUser) {
+        // Initialize mock posts with state
+        const initialPosts: Post[] = Array.from({ length: 9 }).map((_, i) => ({
+            id: `p${i}`,
+            author: currentUser.username,
+            avatar: currentUser.avatar,
+            content: i % 2 === 0 ? 'Deploying new neural architecture to the main grid. #CyberSec #AI' : 'Just hit Level 5 clearance! The restricted sectors are wild.',
+            image: `https://picsum.photos/seed/${i + 200}/600/400`,
+            likes: Math.floor(Math.random() * 500) + 50,
+            comments: Math.floor(Math.random() * 50) + 5,
+            shares: Math.floor(Math.random() * 20),
+            isVerified: true,
+            timestamp: `${i + 1}d ago`,
+            isModerated: true,
+            isLiked: false,
+            isReposted: false
+        }));
+        setPosts(initialPosts);
+    }
   }, []);
 
   const togglePrivacy = () => {
@@ -19,21 +42,33 @@ const Profile: React.FC = () => {
     DB.saveUser({ privacy: newStatus });
   };
 
-  const mockPosts: Post[] = Array.from({ length: 9 }).map((_, i) => ({
-    id: `p${i}`,
-    author: user?.username || 'User',
-    avatar: user?.avatar || '',
-    content: 'Code snippet',
-    image: `https://picsum.photos/seed/${i + 100}/400/400`,
-    likes: Math.floor(Math.random() * 500),
-    comments: Math.floor(Math.random() * 50),
-    shares: 10,
-    isVerified: true,
-    timestamp: '1d ago',
-    isModerated: true
-  }));
+  const toggleLike = (id: string) => {
+    setPosts(prev => prev.map(p => {
+      if (p.id === id) {
+        return {
+          ...p,
+          likes: p.isLiked ? p.likes - 1 : p.likes + 1,
+          isLiked: !p.isLiked
+        };
+      }
+      return p;
+    }));
+  };
 
-  if (!user) return <div>Loading Profile...</div>;
+  const toggleRepost = (id: string) => {
+    setPosts(prev => prev.map(p => {
+      if (p.id === id) {
+        return {
+          ...p,
+          shares: p.isReposted ? p.shares - 1 : p.shares + 1,
+          isReposted: !p.isReposted
+        };
+      }
+      return p;
+    }));
+  };
+
+  if (!user) return <div className="p-10 text-center text-zenith-green animate-pulse">Initializing Profile Link...</div>;
 
   return (
     <div className="animate-fade-in pb-20">
@@ -126,8 +161,8 @@ const Profile: React.FC = () => {
            {[
              { id: 'grid', icon: 'fa-th' },
              { id: 'list', icon: 'fa-bars' },
+             { id: 'neural', icon: 'fa-project-diagram' },
              { id: 'saved', icon: 'fa-bookmark' },
-             { id: 'tagged', icon: 'fa-user-tag' }
            ].map(tab => (
               <button 
                 key={tab.id}
@@ -139,11 +174,11 @@ const Profile: React.FC = () => {
            ))}
         </div>
 
-        {/* Grid Content */}
+        {/* Content Area */}
         <div className="p-4">
            {activeTab === 'grid' && (
               <div className="grid grid-cols-3 gap-1 md:gap-4">
-                 {mockPosts.map(post => (
+                 {posts.map(post => (
                     <div key={post.id} className="aspect-square bg-zenith-surface relative group overflow-hidden cursor-pointer">
                        <img src={post.image} className="w-full h-full object-cover" alt="post" />
                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-6 text-white font-bold">
@@ -154,33 +189,86 @@ const Profile: React.FC = () => {
                  ))}
               </div>
            )}
+
            {activeTab === 'list' && (
               <div className="max-w-2xl mx-auto space-y-6">
-                 {mockPosts.map(post => (
-                    <div key={post.id} className="glass-card rounded-xl overflow-hidden">
+                 {posts.map(post => (
+                    <div key={post.id} className="glass-card rounded-xl overflow-hidden hover:border-zenith-green transition-all duration-300">
                        <div className="p-4 flex items-center gap-3">
-                          <img src={post.avatar} className="w-8 h-8 rounded-full" alt="avatar" />
-                          <div className="text-sm font-bold text-white">{post.author}</div>
-                          <i className="fas fa-ellipsis-h ml-auto text-zenith-dim cursor-pointer"></i>
-                       </div>
-                       <img src={post.image} className="w-full h-auto" alt="post" />
-                       <div className="p-4">
-                          <div className="flex gap-4 text-xl mb-3">
-                             <i className="far fa-heart hover:text-red-500 cursor-pointer transition-colors"></i>
-                             <i className="far fa-comment hover:text-blue-500 cursor-pointer transition-colors"></i>
-                             <i className="far fa-paper-plane hover:text-green-500 cursor-pointer transition-colors"></i>
-                             <i className="far fa-bookmark ml-auto hover:text-yellow-500 cursor-pointer transition-colors"></i>
+                          <img src={post.avatar} className="w-10 h-10 rounded-full border border-zenith-greenDim" alt="avatar" />
+                          <div>
+                            <div className="text-sm font-bold text-white hover:underline cursor-pointer">{post.author}</div>
+                            <div className="text-xs text-zenith-dim">{post.timestamp}</div>
                           </div>
-                          <div className="font-bold text-sm mb-1">{post.likes} likes</div>
-                          <p className="text-sm text-gray-300">
-                             <span className="font-bold text-white mr-2">{post.author}</span>
-                             {post.content}
-                          </p>
-                          <div className="text-xs text-zenith-dim mt-2 uppercase">{post.timestamp}</div>
+                          <button className="ml-auto text-zenith-dim hover:text-white"><i className="fas fa-ellipsis-h"></i></button>
+                       </div>
+                       
+                       <div className="px-4 pb-2 text-sm text-gray-300 leading-relaxed">
+                          {post.content}
+                       </div>
+
+                       {post.image && (
+                         <div className="mt-2">
+                           <img src={post.image} className="w-full h-auto object-cover max-h-[500px]" alt="post" />
+                         </div>
+                       )}
+
+                       {/* Action Bar */}
+                       <div className="p-4 flex items-center justify-between border-t border-white/5 mt-2 select-none">
+                          
+                          {/* Like */}
+                          <button 
+                             onClick={() => toggleLike(post.id)}
+                             className={`group flex items-center gap-2 transition-colors duration-300 ${post.isLiked ? 'text-pink-500' : 'text-zenith-dim hover:text-pink-500'}`}
+                          >
+                             <div className={`p-2 rounded-full ${post.isLiked ? 'bg-pink-500/10' : 'group-hover:bg-pink-500/10'} transition-all`}>
+                               <i className={`${post.isLiked ? 'fas' : 'far'} fa-heart text-xl ${post.isLiked ? 'scale-110 animate-pulse-fast' : 'group-active:scale-90'} transition-transform`}></i>
+                             </div>
+                             <span className="font-mono font-bold text-sm">{post.likes}</span>
+                          </button>
+
+                          {/* Comment */}
+                          <button className="group flex items-center gap-2 text-zenith-dim hover:text-blue-500 transition-colors duration-300">
+                             <div className="p-2 rounded-full group-hover:bg-blue-500/10 transition-all">
+                               <i className="far fa-comment text-xl group-active:scale-90 transition-transform"></i>
+                             </div>
+                             <span className="font-mono font-bold text-sm">{post.comments}</span>
+                          </button>
+
+                          {/* Repost */}
+                          <button 
+                             onClick={() => toggleRepost(post.id)}
+                             className={`group flex items-center gap-2 transition-colors duration-300 ${post.isReposted ? 'text-green-500' : 'text-zenith-dim hover:text-green-500'}`}
+                          >
+                             <div className={`p-2 rounded-full ${post.isReposted ? 'bg-green-500/10' : 'group-hover:bg-green-500/10'} transition-all`}>
+                               <i className={`fas fa-retweet text-xl transition-transform ${post.isReposted ? 'rotate-180 text-green-500' : 'group-hover:rotate-180'}`}></i>
+                             </div>
+                             <span className="font-mono font-bold text-sm">{post.shares}</span>
+                          </button>
+
+                          {/* Share */}
+                          <button className="group text-zenith-dim hover:text-yellow-500 transition-colors">
+                             <div className="p-2 rounded-full group-hover:bg-yellow-500/10 transition-all">
+                               <i className="far fa-bookmark text-xl group-active:scale-90"></i>
+                             </div>
+                          </button>
                        </div>
                     </div>
                  ))}
               </div>
+           )}
+
+           {activeTab === 'neural' && (
+             <div className="max-w-5xl mx-auto">
+                <SkillMatrix />
+             </div>
+           )}
+           
+           {activeTab === 'saved' && (
+             <div className="flex flex-col items-center justify-center py-20 text-zenith-dim">
+               <i className="far fa-bookmark text-4xl mb-4"></i>
+               <p>No saved transmissions.</p>
+             </div>
            )}
         </div>
 

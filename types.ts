@@ -66,6 +66,18 @@ export interface UserProfile {
   credits: number; // Virtual currency
 }
 
+export interface SkillNode {
+  id: string;
+  label: string;
+  description: string;
+  cost: number;
+  status: 'LOCKED' | 'AVAILABLE' | 'MASTERED';
+  x: number; // Percentage 0-100
+  y: number; // Percentage 0-100
+  dependencies: string[]; // IDs of prerequisite skills
+  icon: string;
+}
+
 export enum Tab {
   COURSES = 'COURSES',
   COMMUNITY = 'COMMUNITY',
