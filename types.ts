@@ -36,6 +36,7 @@ export interface Post {
   tags?: string[];
   isModerated: boolean;
   isLiked?: boolean; // Local state
+  isReposted?: boolean; // Local state
 }
 
 export interface Story {

@@ -39,7 +39,8 @@ const Community: React.FC = () => {
       timestamp: '2h ago',
       image: 'https://picsum.photos/seed/update/600/300',
       isModerated: true,
-      isLiked: false
+      isLiked: false,
+      isReposted: false
     }
   ]);
 
@@ -62,6 +63,32 @@ const Community: React.FC = () => {
           ...p,
           likes: p.isLiked ? p.likes - 1 : p.likes + 1,
           isLiked: !p.isLiked
+        };
+      }
+      return p;
+    }));
+  };
+
+  const toggleRepost = (id: string) => {
+    setPosts(posts.map(p => {
+      if (p.id === id) {
+        return {
+          ...p,
+          shares: p.isReposted ? p.shares - 1 : p.shares + 1,
+          isReposted: !p.isReposted
+        };
+      }
+      return p;
+    }));
+  };
+
+  const handleComment = (id: string) => {
+    // For demo purposes, we'll just increment the comment count
+    setPosts(posts.map(p => {
+      if (p.id === id) {
+        return {
+           ...p,
+           comments: p.comments + 1
         };
       }
       return p;
@@ -161,34 +188,45 @@ const Community: React.FC = () => {
                            </div>
                         )}
                         
-                        {/* Action Bar */}
-                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5 pr-4">
-                           <button className="flex items-center gap-2 group text-zenith-dim hover:text-blue-400 transition-colors duration-300">
-                              <div className="relative w-9 h-9 flex items-center justify-center rounded-full group-hover:bg-blue-500/10 group-active:scale-90 transition-all duration-200">
-                                 <i className="far fa-comment text-lg group-hover:scale-110 transition-transform duration-200"></i>
+                        {/* Enhanced Action Bar */}
+                        <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/5 pr-4 select-none">
+                           
+                           {/* Comment Button */}
+                           <button 
+                              onClick={() => handleComment(post.id)}
+                              className="group flex items-center gap-2 text-zenith-dim hover:text-blue-400 transition-colors duration-300"
+                           >
+                              <div className="relative p-2 rounded-full group-hover:bg-blue-500/10 transition-colors">
+                                 <i className="far fa-comment text-lg group-active:scale-90 transition-transform duration-100"></i>
                               </div>
                               <span className="text-sm font-mono group-hover:font-bold transition-all">{post.comments}</span>
                            </button>
                            
-                           <button className="flex items-center gap-2 group text-zenith-dim hover:text-green-400 transition-colors duration-300">
-                              <div className="relative w-9 h-9 flex items-center justify-center rounded-full group-hover:bg-green-500/10 group-active:scale-90 transition-all duration-200">
-                                 <i className="fas fa-retweet text-lg group-hover:rotate-180 transition-transform duration-500"></i>
+                           {/* Repost Button */}
+                           <button 
+                              onClick={() => toggleRepost(post.id)}
+                              className={`group flex items-center gap-2 transition-colors duration-300 ${post.isReposted ? 'text-green-500' : 'text-zenith-dim hover:text-green-500'}`}
+                           >
+                              <div className="relative p-2 rounded-full group-hover:bg-green-500/10 transition-colors">
+                                 <i className={`fas fa-retweet text-lg transition-transform duration-500 ${post.isReposted ? 'rotate-180' : 'group-hover:rotate-180'}`}></i>
                               </div>
                               <span className="text-sm font-mono group-hover:font-bold transition-all">{post.shares}</span>
                            </button>
                            
+                           {/* Like Button */}
                            <button 
-                              className={`flex items-center gap-2 group transition-colors duration-300 ${post.isLiked ? 'text-pink-500' : 'text-zenith-dim hover:text-pink-500'}`}
+                              className={`group flex items-center gap-2 transition-colors duration-300 ${post.isLiked ? 'text-pink-500' : 'text-zenith-dim hover:text-pink-500'}`}
                               onClick={() => toggleLike(post.id)}
                            >
-                              <div className={`relative w-9 h-9 flex items-center justify-center rounded-full group-active:scale-75 transition-all duration-200 ${post.isLiked ? 'bg-pink-500/10' : 'group-hover:bg-pink-500/10'}`}>
-                                 <i className={`${post.isLiked ? 'fas' : 'far'} fa-heart text-lg ${post.isLiked ? 'animate-scale-up' : 'group-hover:scale-110'} transition-transform duration-200`}></i>
+                              <div className={`relative p-2 rounded-full transition-all duration-200 ${post.isLiked ? 'bg-pink-500/10' : 'group-hover:bg-pink-500/10'}`}>
+                                 <i className={`${post.isLiked ? 'fas' : 'far'} fa-heart text-lg ${post.isLiked ? 'scale-110 animate-pulse-fast' : 'group-active:scale-75'} transition-transform duration-200`}></i>
                               </div>
                               <span className="text-sm font-mono group-hover:font-bold transition-all">{post.likes}</span>
                            </button>
                            
-                           <button className="flex items-center gap-2 group text-zenith-dim hover:text-cyan-400 transition-colors duration-300">
-                              <div className="relative w-9 h-9 flex items-center justify-center rounded-full group-hover:bg-cyan-500/10 group-active:scale-90 transition-all duration-200">
+                           {/* Share Button (Generic) */}
+                           <button className="group flex items-center gap-2 text-zenith-dim hover:text-cyan-400 transition-colors duration-300">
+                              <div className="relative p-2 rounded-full group-hover:bg-cyan-500/10 transition-colors">
                                  <i className="fas fa-share-alt text-lg group-hover:scale-110 transition-transform duration-200"></i>
                               </div>
                            </button>

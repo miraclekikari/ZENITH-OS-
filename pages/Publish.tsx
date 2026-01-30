@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { moderateContent } from '../services/geminiService';
+import { AIChat } from '../components/Tools';
 
 const Publish: React.FC = () => {
   const [dragActive, setDragActive] = useState(false);
@@ -93,7 +94,7 @@ const Publish: React.FC = () => {
   };
 
   return (
-    <div className="animate-fade-in max-w-4xl mx-auto pb-20">
+    <div className="animate-fade-in max-w-6xl mx-auto pb-20">
       
       {/* Header */}
       <div className="flex justify-between items-center mb-8 border-b border-zenith-greenDim pb-4">
@@ -118,56 +119,74 @@ const Publish: React.FC = () => {
         </div>
       )}
 
-      {/* Drop Zone */}
-      <div 
-        className={`relative min-h-[300px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all overflow-hidden mb-6 ${dragActive ? 'border-zenith-green bg-zenith-greenDim/20' : 'border-zenith-dim bg-black/40'}`}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
-        {files.length === 0 ? (
-          <div className="text-center p-10">
-            <input ref={inputRef} type="file" multiple className="hidden" onChange={handleChange} />
-            <div className="w-20 h-20 bg-zenith-surface rounded-full flex items-center justify-center mx-auto mb-4 border border-zenith-greenDim">
-               <i className="fas fa-cloud-upload-alt text-3xl text-zenith-green"></i>
-            </div>
-            <h3 className="font-bold text-xl text-white">Drag & Drop Media</h3>
-            <p className="text-sm text-zenith-dim mb-6">Photos, Videos, Code Snippets</p>
-            <button onClick={() => inputRef.current?.click()} className="px-6 py-2 border border-zenith-text text-white rounded-lg hover:bg-white hover:text-black transition-all text-sm font-bold">
-              Browse Files
-            </button>
-          </div>
-        ) : (
-          <div className="w-full h-full p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-            {files.map((file, i) => (
-              <div key={i} className="relative group aspect-square bg-zenith-surface rounded-xl overflow-hidden border border-zenith-greenDim">
-                {file.type.startsWith('image/') ? (
-                  <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="preview" />
-                ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center text-zenith-dim">
-                    <i className="fas fa-file-alt text-4xl mb-2"></i>
-                    <span className="text-xs px-2 text-center truncate w-full">{file.name}</span>
-                  </div>
-                )}
-                <button 
-                  onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
-                  className="absolute top-2 right-2 bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
-                >
-                  <i className="fas fa-times"></i>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Upload Tools */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Drop Zone */}
+          <div 
+            className={`relative min-h-[300px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all overflow-hidden ${dragActive ? 'border-zenith-green bg-zenith-greenDim/20' : 'border-zenith-dim bg-black/40'}`}
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+          >
+            {files.length === 0 ? (
+              <div className="text-center p-10">
+                <input ref={inputRef} type="file" multiple className="hidden" onChange={handleChange} />
+                <div className="w-20 h-20 bg-zenith-surface rounded-full flex items-center justify-center mx-auto mb-4 border border-zenith-greenDim">
+                   <i className="fas fa-cloud-upload-alt text-3xl text-zenith-green"></i>
+                </div>
+                <h3 className="font-bold text-xl text-white">Drag & Drop Media</h3>
+                <p className="text-sm text-zenith-dim mb-6">Photos, Videos, Code Snippets</p>
+                <button onClick={() => inputRef.current?.click()} className="px-6 py-2 border border-zenith-text text-white rounded-lg hover:bg-white hover:text-black transition-all text-sm font-bold">
+                  Browse Files
                 </button>
               </div>
-            ))}
+            ) : (
+              <div className="w-full h-full p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+                {files.map((file, i) => (
+                  <div key={i} className="relative group aspect-square bg-zenith-surface rounded-xl overflow-hidden border border-zenith-greenDim">
+                    {file.type.startsWith('image/') ? (
+                      <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" alt="preview" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center text-zenith-dim">
+                        <i className="fas fa-file-alt text-4xl mb-2"></i>
+                        <span className="text-xs px-2 text-center truncate w-full">{file.name}</span>
+                      </div>
+                    )}
+                    <button 
+                      onClick={() => setFiles(files.filter((_, idx) => idx !== i))}
+                      className="absolute top-2 right-2 bg-black/70 text-white w-8 h-8 rounded-full flex items-center justify-center hover:bg-red-500 transition-colors"
+                    >
+                      <i className="fas fa-times"></i>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        )}
-      </div>
 
-      <textarea 
-        value={caption}
-        onChange={(e) => setCaption(e.target.value)}
-        className="w-full bg-black/30 border border-zenith-greenDim rounded-xl p-4 text-white focus:outline-none focus:border-zenith-green h-32 resize-none"
-        placeholder="Enter encrypted caption..."
-      />
+          <textarea 
+            value={caption}
+            onChange={(e) => setCaption(e.target.value)}
+            className="w-full bg-black/30 border border-zenith-greenDim rounded-xl p-4 text-white focus:outline-none focus:border-zenith-green h-32 resize-none"
+            placeholder="Enter encrypted caption..."
+          />
+        </div>
+
+        {/* Right Column: AI Assistant */}
+        <div className="lg:col-span-1">
+          <div className="h-full flex flex-col">
+            <div className="mb-2 flex items-center gap-2 text-zenith-dim">
+              <i className="fas fa-magic text-zenith-green"></i>
+              <span className="text-xs font-bold uppercase tracking-wider">Publishing Assistant</span>
+            </div>
+            <div className="flex-1 min-h-[500px] lg:min-h-0">
+               <AIChat />
+            </div>
+          </div>
+        </div>
+      </div>
 
     </div>
   );
