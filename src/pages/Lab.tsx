@@ -54,11 +54,11 @@ const Lab: React.FC = () => {
         <div className="glass-card p-4 rounded-xl font-mono text-xs flex flex-col">
           <div className="text-zenith-green mb-2 border-b border-zenith-greenDim pb-1">TERMINAL.LOG</div>
           <div className="flex-1 space-y-1 text-zenith-dim overflow-hidden">
-            <p>> initializing modules...</p>
-            <p>> pomodoro_service: <span className="text-green-500">active</span></p>
-            <p>> secure_gen: <span className="text-green-500">ready</span></p>
-            <p>> ai_link: <span className="text-green-500">established</span></p>
-            <p>> waiting for user input...</p>
+            <p>&gt; initializing modules...</p>
+            <p>&gt; pomodoro_service: <span className="text-green-500">active</span></p>
+            <p>&gt; secure_gen: <span className="text-green-500">ready</span></p>
+            <p>&gt; ai_link: <span className="text-green-500">established</span></p>
+            <p>&gt; waiting for user input...</p>
             <p className="animate-pulse text-zenith-green">_</p>
           </div>
         </div>
