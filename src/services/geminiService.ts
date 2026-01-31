@@ -1,11 +1,9 @@
-import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/generative-ai";
 
+// 1. Récupération de la clé API via Vite
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// On utilise une instance "lazy" import { GoogleGenAI } from "@google/generative-ai";
-
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-
+// 2. Gestion de l'instance "Lazy" (évite le crash au démarrage)
 let genAIInstance: any = null;
 
 export const getGenAI = () => {
@@ -15,38 +13,7 @@ export const getGenAI = () => {
   return genAIInstance;
 };
 
-export const getGeminiResponse = async (prompt: string, history: any[] = []): Promise<string> => {
-  try {
-    const ai = getGenAI();
-    if (!ai) return "ERREUR: IA non configurée.";
-
-    const model = ai.getGenerativeModel({ model: "gemini-pro" });
-    const chat = model.startChat({
-      history: history.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }],
-      })),
-    });
-
-    const result = await chat.sendMessage(prompt);
-    const response = await result.response;
-    return response.text();
-  } catch (error) {
-    return "Erreur de connexion.";
-  }
-};
-
-export default { getGeminiResponse, getGenAI };(chargée uniquement quand on en a besoin)
-// C'est ce qui garantit que l'écran ne restera pas blanc au démarrage !
-let genAIInstance: any = null;
-
-export const getGenAI = () => {
-  if (!genAIInstance && API_KEY) {
-    genAIInstance = new GoogleGenAI(API_KEY);
-  }
-  return genAIInstance;
-};
-
+// 3. Fonction principale d'envoi de message
 export const getGeminiResponse = async (prompt: string, history: any[] = []): Promise<string> => {
   try {
     const ai = getGenAI();
@@ -81,5 +48,5 @@ export const getGeminiResponse = async (prompt: string, history: any[] = []): Pr
   }
 };
 
-// Exportation pour s'assurer que ton App.tsx le trouve bien
+// 4. Exportations
 export default { getGeminiResponse, getGenAI };
