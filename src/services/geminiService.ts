@@ -11,6 +11,7 @@ export const getGenAI = () => {
   return genAIInstance;
 };
 
+// 1. La fonction de base (utilisée par les autres)
 export const getGeminiResponse = async (prompt: string, history: any[] = []): Promise<string> => {
   try {
     const ai = getGenAI();
@@ -34,10 +35,20 @@ export const getGeminiResponse = async (prompt: string, history: any[] = []): Pr
   }
 };
 
-// --- CETTE FONCTION MANQUAIT ET BLOQUAIT LE BUILD ---
+// 2. Export pour Community.tsx (Erreur build #45)
 export const generateCommunityNews = async () => {
-  const prompt = "Génère 3 actualités technologiques futuristes et brèves pour la communauté Zenith OS.";
+  return getGeminiResponse("Génère 3 actualités technologiques futuristes et brèves.");
+};
+
+// 3. Export pour Tools.tsx (Erreur build #46)
+export const askZenithAI = async (prompt: string) => {
   return getGeminiResponse(prompt);
 };
 
-export default { getGeminiResponse, getGenAI, generateCommunityNews };
+// Export par défaut pour la compatibilité générale
+export default { 
+  getGeminiResponse, 
+  getGenAI, 
+  generateCommunityNews, 
+  askZenithAI 
+};
