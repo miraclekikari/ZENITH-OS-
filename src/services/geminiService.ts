@@ -1,9 +1,10 @@
 import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
 
-// Récupération de la clé
+// 1. On récupère la clé
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// INITIALISATION SÉCURISÉE (Le correctif pour l'écran blanc)
+// 2. LA LIGNE CRUCIALE : On vérifie si API_KEY existe AVANT de faire "new GoogleGenAI"
+// Si API_KEY est vide, genAI sera "null" au lieu de faire planter tout le site.
 export const genAI = API_KEY ? new GoogleGenAI(API_KEY) : null;
 
 // Configuration de sécurité (souvent présent dans les versions longues)
