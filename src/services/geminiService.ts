@@ -17,7 +17,7 @@ export const getGeminiResponse = async (prompt: string, history: any[] = []): Pr
     const ai = getGenAI();
     if (!ai) return "ERREUR_SYSTEME : Clé API non configurée.";
 
-    const model = ai.getGenerativeModel({ model: "gemini-pro" });
+    const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
     const chat = model.startChat({
       history: history.map(msg => ({
         role: msg.role === 'user' ? 'user' : 'model',
