@@ -9,8 +9,8 @@ export default defineConfig(({ mode }) => {
     plugins: [react()],
     resolve: {
       alias: {
-        // Cela permet à Vite de trouver tes fichiers à la racine
-        '@': path.resolve(__dirname, './'),
+        // CORRECTION IMPORTANTE : On pointe maintenant vers './src'
+        '@': path.resolve(__dirname, './src'),
       },
     },
   };
