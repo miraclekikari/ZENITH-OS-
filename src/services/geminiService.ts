@@ -11,7 +11,7 @@ export const getGenAI = () => {
   return genAIInstance;
 };
 
-// 1. La fonction de base (utilisée par les autres)
+// Fonction de base
 export const getGeminiResponse = async (prompt: string, history: any[] = []): Promise<string> => {
   try {
     const ai = getGenAI();
@@ -35,20 +35,36 @@ export const getGeminiResponse = async (prompt: string, history: any[] = []): Pr
   }
 };
 
-// 2. Export pour Community.tsx (Erreur build #45)
+// --- EXPORTS REQUIS PAR TES DIFFÉRENTES PAGES ---
+
+// Pour Community.tsx
 export const generateCommunityNews = async () => {
   return getGeminiResponse("Génère 3 actualités technologiques futuristes et brèves.");
 };
 
-// 3. Export pour Tools.tsx (Erreur build #46)
+// Pour Tools.tsx
 export const askZenithAI = async (prompt: string) => {
   return getGeminiResponse(prompt);
 };
 
-// Export par défaut pour la compatibilité générale
+// Pour Publish.tsx (Erreurs build #47)
+export const moderateContent = async (content: string) => {
+  const prompt = `Analyse le texte suivant et réponds uniquement par 'SAFE' ou 'UNSAFE' : ${content}`;
+  const response = await getGeminiResponse(prompt);
+  return response.includes('SAFE') && !response.includes('UNSAFE');
+};
+
+export const generateCreativeCaption = async (topic: string) => {
+  const prompt = `Génère une légende créative et futuriste pour une publication sur : ${topic}`;
+  return getGeminiResponse(prompt);
+};
+
+// Export par défaut
 export default { 
   getGeminiResponse, 
   getGenAI, 
   generateCommunityNews, 
-  askZenithAI 
+  askZenithAI,
+  moderateContent,
+  generateCreativeCaption
 };
