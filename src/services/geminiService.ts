@@ -2,8 +2,8 @@ import { GoogleGenAI, HarmCategory, HarmBlockThreshold } from "@google/generativ
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// On déplace l'initialisation à l'intérieur d'une fonction 
-// pour éviter qu'elle ne s'exécute immédiatement au chargement du fichier
+// On utilise une instance "lazy" (chargée uniquement quand on en a besoin)
+// C'est ce qui garantit que l'écran ne restera pas blanc au démarrage !
 let genAIInstance: any = null;
 
 export const getGenAI = () => {
@@ -15,12 +15,37 @@ export const getGenAI = () => {
 
 export const getGeminiResponse = async (prompt: string, history: any[] = []): Promise<string> => {
   try {
-    const ai = getGenAI(); // On appelle l'instance ici
+    const ai = getGenAI();
+    
     if (!ai) {
-      return "ERREUR : Clé API non configurée.";
+      console.warn("Clé API manquante ou invalide.");
+      return "ERREUR_SYSTEME : L'IA n'est pas configurée correctement (VITE_GEMINI_API_KEY).";
     }
-    // ... reste du code utilisant 'ai' au lieu de 'genAI'
-  } catch (e) { 
-    return "Erreur"; 
+
+    const model = ai.getGenerativeModel({ 
+      model: "gemini-pro" 
+    });
+
+    const chat = model.startChat({
+      history: history.map(msg => ({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.content }],
+      })),
+      generationConfig: {
+        maxOutputTokens: 1000,
+        temperature: 0.8,
+      },
+    });
+
+    const result = await chat.sendMessage(prompt);
+    const response = await result.response;
+    return response.text();
+
+  } catch (error: any) {
+    console.error("Erreur Gemini détectée :", error);
+    return `ERREUR_IA : ${error.message || "Problème de connexion au réseau"}`;
   }
 };
+
+// Exportation pour s'assurer que ton App.tsx le trouve bien
+export default { getGeminiResponse, getGenAI };
