@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Post, Story, Community as CommunityType } from '../types';
 import { generateCommunityNews } from '../services/geminiService';
 import { DB } from '../services/storageService';
+import PostCard from '../components/PostCard';
 
 const mockStories: Story[] = [
   { id: '1', user: 'Your Story', avatar: 'https://picsum.photos/seed/avatar/200/200', image: '', isSeen: false },
