@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { moderateContent, generateCreativeCaption } from '../services/geminiService';
 import { AIChat } from '../components/Tools';
+import { DB } from '../services/storageService'; 
 
 const FILTERS = [
   { name: 'Normal', style: {} },
@@ -22,7 +23,6 @@ const Publish: React.FC = () => {
   
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Helper to convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -44,11 +44,10 @@ const Publish: React.FC = () => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  // Parent Drop Zone Handlers
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (draggedIndex !== null) return; // Ignore internal reorder drags
+    if (draggedIndex !== null) return;
     if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
     else if (e.type === "dragleave") setDragActive(false);
   };
@@ -57,40 +56,31 @@ const Publish: React.FC = () => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    if (draggedIndex !== null) return; // Ignore internal reorder drops on parent container
-
+    if (draggedIndex !== null) return;
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       setFiles(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
     }
   };
 
-  // Item Reordering Handlers
   const onDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
-    // Required for Firefox
     e.dataTransfer.setData('text/plain', index.toString());
   };
 
   const onDragOverItem = (e: React.DragEvent, index: number) => {
-    e.preventDefault(); // Allow drop
+    e.preventDefault();
     e.stopPropagation(); 
   };
 
   const onDropItem = (e: React.DragEvent, index: number) => {
     e.preventDefault();
     e.stopPropagation();
-    
     if (draggedIndex === null || draggedIndex === index) return;
-    
     const newFiles = [...files];
     const draggedFile = newFiles[draggedIndex];
-    
-    // Remove from old position
     newFiles.splice(draggedIndex, 1);
-    // Insert at new position
     newFiles.splice(index, 0, draggedFile);
-    
     setFiles(newFiles);
     setDraggedIndex(null);
   };
@@ -121,88 +111,59 @@ const Publish: React.FC = () => {
     if (files.length === 0 && !caption) return;
     
     setIsUploading(true);
-    setStatusSteps([]); // Clear previous
+    setStatusSteps([]); 
     addStatus('>> Initializing Secure Handshake...');
 
-    await new Promise(r => setTimeout(r, 800));
-
-    // Simulate AI Moderation Check
-    let safe = true;
-    let reason = '';
-
-    // Check Caption
-    if (caption) {
+    try {
+      // 1. AI Moderation Check
       addStatus('>> Scanning Text Packet (NLP)...');
       const check = await moderateContent(caption);
-      if (!check.safe) {
-        safe = false;
-        reason = check.reason || 'Harmful Text';
+      if (!check.safe) throw new Error(`AI Sentinel: ${check.reason || 'Content Flagged'}`);
+
+      // 2. Cloudinary Upload (If there is a file)
+      let uploadedUrl = '';
+      if (files.length > 0) {
+        addStatus(`>> Digitizing Media Fragment: ${files[0].name}...`);
+        
+        const formData = new FormData();
+        formData.append('file', files[0]);
+        formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
+
+        const cloudRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+          { method: 'POST', body: formData }
+        );
+
+        if (!cloudRes.ok) throw new Error('Cloudinary Grid Rejection');
+        const cloudData = await cloudRes.json();
+        uploadedUrl = cloudData.secure_url;
+        addStatus('>> Media Fragment Encrypted & Cloud-Stored.');
       }
-    }
 
-    if(safe) await new Promise(r => setTimeout(r, 500));
+      // 3. Supabase Entry
+      addStatus('>> Patching Entry to Zenith Core Database...');
+      await DB.addPost(caption, uploadedUrl);
 
-    // Check All Files
-    if (safe && files.length > 0) {
-       addStatus(`>> Detected ${files.length} media fragments. Initiating AI verification...`);
-       
-       for (let i = 0; i < files.length; i++) {
-         const file = files[i];
-         
-         if (file.type.startsWith('image/')) {
-           addStatus(`>> Analyzing visual data [${i + 1}/${files.length}]: ${file.name}...`);
-           try {
-             const b64 = await fileToBase64(file);
-             const check = await moderateContent('', { data: b64, mimeType: file.type });
-             
-             if (!check.safe) {
-                safe = false;
-                reason = `File '${file.name}': ${check.reason || 'Content Flagged'}`;
-                break; 
-             }
-           } catch (e) {
-             console.error(e);
-             addStatus(`!! Warning: Could not scan ${file.name}.`);
-           }
-         } else if (file.type.startsWith('video/')) {
-            // Simulated video check
-            addStatus(`>> Verifying video integrity [${i + 1}/${files.length}]: ${file.name}...`);
-            await new Promise(r => setTimeout(r, 800));
-         }
-       }
-    }
+      addStatus('>> TRANSMISSION COMPLETE.');
+      
+      setTimeout(() => {
+        alert("Transmission Successful to Zenith Network.");
+        setFiles([]);
+        setCaption('');
+        setIsUploading(false);
+        setStatusSteps([]);
+      }, 1000);
 
-    if (!safe) {
+    } catch (error: any) {
+      console.error(error);
       setIsUploading(false);
-      addStatus(`!! SECURITY ALERT: ${reason}`);
-      alert(`⚠️ UPLOAD BLOCKED BY SENTINEL AI ⚠️\n\nReason: ${reason}`);
-      return;
+      addStatus(`!! SECURITY ALERT: ${error.message}`);
+      alert(`⚠️ TRANSMISSION FAILED ⚠️\n\nReason: ${error.message}`);
     }
-
-    addStatus('>> Content Verified. Safe.');
-    await new Promise(r => setTimeout(r, 600));
-
-    addStatus('>> Encrypting Media Fragments...');
-    await new Promise(r => setTimeout(r, 1000));
-
-    addStatus('>> Uploading to Decentralized Grid...');
-    await new Promise(r => setTimeout(r, 800));
-
-    addStatus('>> TRANSMISSION COMPLETE.');
-    
-    setTimeout(() => {
-      alert("Transmission Successful.");
-      setFiles([]);
-      setCaption('');
-      setIsUploading(false);
-      setStatusSteps([]);
-    }, 1000);
   };
 
   return (
     <div className="animate-fade-in max-w-6xl mx-auto pb-20">
-      
-      {/* Header */}
       <div className="flex justify-between items-center mb-8 border-b border-zenith-greenDim pb-4">
         <div>
           <h2 className="text-3xl font-tech text-white">SECURE TRANSMISSION</h2>
@@ -218,7 +179,6 @@ const Publish: React.FC = () => {
         </button>
       </div>
 
-      {/* Dynamic Status Console */}
       {statusSteps.length > 0 && (
         <div className="mb-6 bg-black border border-zenith-green font-mono text-xs p-4 rounded-xl shadow-[0_0_15px_rgba(0,255,136,0.1)]">
            {statusSteps.map((step, i) => (
@@ -233,9 +193,7 @@ const Publish: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Upload Tools */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Drop Zone */}
           <div 
             className={`relative min-h-[350px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all overflow-hidden ${dragActive ? 'border-zenith-green bg-zenith-greenDim/20' : 'border-zenith-dim bg-black/40'}`}
             onDragEnter={handleDrag}
@@ -257,7 +215,6 @@ const Publish: React.FC = () => {
               </div>
             ) : (
               <div className="w-full h-full flex flex-col">
-                {/* Media Preview Grid */}
                 <div className="flex-1 p-4 grid grid-cols-2 gap-4 overflow-y-auto max-h-[400px] scrollbar-thin">
                   {files.map((file, i) => (
                     <div 
@@ -270,57 +227,46 @@ const Publish: React.FC = () => {
                       className={`relative group bg-zenith-surface rounded-xl overflow-hidden border transition-all shadow-lg animate-fade-in cursor-move ${draggedIndex === i ? 'opacity-50 border-dashed border-zenith-green' : 'border-zenith-greenDim hover:border-zenith-green'}`}
                     >
                       {file.type.startsWith('image/') ? (
-                        <>
-                          <div className="aspect-video w-full overflow-hidden bg-black relative">
-                            <img 
-                              src={URL.createObjectURL(file)} 
-                              className="w-full h-full object-cover transition-all duration-300 pointer-events-none" 
-                              style={FILTERS[currentFilter].style}
-                              alt="preview" 
-                            />
-                            {/* Filter Badge */}
-                            {currentFilter !== 0 && (
-                              <div className="absolute top-2 left-2 bg-black/60 backdrop-blur text-zenith-green text-[10px] px-2 py-1 rounded border border-zenith-greenDim">
-                                FX: {FILTERS[currentFilter].name.toUpperCase()}
-                              </div>
-                            )}
-                          </div>
-                        </>
+                        <div className="aspect-video w-full overflow-hidden bg-black relative">
+                          <img 
+                            src={URL.createObjectURL(file)} 
+                            className="w-full h-full object-cover transition-all duration-300 pointer-events-none" 
+                            style={FILTERS[currentFilter].style}
+                            alt="preview" 
+                          />
+                          {currentFilter !== 0 && (
+                            <div className="absolute top-2 left-2 bg-black/60 backdrop-blur text-zenith-green text-[10px] px-2 py-1 rounded border border-zenith-greenDim">
+                              FX: {FILTERS[currentFilter].name.toUpperCase()}
+                            </div>
+                          )}
+                        </div>
                       ) : (
                         <div className="aspect-video w-full flex flex-col items-center justify-center text-zenith-dim p-4 relative bg-black/40 pointer-events-none">
                           <i className="fas fa-file-alt text-4xl mb-3 text-zenith-dim group-hover:text-white transition-colors"></i>
                           <div className="text-[10px] text-zenith-green font-mono">{formatFileSize(file.size)}</div>
                         </div>
                       )}
-                      
                       <div className="p-3 bg-zenith-surface border-t border-zenith-greenDim flex items-center justify-between">
                          <span className="text-xs font-bold text-white truncate max-w-[70%]">{file.name}</span>
                          <button 
                             onClick={(e) => { e.stopPropagation(); removeFile(i); }}
                             className="text-red-500 hover:text-red-400 transition-colors cursor-pointer"
-                            title="Remove"
-                            onMouseDown={e => e.stopPropagation()} // Prevent drag start when clicking remove
                           >
                             <i className="fas fa-trash-alt"></i>
                           </button>
                       </div>
                     </div>
                   ))}
-                  
-                  {/* Add More Tile - Dropping here means move to end if reordering */}
                   <div 
                     onClick={() => inputRef.current?.click()}
                     onDragOver={(e) => onDragOverItem(e, files.length)}
                     onDrop={(e) => onDropItem(e, files.length)}
                     className="aspect-video rounded-xl border-2 border-dashed border-zenith-greenDim hover:border-zenith-green hover:bg-zenith-greenDim/10 flex flex-col items-center justify-center cursor-pointer transition-all"
                   >
-                     <input ref={inputRef} type="file" multiple className="hidden" onChange={handleChange} />
                      <i className="fas fa-plus text-2xl text-zenith-green mb-2"></i>
                      <span className="text-xs text-zenith-dim font-bold">ADD MORE</span>
                   </div>
                 </div>
-
-                {/* Filter Toolbar for Images */}
                 {files.some(f => f.type.startsWith('image/')) && (
                   <div className="p-3 bg-black/60 border-t border-zenith-greenDim flex items-center gap-3 overflow-x-auto">
                     <span className="text-xs font-bold text-zenith-dim uppercase whitespace-nowrap"><i className="fas fa-magic mr-1"></i> Visual FX:</span>
@@ -346,7 +292,6 @@ const Publish: React.FC = () => {
               className="w-full bg-black/30 border border-zenith-greenDim rounded-xl p-4 text-white focus:outline-none focus:border-zenith-green h-32 resize-none"
               placeholder="Enter encrypted caption..."
             />
-            {/* AI Assist Button */}
             <button 
               onClick={handleAICaption}
               disabled={isGenerating}
@@ -358,7 +303,6 @@ const Publish: React.FC = () => {
           </div>
         </div>
 
-        {/* Right Column: AI Assistant */}
         <div className="lg:col-span-1">
           <div className="h-full flex flex-col">
             <div className="mb-2 flex items-center gap-2 text-zenith-dim">
@@ -371,7 +315,6 @@ const Publish: React.FC = () => {
           </div>
         </div>
       </div>
-
     </div>
   );
 };
