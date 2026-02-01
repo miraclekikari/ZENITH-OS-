@@ -23,15 +23,6 @@ const Publish: React.FC = () => {
   
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
-
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -44,17 +35,16 @@ const Publish: React.FC = () => {
     setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  // --- DRAG & DROP LOGIC ---
   const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     if (draggedIndex !== null) return;
     if (e.type === "dragenter" || e.type === "dragover") setDragActive(true);
     else if (e.type === "dragleave") setDragActive(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
     setDragActive(false);
     if (draggedIndex !== null) return;
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
@@ -65,17 +55,10 @@ const Publish: React.FC = () => {
   const onDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', index.toString());
-  };
-
-  const onDragOverItem = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.stopPropagation(); 
   };
 
   const onDropItem = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    e.stopPropagation();
     if (draggedIndex === null || draggedIndex === index) return;
     const newFiles = [...files];
     const draggedFile = newFiles[draggedIndex];
@@ -85,42 +68,26 @@ const Publish: React.FC = () => {
     setDraggedIndex(null);
   };
 
-  const onDragEnd = () => {
-    setDraggedIndex(null);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-       setFiles(prev => [...prev, ...Array.from(e.target.files)]);
-    }
-  };
-
   const handleAICaption = async () => {
     setIsGenerating(true);
-    const context = caption || (files.length > 0 ? `A photo of ${files[0].name}` : 'A cool tech update');
-    const newCaption = await generateCreativeCaption(context);
-    setCaption(newCaption);
+    try {
+      const context = caption || (files.length > 0 ? `A photo of ${files[0].name}` : 'A cool tech update');
+      const newCaption = await generateCreativeCaption(context);
+      setCaption(newCaption);
+    } catch (err) { console.error("AI Assist Failed"); }
     setIsGenerating(false);
   };
 
-  const addStatus = (msg: string) => {
-    setStatusSteps(prev => [...prev, msg]);
-  };
-
-
-const handleSubmit = async () => {
+  // --- SUBMIT LOGIC (SHADOW SENTINEL 1-10) ---
+  const handleSubmit = async () => {
     if (files.length === 0 && !caption.trim()) return;
-    
     setIsUploading(true);
     setStatusSteps(['>> UPLINK ESTABLISHED...']); 
 
     try {
       let uploadedUrl = '';
-      
-      // 1. UPLOAD MÉDIA (Cloudinary) - On le fait en premier pour avoir l'URL
       if (files.length > 0) {
-        addStatus(`>> Digitizing Media Fragment: ${files[0].name}...`);
-        
+        setStatusSteps(prev => [...prev, `>> Digitizing: ${files[0].name}...`]);
         const formData = new FormData();
         formData.append('file', files[0]);
         formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET);
@@ -129,58 +96,30 @@ const handleSubmit = async () => {
           `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
           { method: 'POST', body: formData }
         );
-
-        if (!cloudRes.ok) throw new Error('Cloudinary Rejection');
         const cloudData = await cloudRes.json();
         uploadedUrl = cloudData.secure_url;
       }
 
-      // 2. PUBLICATION IMMÉDIATE (Rapidité maximale)
-      addStatus('>> Patching Entry to Zenith Core...');
-      // On récupère l'ID du post créé pour pouvoir le modifier après si besoin
+      // Publication Instantanée
+      setStatusSteps(prev => [...prev, '>> Patching Zenith Core...']);
       const newPost = await DB.addPost(caption, uploadedUrl);
 
-      // 3. SHADOW SENTINEL (Analyse furtive en arrière-plan)
-      // On ne met pas "await" devant moderateContent pour ne pas faire attendre l'utilisateur
-      moderateContent(caption).then(async (result) => {
-        // Logique de score 1-10 :
-        // 1-5: Public | 6-7: Restreint (Profil) | 8-10: Privé (Morbide/Drogue)
-        if (result.riskScore >= 6) {
-          console.log(`Sentinel: Content Score ${result.riskScore}. Adjusting visibility...`);
-          
-          await DB.updatePostStatus(newPost.id, {
-            visibility: result.riskScore >= 8 ? 'private' : 'restricted',
-            risk_score: result.riskScore,
-            violation_type: result.reason
-          });
+      // Sentinel en arrière-plan (Shadow Mode)
+      if (caption.trim().length > 3) {
+        moderateContent(caption).then(async (result) => {
+          if (result.riskScore >= 6) {
+             console.log("Sentinel: Adjusting Visibility Score", result.riskScore);
+             await DB.updatePostStatus(newPost.id, {
+               visibility: result.riskScore >= 8 ? 'private' : 'restricted',
+               risk_score: result.riskScore,
+               violation: result.reason
+             });
+          }
+        });
+      }
 
-          // Ici on pourrait déclencher une alerte/notification pour l'utilisateur
-          // alert(`Note: Votre transmission est passée en mode restreint (Score: ${result.riskScore})`);
-        }
-      });
-
-      // 4. FINALISATION UI
-      addStatus('>> TRANSMISSION COMPLETE.');
-      
+      setStatusSteps(prev => [...prev, '>> TRANSMISSION COMPLETE.']);
       setTimeout(() => {
-        setFiles([]);
-        setCaption('');
-        setIsUploading(false);
-        setStatusSteps([]);
-        // Petit message de succès discret
-        console.log("Zenith Network: Data Synced.");
-      }, 800);
-
-    } catch (error: any) {
-      console.error(error);
-      setIsUploading(false);
-      addStatus(`!! SECURITY ALERT: ${error.message}`);
-      alert(`⚠️ TRANSMISSION FAILED ⚠️\n\nReason: ${error.message}`);
-    }
-  };
-      
-      setTimeout(() => {
-        alert("Transmission Successful to Zenith Network.");
         setFiles([]);
         setCaption('');
         setIsUploading(false);
@@ -188,24 +127,21 @@ const handleSubmit = async () => {
       }, 1000);
 
     } catch (error: any) {
-      console.error(error);
       setIsUploading(false);
-      addStatus(`!! SECURITY ALERT: ${error.message}`);
-      alert(`⚠️ TRANSMISSION FAILED ⚠️\n\nReason: ${error.message}`);
+      setStatusSteps(prev => [...prev, `!! ERROR: ${error.message}`]);
     }
   };
 
   return (
-    <div className="animate-fade-in max-w-6xl mx-auto pb-20">
+    <div className="animate-fade-in max-w-6xl mx-auto pb-20 p-4">
       <div className="flex justify-between items-center mb-8 border-b border-zenith-greenDim pb-4">
         <div>
           <h2 className="text-3xl font-tech text-white">SECURE TRANSMISSION</h2>
-          <p className="text-zenith-dim text-sm">All content is verified by AI Sentinel v7.0</p>
+          <p className="text-zenith-dim text-sm">AI Sentinel v7.0 | Stealth Mode Active</p>
         </div>
         <button 
-          onClick={handleSubmit}
-          disabled={isUploading}
-          className={`px-8 py-3 rounded-full font-bold transition-all flex items-center gap-2 ${isUploading ? 'bg-gray-600 text-gray-300' : 'bg-zenith-green text-black hover:shadow-[0_0_20px_var(--z-primary)]'}`}
+          onClick={handleSubmit} disabled={isUploading}
+          className={`px-8 py-3 rounded-full font-bold transition-all flex items-center gap-2 ${isUploading ? 'bg-gray-600 text-gray-300' : 'bg-zenith-green text-black hover:shadow-[0_0_20px_rgba(0,255,136,0.5)]'}`}
         >
           {isUploading ? <i className="fas fa-satellite fa-spin"></i> : <i className="fas fa-paper-plane"></i>}
           {isUploading ? 'TRANSMITTING' : 'PUBLISH'}
@@ -213,15 +149,10 @@ const handleSubmit = async () => {
       </div>
 
       {statusSteps.length > 0 && (
-        <div className="mb-6 bg-black border border-zenith-green font-mono text-xs p-4 rounded-xl shadow-[0_0_15px_rgba(0,255,136,0.1)]">
+        <div className="mb-6 bg-black border border-zenith-green font-mono text-xs p-4 rounded-xl">
            {statusSteps.map((step, i) => (
-             <div key={i} className={`${i === statusSteps.length - 1 ? 'text-zenith-green animate-pulse' : 'text-gray-500'}`}>
-               {step}
-             </div>
+             <div key={i} className={i === statusSteps.length - 1 ? 'text-zenith-green animate-pulse' : 'text-gray-500'}>{step}</div>
            ))}
-           {isUploading && <div className="h-1 bg-zenith-green/20 mt-2 rounded overflow-hidden">
-             <div className="h-full bg-zenith-green animate-expand-line"></div>
-           </div>}
         </div>
       )}
 
@@ -229,140 +160,64 @@ const handleSubmit = async () => {
         <div className="lg:col-span-2 space-y-6">
           <div 
             className={`relative min-h-[350px] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center transition-all overflow-hidden ${dragActive ? 'border-zenith-green bg-zenith-greenDim/20' : 'border-zenith-dim bg-black/40'}`}
-            onDragEnter={handleDrag}
-            onDragLeave={handleDrag}
-            onDragOver={handleDrag}
-            onDrop={handleDrop}
+            onDragEnter={handleDrag} onDragLeave={handleDrag} onDragOver={handleDrag} onDrop={handleDrop}
           >
             {files.length === 0 ? (
-              <div className="text-center p-10 animate-fade-in">
-                <input ref={inputRef} type="file" multiple className="hidden" onChange={handleChange} />
-                <div className="w-20 h-20 bg-zenith-surface rounded-full flex items-center justify-center mx-auto mb-4 border border-zenith-greenDim hover:scale-110 transition-transform cursor-pointer" onClick={() => inputRef.current?.click()}>
+              <div className="text-center p-10">
+                <input ref={inputRef} type="file" multiple className="hidden" onChange={(e) => e.target.files && setFiles(prev => [...prev, ...Array.from(e.target.files!)])} />
+                <div className="w-20 h-20 bg-zenith-surface rounded-full flex items-center justify-center mx-auto mb-4 border border-zenith-greenDim cursor-pointer" onClick={() => inputRef.current?.click()}>
                    <i className="fas fa-cloud-upload-alt text-3xl text-zenith-green"></i>
                 </div>
                 <h3 className="font-bold text-xl text-white">Drag & Drop Media</h3>
-                <p className="text-sm text-zenith-dim mb-6">Photos, Videos, Code Snippets</p>
-                <button onClick={() => inputRef.current?.click()} className="px-6 py-2 border border-zenith-text text-white rounded-lg hover:bg-white hover:text-black transition-all text-sm font-bold">
-                  Browse Files
-                </button>
               </div>
             ) : (
               <div className="w-full h-full flex flex-col">
-                <div className="flex-1 p-4 grid grid-cols-2 gap-4 overflow-y-auto max-h-[400px] scrollbar-thin">
+                <div className="flex-1 p-4 grid grid-cols-2 gap-4 overflow-y-auto max-h-[400px]">
                   {files.map((file, i) => (
-                    <div 
-                      key={`${file.name}-${file.size}-${file.lastModified}`} 
-                      draggable
-                      onDragStart={(e) => onDragStart(e, i)}
-                      onDragOver={(e) => onDragOverItem(e, i)}
-                      onDrop={(e) => onDropItem(e, i)}
-                      onDragEnd={onDragEnd}
-                      className={`relative group bg-zenith-surface rounded-xl overflow-hidden border transition-all shadow-lg animate-fade-in cursor-move ${draggedIndex === i ? 'opacity-50 border-dashed border-zenith-green' : 'border-zenith-greenDim hover:border-zenith-green'}`}
+                    <div key={i} draggable onDragStart={(e) => onDragStart(e, i)} onDragOver={(e) => e.preventDefault()} onDrop={(e) => onDropItem(e, i)}
+                      className="relative group bg-zenith-surface rounded-xl overflow-hidden border border-zenith-greenDim"
                     >
                       {file.type.startsWith('image/') ? (
-                        <div className="aspect-video w-full overflow-hidden bg-black relative">
-                          <img 
-                            src={URL.createObjectURL(file)} 
-                            className="w-full h-full object-cover transition-all duration-300 pointer-events-none" 
-                            style={FILTERS[currentFilter].style}
-                            alt="preview" 
-                          />
-                          {currentFilter !== 0 && (
-                            <div className="absolute top-2 left-2 bg-black/60 backdrop-blur text-zenith-green text-[10px] px-2 py-1 rounded border border-zenith-greenDim">
-                              FX: {FILTERS[currentFilter].name.toUpperCase()}
-                            </div>
-                          )}
-                        </div>
+                        <img src={URL.createObjectURL(file)} className="w-full aspect-video object-cover" style={FILTERS[currentFilter].style} alt="preview" />
                       ) : (
-                        <div className="aspect-video w-full flex flex-col items-center justify-center text-zenith-dim p-4 relative bg-black/40 pointer-events-none">
-                          <i className="fas fa-file-alt text-4xl mb-3 text-zenith-dim group-hover:text-white transition-colors"></i>
-                          <div className="text-[10px] text-zenith-green font-mono">{formatFileSize(file.size)}</div>
-                        </div>
+                        <div className="aspect-video flex items-center justify-center bg-black/40"><i className="fas fa-file-alt text-3xl"></i></div>
                       )}
-                      <div className="p-3 bg-zenith-surface border-t border-zenith-greenDim flex items-center justify-between">
-                         <span className="text-xs font-bold text-white truncate max-w-[70%]">{file.name}</span>
-                         <button 
-                            onClick={(e) => { e.stopPropagation(); removeFile(i); }}
-                            className="text-red-500 hover:text-red-400 transition-colors cursor-pointer"
-                          >
-                            <i className="fas fa-trash-alt"></i>
-                          </button>
+                      <div className="p-2 flex justify-between items-center bg-black/60">
+                        <span className="text-[10px] truncate w-24">{file.name}</span>
+                        <button onClick={() => removeFile(i)} className="text-red-500 hover:text-red-400"><i className="fas fa-trash"></i></button>
                       </div>
                     </div>
                   ))}
-                  <div 
-                    onClick={() => inputRef.current?.click()}
-                    onDragOver={(e) => onDragOverItem(e, files.length)}
-                    onDrop={(e) => onDropItem(e, files.length)}
-                    className="aspect-video rounded-xl border-2 border-dashed border-zenith-greenDim hover:border-zenith-green hover:bg-zenith-greenDim/10 flex flex-col items-center justify-center cursor-pointer transition-all"
-                  >
-                     <i className="fas fa-plus text-2xl text-zenith-green mb-2"></i>
-                     <span className="text-xs text-zenith-dim font-bold">ADD MORE</span>
-                  </div>
                 </div>
-                {files.some(f => f.type.startsWith('image/')) && (
-                  <div className="p-3 bg-black/60 border-t border-zenith-greenDim flex items-center gap-3 overflow-x-auto">
-                    <span className="text-xs font-bold text-zenith-dim uppercase whitespace-nowrap"><i className="fas fa-magic mr-1"></i> Visual FX:</span>
-                    {FILTERS.map((f, idx) => (
-                      <button 
-                        key={idx}
-                        onClick={() => setCurrentFilter(idx)}
-                        className={`px-3 py-1 rounded text-xs font-bold whitespace-nowrap transition-all ${currentFilter === idx ? 'bg-zenith-green text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}
-                      >
-                        {f.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                {/* FILTERS BAR */}
+                <div className="p-3 bg-black/60 border-t border-zenith-greenDim flex items-center gap-3 overflow-x-auto">
+                   <span className="text-xs font-bold text-zenith-dim uppercase whitespace-nowrap">Visual FX:</span>
+                   {FILTERS.map((f, idx) => (
+                     <button key={idx} onClick={() => setCurrentFilter(idx)} className={`px-3 py-1 rounded text-xs font-bold transition-all ${currentFilter === idx ? 'bg-zenith-green text-black' : 'bg-white/10 text-white hover:bg-white/20'}`}>{f.name}</button>
+                   ))}
+                </div>
               </div>
             )}
           </div>
 
-<div className="relative">
-  <textarea 
-    value={caption}
-    onChange={(e) => setCaption(e.target.value)}
-    className="w-full bg-black/30 border border-zenith-greenDim rounded-xl p-4 text-white focus:outline-none focus:border-zenith-green h-32 resize-none"
-    placeholder="Enter encrypted caption..."
-  />
-  
-  {/* ZONE DES BOUTONS : Alignés en bas à droite dans le textarea */}
-  <div className="absolute bottom-4 right-4 flex gap-3">
-    
-    {/* Bouton IA */}
-    <button 
-      onClick={handleAICaption}
-      disabled={isGenerating || isUploading}
-      className="bg-zenith-surface border border-zenith-green text-zenith-green hover:bg-zenith-green hover:text-black text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2"
-    >
-      {isGenerating ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-robot"></i>}
-      {isGenerating ? 'GENERATING...' : 'AI ASSIST'}
-    </button>
-
-    {/* Bouton PUBLIER (Direct) */}
-    <button 
-      onClick={handleSubmit}
-      disabled={isUploading}
-      className="bg-white/10 border border-white/20 text-white hover:bg-white hover:text-black text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2"
-    >
-      {isUploading ? <i className="fas fa-satellite fa-spin"></i> : <i className="fas fa-paper-plane"></i>}
-      {isUploading ? 'TRANSMITTING...' : 'PUBLISH'}
-    </button>
-
-  </div>
-</div>
+          {/* TEXTAREA AREA */}
+          <div className="relative">
+            <textarea 
+              value={caption} onChange={(e) => setCaption(e.target.value)}
+              className="w-full bg-black/30 border border-zenith-greenDim rounded-xl p-4 text-white focus:outline-none focus:border-zenith-green h-32 resize-none"
+              placeholder="Enter encrypted caption..."
+            />
+            <div className="absolute bottom-4 right-4 flex gap-3">
+              <button onClick={handleAICaption} disabled={isGenerating} className="bg-zenith-surface border border-zenith-green text-zenith-green px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-zenith-green hover:text-black transition-all">
+                {isGenerating ? <i className="fas fa-spinner fa-spin mr-2"></i> : <i className="fas fa-robot mr-2"></i>}
+                AI ASSIST
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="lg:col-span-1">
-          <div className="h-full flex flex-col">
-            <div className="mb-2 flex items-center gap-2 text-zenith-dim">
-              <i className="fas fa-broadcast-tower text-zenith-green"></i>
-              <span className="text-xs font-bold uppercase tracking-wider">Frequency Assistant</span>
-            </div>
-            <div className="flex-1 min-h-[500px] lg:min-h-0">
-               <AIChat />
-            </div>
-          </div>
+          <AIChat />
         </div>
       </div>
     </div>
