@@ -107,22 +107,25 @@ const Publish: React.FC = () => {
     setStatusSteps(prev => [...prev, msg]);
   };
 
-  const handleSubmit = async () => {
-    if (files.length === 0 && !caption) return;
+
+const handleSubmit = async () => {
+    // 1. On vérifie d'abord s'il y a quelque chose à envoyer
+    if (files.length === 0 && !caption.trim()) return;
     
     setIsUploading(true);
     setStatusSteps([]); 
-    addStatus('>> Initializing Secure Handshake...');
+    addStatus('>> Initializing Secure Handshake...'); // <--- Le premier message doit être celui-ci
 
     try {
-      // 1. AI Moderation Check
+      // 2. Modération (Sentinel)
       addStatus('>> Scanning Text Packet (NLP)...');
       const check = await moderateContent(caption);
       if (!check.safe) throw new Error(`AI Sentinel: ${check.reason || 'Content Flagged'}`);
 
-      // 2. Cloudinary Upload (If there is a file)
+      // 3. ICI on gère le fichier (Cloudinary)
       let uploadedUrl = '';
       if (files.length > 0) {
+        // C'EST ICI que ce message doit apparaître, pas avant !
         addStatus(`>> Digitizing Media Fragment: ${files[0].name}...`);
         
         const formData = new FormData();
@@ -140,11 +143,13 @@ const Publish: React.FC = () => {
         addStatus('>> Media Fragment Encrypted & Cloud-Stored.');
       }
 
-      // 3. Supabase Entry
+      // 4. Base de données
       addStatus('>> Patching Entry to Zenith Core Database...');
       await DB.addPost(caption, uploadedUrl);
 
       addStatus('>> TRANSMISSION COMPLETE.');
+      
+      // ... reste du code (setTimeout, reset, etc.)
       
       setTimeout(() => {
         alert("Transmission Successful to Zenith Network.");
@@ -285,22 +290,39 @@ const Publish: React.FC = () => {
             )}
           </div>
 
-          <div className="relative">
-            <textarea 
-              value={caption}
-              onChange={(e) => setCaption(e.target.value)}
-              className="w-full bg-black/30 border border-zenith-greenDim rounded-xl p-4 text-white focus:outline-none focus:border-zenith-green h-32 resize-none"
-              placeholder="Enter encrypted caption..."
-            />
-            <button 
-              onClick={handleAICaption}
-              disabled={isGenerating}
-              className="absolute bottom-4 right-4 bg-zenith-surface border border-zenith-green text-zenith-green hover:bg-zenith-green hover:text-black text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2"
-            >
-              {isGenerating ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-robot"></i>}
-              {isGenerating ? 'GENERATING...' : 'AI ASSIST'}
-            </button>
-          </div>
+<div className="relative">
+  <textarea 
+    value={caption}
+    onChange={(e) => setCaption(e.target.value)}
+    className="w-full bg-black/30 border border-zenith-greenDim rounded-xl p-4 text-white focus:outline-none focus:border-zenith-green h-32 resize-none"
+    placeholder="Enter encrypted caption..."
+  />
+  
+  {/* ZONE DES BOUTONS : Alignés en bas à droite dans le textarea */}
+  <div className="absolute bottom-4 right-4 flex gap-3">
+    
+    {/* Bouton IA */}
+    <button 
+      onClick={handleAICaption}
+      disabled={isGenerating || isUploading}
+      className="bg-zenith-surface border border-zenith-green text-zenith-green hover:bg-zenith-green hover:text-black text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2"
+    >
+      {isGenerating ? <i className="fas fa-spinner fa-spin"></i> : <i className="fas fa-robot"></i>}
+      {isGenerating ? 'GENERATING...' : 'AI ASSIST'}
+    </button>
+
+    {/* Bouton PUBLIER (Direct) */}
+    <button 
+      onClick={handleSubmit}
+      disabled={isUploading}
+      className="bg-white/10 border border-white/20 text-white hover:bg-white hover:text-black text-xs font-bold px-3 py-1.5 rounded-lg transition-all flex items-center gap-2"
+    >
+      {isUploading ? <i className="fas fa-satellite fa-spin"></i> : <i className="fas fa-paper-plane"></i>}
+      {isUploading ? 'TRANSMITTING...' : 'PUBLISH'}
+    </button>
+
+  </div>
+</div>
         </div>
 
         <div className="lg:col-span-1">
