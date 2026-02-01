@@ -109,23 +109,16 @@ const Publish: React.FC = () => {
 
 
 const handleSubmit = async () => {
-    // 1. On vérifie d'abord s'il y a quelque chose à envoyer
     if (files.length === 0 && !caption.trim()) return;
     
     setIsUploading(true);
-    setStatusSteps([]); 
-    addStatus('>> Initializing Secure Handshake...'); // <--- Le premier message doit être celui-ci
+    setStatusSteps(['>> UPLINK ESTABLISHED...']); 
 
     try {
-      // 2. Modération (Sentinel)
-      addStatus('>> Scanning Text Packet (NLP)...');
-      const check = await moderateContent(caption);
-      if (!check.safe) throw new Error(`AI Sentinel: ${check.reason || 'Content Flagged'}`);
-
-      // 3. ICI on gère le fichier (Cloudinary)
       let uploadedUrl = '';
+      
+      // 1. UPLOAD MÉDIA (Cloudinary) - On le fait en premier pour avoir l'URL
       if (files.length > 0) {
-        // C'EST ICI que ce message doit apparaître, pas avant !
         addStatus(`>> Digitizing Media Fragment: ${files[0].name}...`);
         
         const formData = new FormData();
@@ -137,19 +130,54 @@ const handleSubmit = async () => {
           { method: 'POST', body: formData }
         );
 
-        if (!cloudRes.ok) throw new Error('Cloudinary Grid Rejection');
+        if (!cloudRes.ok) throw new Error('Cloudinary Rejection');
         const cloudData = await cloudRes.json();
         uploadedUrl = cloudData.secure_url;
-        addStatus('>> Media Fragment Encrypted & Cloud-Stored.');
       }
 
-      // 4. Base de données
-      addStatus('>> Patching Entry to Zenith Core Database...');
-      await DB.addPost(caption, uploadedUrl);
+      // 2. PUBLICATION IMMÉDIATE (Rapidité maximale)
+      addStatus('>> Patching Entry to Zenith Core...');
+      // On récupère l'ID du post créé pour pouvoir le modifier après si besoin
+      const newPost = await DB.addPost(caption, uploadedUrl);
 
+      // 3. SHADOW SENTINEL (Analyse furtive en arrière-plan)
+      // On ne met pas "await" devant moderateContent pour ne pas faire attendre l'utilisateur
+      moderateContent(caption).then(async (result) => {
+        // Logique de score 1-10 :
+        // 1-5: Public | 6-7: Restreint (Profil) | 8-10: Privé (Morbide/Drogue)
+        if (result.riskScore >= 6) {
+          console.log(`Sentinel: Content Score ${result.riskScore}. Adjusting visibility...`);
+          
+          await DB.updatePostStatus(newPost.id, {
+            visibility: result.riskScore >= 8 ? 'private' : 'restricted',
+            risk_score: result.riskScore,
+            violation_type: result.reason
+          });
+
+          // Ici on pourrait déclencher une alerte/notification pour l'utilisateur
+          // alert(`Note: Votre transmission est passée en mode restreint (Score: ${result.riskScore})`);
+        }
+      });
+
+      // 4. FINALISATION UI
       addStatus('>> TRANSMISSION COMPLETE.');
       
-      // ... reste du code (setTimeout, reset, etc.)
+      setTimeout(() => {
+        setFiles([]);
+        setCaption('');
+        setIsUploading(false);
+        setStatusSteps([]);
+        // Petit message de succès discret
+        console.log("Zenith Network: Data Synced.");
+      }, 800);
+
+    } catch (error: any) {
+      console.error(error);
+      setIsUploading(false);
+      addStatus(`!! SECURITY ALERT: ${error.message}`);
+      alert(`⚠️ TRANSMISSION FAILED ⚠️\n\nReason: ${error.message}`);
+    }
+  };
       
       setTimeout(() => {
         alert("Transmission Successful to Zenith Network.");
