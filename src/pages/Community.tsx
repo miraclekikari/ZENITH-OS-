@@ -295,8 +295,8 @@ const Community: React.FC = () => {
                   <span className="text-[10px] bg-zenith-green/20 text-zenith-green px-1 rounded">2</span>
                </div>
                
-               {[1,2].map(i => (
-                  <div key={`group-${i}`} className="px-4 py-3 hover:bg-white/5 cursor-pointer flex gap-3 items-center group border-l-2 border-transparent hover:border-zenith-green transition-all">
+               (i {[1,2].map=> (
+                  <div key={chan-${i}} className="px-4 py-3 hover:bg-white/5 cursor-pointer flex gap-3 items-center group border-l-2 border-transparent hover:border-zenith-green transition-all">
                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-purple-900/50 to-blue-900/50 text-purple-300 border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <i className="fas fa-hashtag text-sm"></i>
                      </div>
@@ -305,7 +305,7 @@ const Community: React.FC = () => {
                            <span className="font-bold text-sm text-gray-200 truncate">Titan_Project_{i}</span>
                            <span className="text-[9px] text-zenith-dim font-mono">14:02</span>
                         </div>
-                        <p className="text-xs text-gray-500 truncate group-hover:text-zenith-green transition-colors font-mono">>> key rotation complete.</p>
+                        <p className="text-xs text-gray-500 truncate group-hover:text-zenith-green transition-colors font-mono">{" >> "} key rotation complete.</p>
                      </div>
                   </div>
                ))}
@@ -315,7 +315,7 @@ const Community: React.FC = () => {
                   <span className="text-[10px] font-bold text-zenith-dim">DIRECT SIGNALS</span>
                </div>
                {[1,2,3,4,5].map(i => (
-                  <div key={i} className="px-4 py-3 hover:bg-white/5 cursor-pointer flex gap-3 items-center group border-l-2 border-transparent hover:border-blue-500 transition-all">
+                  <div key={sig-${i}} className="px-4 py-3 hover:bg-white/5 cursor-pointer flex gap-3 items-center group border-l-2 border-transparent hover:border-blue-500 transition-all">
                      <div className="relative">
                         <img src={`https://picsum.photos/seed/chat${i}/50/50`} className="w-9 h-9 rounded-full grayscale group-hover:grayscale-0 transition-all" alt="user" />
                         <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-black"></div>
