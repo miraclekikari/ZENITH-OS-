@@ -104,11 +104,11 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
             {/* Auth Button or Profile */}
             {!isAuthenticated ? (
               <button
-                onClick={onLogin}
-                className="px-4 py-2 bg-zenith-green text-black font-bold rounded-full text-sm hover:shadow-[0_0_15px_var(--z-primary)] transition-all flex items-center gap-2"
+                onClick={() => navigate('/login')}
+                className="px-4 py-2 bg-cyan-500 text-black font-bold rounded-full text-sm hover:bg-cyan-400 hover:shadow-[0_0_20px_rgba(0,255,255,0.8)] transition-all flex items-center gap-2 border-2 border-cyan-400"
               >
-                <i className="fas fa-link"></i>
-                CONNECT NEURAL LINK
+                <i className="fas fa-sign-in-alt"></i>
+                SE CONNECTER
               </button>
             ) : (
               <div 
