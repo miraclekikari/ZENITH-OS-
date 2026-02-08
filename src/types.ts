@@ -17,7 +17,7 @@ export interface SupabasePost {
 export interface SupabaseComment {
   id: string;
   post_id: string;
-  user_id: UserId; // Explicitement string, pas UUID
+  author_id: UserId; // Utiliser author_id au lieu de user_id
   content: string;
   created_at: string;
 }

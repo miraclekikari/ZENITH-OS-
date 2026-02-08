@@ -6,7 +6,7 @@ import { UserId, SupabaseComment } from '../types';
 export interface CommentRow {
   id: string;
   post_id: string;
-  user_id: UserId; // Explicitement string
+  author_id: UserId; // Utiliser author_id comme dans la nouvelle table
   content: string;
   created_at?: string;
 }
@@ -68,16 +68,16 @@ const CommentsDrawer: React.FC<CommentsDrawerProps> = ({
   return (
     <>
       <div
-        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 lg:z-50"
+        className="fixed inset-0 bg-black z-[9998]"
         onClick={onClose}
         aria-hidden
       />
       <div
-        className="fixed left-0 right-0 bottom-0 z-50 bg-zenith-surface border-t border-zenith-greenDim rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.5)] flex flex-col max-h-[85vh] animate-slide-up"
+        className="fixed left-0 right-0 bottom-0 z-[9999] bg-black border-t-2 border-cyan-500/30 shadow-[0_-10px_40px_rgba(0,255,255,0.3)] flex flex-col max-h-[85vh] animate-slide-up"
         role="dialog"
         aria-label="Commentaires"
       >
-        <div className="p-4 border-b border-zenith-greenDim flex items-center justify-between">
+        <div className="p-4 border-b border-zenith-greenDim flex items-center justify-between bg-zinc-950">
           <h3 className="font-tech text-white text-sm tracking-wider">COMMENTAIRES CHIFFRÉS</h3>
           <button
             type="button"
@@ -89,7 +89,7 @@ const CommentsDrawer: React.FC<CommentsDrawerProps> = ({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 bg-zinc-950">
           {loading ? (
             <div className="flex justify-center py-8">
               <div className="w-8 h-8 border-2 border-zenith-green border-t-transparent rounded-full animate-spin" />
@@ -99,9 +99,9 @@ const CommentsDrawer: React.FC<CommentsDrawerProps> = ({
           ) : (
             comments.map((c) => (
               <div key={c.id} className="flex gap-3">
-                <img src={`https://picsum.photos/seed/${encodeURIComponent(String(c.user_id))}/64/64`} alt="" className="w-8 h-8 rounded-full flex-shrink-0 object-cover bg-zenith-greenDim/50" />
+                <img src={`https://picsum.photos/seed/${encodeURIComponent(String(c.author_id))}/64/64`} alt="" className="w-8 h-8 rounded-full flex-shrink-0 object-cover bg-zenith-greenDim/50" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-zenith-dim text-[10px] font-mono">{c.user_id}</p>
+                  <p className="text-zenith-dim text-[10px] font-mono">{c.author_id}</p>
                   <p className="text-white text-sm break-words">{c.content}</p>
                 </div>
               </div>
@@ -109,14 +109,14 @@ const CommentsDrawer: React.FC<CommentsDrawerProps> = ({
           )}
         </div>
 
-        <form onSubmit={handleSubmit} className="p-4 border-t border-zenith-greenDim bg-black/40">
+        <form onSubmit={handleSubmit} className="sticky bottom-0 p-4 border-t border-zenith-greenDim bg-zinc-950">
           <div className="flex gap-2">
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Écrire un commentaire..."
-              className="flex-1 bg-black/50 border border-zenith-greenDim rounded-xl px-4 py-3 text-white placeholder-zenith-dim focus:outline-none focus:border-zenith-green text-sm"
+              className="flex-1 bg-black border border-zenith-greenDim rounded-xl px-4 py-3 text-white placeholder-zenith-dim focus:outline-none focus:border-zenith-green text-sm"
               maxLength={500}
             />
             <button

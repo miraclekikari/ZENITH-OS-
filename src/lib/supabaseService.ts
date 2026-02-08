@@ -38,10 +38,10 @@ export const createPost = async (content: string | null, imageUrl: string | null
 };
 
 export const createComment = async (postId: string, content: string) => {
-  const commentData: SupabaseComment = {
+  const commentData = {
     id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
     post_id: postId,
-    user_id: DEFAULT_USER_ID as UserId, // Forcé explicitement en string
+    author_id: DEFAULT_USER_ID as UserId, // Utiliser author_id au lieu de user_id
     content,
     created_at: new Date().toISOString(),
   };
