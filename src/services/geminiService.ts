@@ -1,5 +1,6 @@
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const MODEL = 'gemini-1.5-pro'; // ⚠️ SEUL MODÈLE QUI MARCHE
+const MODEL = 'gemini-1.5-pro';
+const API_URL = `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`;
 
 console.log('🔧 Gemini config:', {
   modèle: MODEL,
@@ -8,7 +9,6 @@ console.log('🔧 Gemini config:', {
 });
 
 export const askZenithAI = async (prompt: string): Promise<string> => {
-  // DEBUG
   console.log('📤 Envoi à IA:', prompt.substring(0, 80));
   
   if (!API_KEY) {
@@ -20,20 +20,17 @@ export const askZenithAI = async (prompt: string): Promise<string> => {
   }
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024,
-          }
-        })
-      }
-    );
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 1024,
+        }
+      })
+    });
 
     const data = await response.json();
     
@@ -52,11 +49,11 @@ export const askZenithAI = async (prompt: string): Promise<string> => {
   }
 };
 
-// Fonctions vides pour compatibilité (ne pas casser le build)
+// Fonctions vides pour compatibilité
 export const moderateContent = async () => '';
 export const generateCreativeCaption = async () => '';
 
-// --- COMPATIBILITÉ AVEC LES IMPORTS EXISTANTS ---
+// Compatibilité avec les imports existants
 export const generateContent = askZenithAI;
 export const getGeminiResponse = askZenithAI;
 export const generateCommunityNews = () => askZenithAI("Génère 3 news tech.");
