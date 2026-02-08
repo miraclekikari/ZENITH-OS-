@@ -117,9 +117,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <span className="text-zenith-dim">{isRegister ? "Already valid?" : "New recruit?"}</span>
           <button 
             onClick={() => setIsRegister(!isRegister)}
-            className="ml-2 text-zenith-green hover:underline font-bold"
+            className="ml-2 px-3 py-1 border border-dashed border-cyan-700/50 text-cyan-400 text-xs tracking-widest uppercase font-bold hover:bg-cyan-400/10 hover:border-cyan-400 hover:text-cyan-300 hover:shadow-[0_0_10px_rgba(0,255,255,0.3)] transition-all duration-300 flex items-center gap-2 relative overflow-hidden group"
           >
-            {isRegister ? "Log In" : "Register ID"}
+            <span className="relative z-10 flex items-center gap-2">
+              <i className={`fas ${isRegister ? 'fa-sign-in-alt' : 'fa-user-plus'} text-xs`}></i>
+              {isRegister ? "Log In" : "Register ID"}
+            </span>
+            {/* Effet glitch/scanner */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
+            <div className="absolute inset-0 border border-cyan-400/30 animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
           </button>
         </div>
       </div>
