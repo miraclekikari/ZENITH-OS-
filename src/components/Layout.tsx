@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { DB } from '../services/storageService';
 import { UserProfile } from '../types';
 import ProfileSearch from './ProfileSearch';
+import Icon from './Icon';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -69,7 +70,7 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
               {location.pathname === item.path && (
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-zenith-green shadow-[0_0_10px_#00ff88]"></div>
               )}
-              <i className={`fas ${item.icon} text-lg w-6 text-center`}></i>
+              <Icon icon={item.icon} className={`fas ${item.icon} text-lg w-6 text-center`} />
               <span className="whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-sm font-semibold">{item.label}</span>
             </Link>
           ))}
@@ -88,7 +89,7 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
         {/* Header */}
         <header className="h-20 border-b border-zenith-greenDim flex items-center justify-between px-6 md:px-8 bg-zenith-bg/80 backdrop-blur-md z-40">
           <div className="flex items-center gap-4">
-             <i className={`fas ${navItems.find(n => n.path === location.pathname)?.icon || 'fa-satellite'} text-2xl text-zenith-green`}></i>
+             <Icon icon={navItems.find(n => n.path === location.pathname)?.icon || 'fa-satellite'} className={`fas ${navItems.find(n => n.path === location.pathname)?.icon || 'fa-satellite'} text-2xl text-zenith-green`} />
              <div>
                <div className="font-tech text-xl text-white tracking-wider">
                  {navItems.find(n => n.path === location.pathname)?.label.toUpperCase() || 'SYSTEM'}

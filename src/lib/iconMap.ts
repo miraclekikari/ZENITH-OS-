@@ -1,0 +1,48 @@
+// Mapping des icônes FontAwesome pour éviter les imports individuels
+import { 
+  faPowerOff, faChevronDown, faUserLock, faBan, faClock, faCheck, 
+  faStore, faHeart, faComment, faSatellite, faPaperPlane, faCloudUploadAlt,
+  faSearch, faUser, faCog, faPlusSquare, faFlask, faGraduationCap, 
+  faGlobeAmericas, faSlidersH, faShieldAlt, faDatabase, faTable, 
+  faUnlink, faCheckCircle, faTimesCircle, faSyncAlt, faStethoscope,
+  faRedo, faSpinner, faTimes, faLink, faShare, faMicrochip, faRetweet, faBookmark
+} from '@fortawesome/free-solid-svg-icons';
+
+export const iconMap = {
+  'fa-power-off': faPowerOff,
+  'fa-chevron-down': faChevronDown,
+  'fa-user-lock': faUserLock,
+  'fa-ban': faBan,
+  'fa-clock': faClock,
+  'fa-check': faCheck,
+  'fa-store': faStore,
+  'fa-heart': faHeart,
+  'fa-comment': faComment,
+  'fa-satellite': faSatellite,
+  'fa-paper-plane': faPaperPlane,
+  'fa-cloud-upload-alt': faCloudUploadAlt,
+  'fa-search': faSearch,
+  'fa-user': faUser,
+  'fa-cog': faCog,
+  'fa-plus-square': faPlusSquare,
+  'fa-flask': faFlask,
+  'fa-graduation-cap': faGraduationCap,
+  'fa-globe-americas': faGlobeAmericas,
+  'fa-sliders-h': faSlidersH,
+  'fa-shield-alt': faShieldAlt,
+  'fa-database': faDatabase,
+  'fa-table': faTable,
+  'fa-unlink': faUnlink,
+  'fa-check-circle': faCheckCircle,
+  'fa-times-circle': faTimesCircle,
+  'fa-sync-alt': faSyncAlt,
+  'fa-stethoscope': faStethoscope,
+  'fa-redo': faRedo,
+  'fa-spinner': faSpinner,
+  'fa-times': faTimes,
+  'fa-link': faLink,
+  'fa-share': faShare,
+  'fa-microchip': faMicrochip,
+  'fa-retweet': faRetweet,
+  'fa-bookmark': faBookmark
+};

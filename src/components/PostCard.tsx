@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Post } from '../types';
 import SafeImage from './SafeImage';
+import Icon from './Icon';
 
 interface PostProps {
   post: Post;
@@ -80,7 +81,7 @@ const PostCard: React.FC<PostProps> = ({ post, onLike, onRepost, onComment }) =>
               {post.author}
             </div>
             {post.isVerified && (
-              <i className="fas fa-check text-cyan-400 text-xs"></i>
+              <Icon icon="fa-check" className="fas fa-check text-cyan-400 text-xs" />
             )}
           </div>
           <div className="text-zenith-dim text-[10px]">TRANSMISSION ENCRYPTED</div>
@@ -101,7 +102,7 @@ const PostCard: React.FC<PostProps> = ({ post, onLike, onRepost, onComment }) =>
         {/* L'animation du cœur qui pop */}
         {showHeart && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <i className="fas fa-heart text-white text-8xl animate-ping opacity-75"></i>
+            <Icon icon="fa-heart" className="fas fa-heart text-white text-8xl animate-ping opacity-75" />
           </div>
         )}
       </div>
@@ -111,23 +112,23 @@ const PostCard: React.FC<PostProps> = ({ post, onLike, onRepost, onComment }) =>
         <div className="flex justify-between items-center mb-4">
           <div className="flex gap-5 items-center">
             <button onClick={onLike} className={`transition-transform active:scale-150 flex items-center gap-1.5 ${isLiked ? 'text-red-500' : 'text-white'}`} title="Like">
-              <i className={`${isLiked ? 'fas' : 'far'} fa-heart text-2xl`}></i>
+              <Icon icon="fa-heart" className={`${isLiked ? 'fas' : 'far'} fa-heart text-2xl`} />
               {post.likes > 0 && <span className="text-sm">{post.likes}</span>}
             </button>
             <button onClick={onComment} className="text-white hover:text-zenith-green transition-colors flex items-center gap-1.5" title="Commenter">
-              <i className="far fa-comment text-2xl"></i>
+              <Icon icon="fa-comment" className="far fa-comment text-2xl" />
               {post.comments > 0 && <span className="text-sm">{post.comments}</span>}
             </button>
             <button onClick={onRepost} className={`transition-colors flex items-center gap-1.5 ${isReposted ? 'text-zenith-green' : 'text-white hover:text-zenith-green'}`} title="Repost">
-              <i className="fas fa-retweet text-2xl"></i>
+              <Icon icon="fa-retweet" className="fas fa-retweet text-2xl" />
               {post.shares > 0 && <span className="text-sm">{post.shares}</span>}
             </button>
             <button onClick={handleShare} className="text-white hover:text-zenith-green transition-colors" title="Partager">
-              <i className="far fa-paper-plane text-2xl"></i>
+              <Icon icon="fa-share" className="far fa-paper-plane text-2xl" />
             </button>
           </div>
           <button className="text-white hover:text-zenith-green">
-            <i className="far fa-bookmark text-2xl"></i>
+            <Icon icon="fa-bookmark" className="far fa-bookmark text-2xl" />
           </button>
         </div>
 
