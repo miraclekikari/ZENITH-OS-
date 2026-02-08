@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { moderateContent, generateCreativeCaption } from '../services/geminiService';
 import { AIChat } from '../components/Tools';
 import { DB } from '../services/storageService';
 import { supabase } from '../lib/supabaseClient'; 
@@ -96,13 +95,24 @@ const Publish: React.FC = () => {
     }
   };
 
-  const handleAICaption = async () => {
-    setIsGenerating(true);
-    const context = caption || (files.length > 0 ? `A photo of ${files[0].name}` : 'A cool tech update');
-    const newCaption = await generateCreativeCaption(context);
-    setCaption(newCaption);
-    setIsGenerating(false);
-  };
+  const handleAICaption = async () => {
+    setIsGenerating(true);
+    const context = caption || (files.length > 0 ? `A photo of ${files[0].name}` : 'A cool tech update');
+    const fallback = caption || 'A moment in time.';
+    try {
+      const { generateCreativeCaption } = await import('../services/geminiService').catch(() => ({ generateCreativeCaption: async () => '' }));
+      const newCaption = await generateCreativeCaption(context);
+      if (newCaption && typeof newCaption === 'string' && !newCaption.startsWith('ERREUR_')) {
+        setCaption(newCaption);
+      } else {
+        setCaption(prev => prev || fallback);
+      }
+    } catch (_) {
+      setCaption(prev => prev || fallback);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   const addStatus = (msg: string) => {
     setStatusSteps(prev => [...prev, msg]);
@@ -120,7 +130,7 @@ const handleSubmit = async () => {
     try {
       let uploadedUrl = '';
       
-      // 2. Gestion Media - Cloudinary (Inchangé)
+      // 2. Gestion Media - Cloudinary
       if (files.length > 0) {
         addStatus(`>> Digitizing Media Fragment: ${files[0].name}...`);
         const formData = new FormData();
@@ -134,11 +144,12 @@ const handleSubmit = async () => {
         
         if (!cloudRes.ok) throw new Error('Cloudinary Grid Rejection');
         const cloudData = await cloudRes.json();
-        uploadedUrl = cloudData.secure_url;
+        const imageUrlFromCloudinary = cloudData?.secure_url ?? '';
+        uploadedUrl = imageUrlFromCloudinary;
         addStatus('>> Media Fragment Encrypted & Cloud-Stored.');
       }
 
-      // 3. Enregistrement dans Supabase (table 'posts')
+      // 3. Enregistrement dans Supabase (table 'posts') — URL image = celle retournée par Cloudinary
       addStatus('>> Patching Entry to Zenith Core Database...');
       const user = DB.getUser();
       const userId = user?.id ?? 'anonymous';
@@ -157,13 +168,16 @@ const handleSubmit = async () => {
         throw new Error(insertError.message || 'Supabase insert failed');
       }
 
-      // 4. Shadow Sentinel (modération optionnelle)
+      // 4. Modération optionnelle (IA) — n’empêche pas la publication si Gemini échoue ou est absent
       if (caption.trim().length > 5) {
-        moderateContent(caption).then((result) => {
-          if (result.riskScore >= 6) {
-            console.warn("Sentinel: Post flagging post-upload.");
+        try {
+          const { moderateContent } = await import('../services/geminiService').catch(() => ({}));
+          if (typeof moderateContent === 'function') {
+            moderateContent(caption).then((result) => {
+              if (result === false) console.warn("Sentinel: Post flagged post-upload.");
+            }).catch(() => {});
           }
-        }).catch(err => console.error("Sentinel Offline:", err));
+        } catch (_) {}
       }
 
       // 5. Finalisation
