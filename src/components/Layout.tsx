@@ -101,6 +101,15 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
           <div className="flex items-center gap-4">
             <ProfileSearch />
             
+            {/* Support Button */}
+            <button
+              onClick={() => navigate('/support')}
+              className="px-3 py-2 bg-purple-600 text-white font-bold rounded-full text-sm hover:bg-purple-500 hover:shadow-[0_0_15px_rgba(147,51,234,0.8)] transition-all flex items-center gap-2 border border-purple-400"
+            >
+              <i className="fas fa-headset"></i>
+              <span className="hidden md:inline">SUPPORT</span>
+            </button>
+            
             {/* Auth Button or Profile */}
             {!isAuthenticated ? (
               <button

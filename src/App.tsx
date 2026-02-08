@@ -11,6 +11,7 @@ import Publish from './pages/Publish';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import AdminPanel from './pages/AdminPanel';
+import Support from './pages/Support';
 import SchemaDiagnostic from './components/SchemaDiagnostic';
 import { ThemeProvider } from './context/ThemeContext';
 import { DB } from './services/storageService';
@@ -48,6 +49,7 @@ const App: React.FC = () => {
               <Route path="/academy" element={<Academy />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/support" element={<Support />} />
               <Route path="/diagnostic" element={<SchemaDiagnostic />} />
               <Route path="/login" element={<Login onLogin={handleLogin} />} />
               <Route path="*" element={<Navigate to="/" replace />} />
