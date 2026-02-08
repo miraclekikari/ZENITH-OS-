@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { askZenithAI } from '../services/geminiService';
-import { EnhancedTerminal } from './EnhancedTerminal';
 
 /* --- EXISTING TOOLS --- */
 
@@ -70,7 +69,56 @@ export const LatexEditor: React.FC = () => {
 };
 
 export const AIChat: React.FC = () => {
-  return <EnhancedTerminal />;
+  const [query, setQuery] = useState('');
+  const [history, setHistory] = useState<{role: 'user' | 'ai', text: string}[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const handleSend = async () => {
+    if(!query.trim()) return;
+    const userMsg = query;
+    setHistory(prev => [...prev, {role: 'user', text: userMsg}]);
+    setQuery('');
+    setLoading(true);
+    const response = await askZenithAI(userMsg);
+    setHistory(prev => [...prev, {role: 'ai', text: response}]);
+    setLoading(false);
+  };
+
+  return (
+    <div className="glass-card p-4 rounded-xl w-full h-full flex flex-col min-h-[400px]">
+       <div className="text-xs text-zenith-green mb-2 font-tech flex justify-between">
+         <span>ZENITH.AI_CORE</span>
+         <span className="animate-pulse text-green-400">● ONLINE</span>
+       </div>
+       <div className="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 scrollbar-thin">
+          {history.length === 0 && (
+            <div className="flex flex-col items-center justify-center h-full text-zenith-dim opacity-50">
+              <i className="fas fa-robot text-4xl mb-2"></i>
+              <div>System Ready.</div>
+            </div>
+          )}
+          {history.map((msg, i) => (
+            <div key={i} className={`p-3 rounded-lg max-w-[85%] text-sm ${msg.role === 'user' ? 'bg-zenith-greenDim text-white self-end ml-auto' : 'bg-black border border-zenith-greenDim text-zenith-green'}`}>
+              <strong className="block text-[10px] opacity-50 mb-1">{msg.role === 'user' ? 'COMMAND' : 'RESPONSE'}</strong> 
+              {msg.text}
+            </div>
+          ))}
+          {loading && <div className="text-zenith-green text-xs animate-pulse">Computing...</div>}
+       </div>
+       <div className="flex gap-2 relative">
+         <input 
+            value={query} 
+            onChange={e => setQuery(e.target.value)} 
+            onKeyDown={e => e.key === 'Enter' && handleSend()}
+            placeholder="Query the Zenith Core..."
+            className="flex-1 bg-black border border-zenith-greenDim rounded px-4 py-3 text-sm focus:outline-none focus:border-zenith-green focus:ring-1 focus:ring-zenith-green"
+         />
+         <button onClick={handleSend} className="bg-zenith-green text-black px-4 py-2 rounded font-bold hover:opacity-80 transition-opacity">
+           <i className="fas fa-paper-plane"></i>
+         </button>
+       </div>
+    </div>
+  );
 };
 
 /* --- NEW TOOLS --- */
