@@ -1,60 +1,56 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const MODEL = 'gemini-1.5-flash'; // Ou 'gemini-1.5-pro' si flash échoue
 
-// Debug: Confirmer le chargement de la clé au démarrage
-if (import.meta.env.DEV) {
-  console.log('🔑 Gemini API Key:', API_KEY ? '✅ Chargée' : '❌ Manquante');
-}
-
-let genAIInstance: any = null;
-
-export const getGenAI = () => {
-  // Garde le nom correct GoogleGenerativeAI pour éviter l'erreur d'export (Page Blanche)
-  if (!genAIInstance && API_KEY) {
-    genAIInstance = new GoogleGenerativeAI(API_KEY);
+export const generateContent = async (prompt: string) => {
+  if (!API_KEY) {
+    console.error('🔴 ERREUR: Clé API manquante');
+    return 'Configuration IA manquante. Vérifiez les variables d\'environnement.';
   }
-  return genAIInstance;
-};
 
-export const getGeminiResponse = async (prompt: string, history: any[] = []): Promise<string> => {
   try {
-    const ai = getGenAI();
-    if (!ai) return "ERREUR_SYSTEME : Clé API non configurée.";
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1/models/${MODEL}:generateContent?key=${API_KEY}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+            topP: 0.95,
+            maxOutputTokens: 1024,
+          }
+        })
+      }
+    );
 
-    // Test du modèle 1.5-flash qui est le plus compatible avec les clés gratuites
-    const model = ai.getGenerativeModel({ 
-      model: "gemini-1.5-flash" 
-    });
-
-    const chat = model.startChat({
-      history: history.map(msg => ({
-        role: msg.role === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.content }],
-      })),
-      generationConfig: { 
-        maxOutputTokens: 1000, 
-        temperature: 0.8 
-      },
-    });
-
-    const result = await chat.sendMessage(prompt);
-    const response = await result.response;
-    return response.text();
-  } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : String(error);
-    if (import.meta.env.DEV) console.warn("Gemini:", msg);
-    return `ERREUR_IA : ${msg}`;
+    const data = await response.json();
+    
+    if (data.error) {
+      console.error('🔴 Erreur Gemini:', data.error);
+      return `Erreur API: ${data.error.message}`;
+    }
+    
+    return data.candidates[0].content.parts[0].text;
+  } catch (error) {
+    console.error('🔴 Erreur réseau:', error);
+    return 'Erreur de connexion à l\'IA';
   }
 };
 
-// --- GARDE TOUS LES EXPORTS POUR ÉVITER LES ERREURS DE BUILD ---
-export const generateCommunityNews = async () => getGeminiResponse("Génère 3 news tech.");
-export const askZenithAI = async (prompt: string) => getGeminiResponse(prompt);
-export const moderateContent = async (content: string) => {
-  const res = await getGeminiResponse(`Réponds SAFE ou UNSAFE : ${content}`);
-  return res.includes('SAFE');
-};
-export const generateCreativeCaption = async (topic: string) => getGeminiResponse(`Légende pour : ${topic}`);
+// --- COMPATIBILITÉ AVEC LES IMPORTS EXISTANTS ---
+export const getGeminiResponse = generateContent;
+export const generateCommunityNews = () => generateContent("Génère 3 news tech.");
+export const askZenithAI = generateContent;
+export const moderateContent = (content: string) => generateContent(`Réponds SAFE ou UNSAFE : ${content}`);
+export const generateCreativeCaption = (topic: string) => generateContent(`Légende pour : ${topic}`);
 
-export default { getGeminiResponse, getGenAI, generateCommunityNews, askZenithAI, moderateContent, generateCreativeCaption };
+export default { 
+  generateContent, 
+  getGeminiResponse, 
+  generateCommunityNews, 
+  askZenithAI, 
+  moderateContent, 
+  generateCreativeCaption 
+};
