@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap');
+
+/* Variables CSS personnalisées */
+:root {
+  --z-primary: #00ffcc;
+  --z-secondary: #ff3333;
+  --z-background: #050505;
+  --z-surface: rgba(5, 5, 5, 0.8);
+  --z-border: rgba(0, 255, 204, 0.3);
+  --z-green: #00ff88;
+  --z-green-dim: rgba(0, 255, 136, 0.3);
+  --z-dim: #666666;
+}
+
+/* Force le noir profond pour éviter le gris d'Opera */
+html, body {
+  background-color: #050505 !important;
+  color: #00ffcc !important;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Rajdhani', sans-serif;
+}
+
+/* Scanlines fixes pour l'effet rétro-futuriste */
+.scanlines {
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    transparent 50%,
+    rgba(0, 0, 0, 0.2) 50%
+  );
+  background-size: 100% 4px;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+/* On s'assure que le container React prend toute la place */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Styles de base pour les composants */
+.glass-card {
+  background: rgba(5, 5, 5, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 255, 204, 0.3);
+  border-radius: 0.5rem;
+}
+
+.font-tech {
+  font-family: 'Orbitron', monospace;
+}
+
+.font-terminal {
+  font-family: 'Rajdhani', monospace;
+}
+
+/* Scrollbar personnalisée */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(5, 5, 5, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--z-green);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--z-primary);
+}

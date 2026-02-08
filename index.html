@@ -4,82 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <title>Zenith Core OS</title>
-
-    <script>
-      window.tailwind = {
-        theme: {
-          extend: {
-            colors: {
-              zenith: {
-                neon: '#00ffcc',
-                red: '#ff3333',
-                dark: '#050505',
-                border: 'rgba(0, 255, 204, 0.3)'
-              }
-            }
-          }
-        }
-      };
-      // Réduire l’avertissement CDN en dev (pour prod, préférer Tailwind en build)
-      (function () {
-        var w = console.warn;
-        if (typeof w === 'function') {
-          console.warn = function (msg) {
-            if (typeof msg === 'string' && msg.indexOf('Tailwind') !== -1 && msg.indexOf('CDN') !== -1) return;
-            return w.apply(console, arguments);
-          };
-        }
-      })();
-    </script>
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <style type="text/css">
-      /* Force le noir profond pour éviter le gris d'Opera */
-      html, body {
-        background-color: #050505 !important;
-        color: #00ffcc !important;
-        margin: 0;
-        padding: 0;
-        min-height: 100vh;
-        font-family: 'Rajdhani', sans-serif;
-      }
-
-      /* Scanlines fixes pour l'effet rétro-futuriste */
-      .scanlines {
-        position: fixed;
-        inset: 0;
-        background: linear-gradient(
-          to bottom,
-          transparent 50%,
-          rgba(0, 0, 0, 0.2) 50%
-        );
-        background-size: 100% 4px;
-        z-index: 9999;
-        pointer-events: none;
-      }
-
-      /* On s'assure que le container React prend toute la place */
-      #root {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-      }
-      @keyframes slide-up {
-        from { transform: translateY(100%); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
-      }
-      .animate-slide-up {
-        animation: slide-up 0.25s ease-out forwards;
-      }
-    </style>
-
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" crossorigin="anonymous" />
+    
+    <!-- CSS local avec Tailwind -->
+    <link rel="stylesheet" href="/src/index.css" />
   </head>
   <body>
     <div class="scanlines"></div>
     <div id="root"></div>
-    
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
