@@ -19,7 +19,17 @@
             }
           }
         }
-      }
+      };
+      // Réduire l’avertissement CDN en dev (pour prod, préférer Tailwind en build)
+      (function () {
+        var w = console.warn;
+        if (typeof w === 'function') {
+          console.warn = function (msg) {
+            if (typeof msg === 'string' && msg.indexOf('Tailwind') !== -1 && msg.indexOf('CDN') !== -1) return;
+            return w.apply(console, arguments);
+          };
+        }
+      })();
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
 
@@ -53,6 +63,13 @@
         min-height: 100vh;
         display: flex;
         flex-direction: column;
+      }
+      @keyframes slide-up {
+        from { transform: translateY(100%); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+      .animate-slide-up {
+        animation: slide-up 0.25s ease-out forwards;
       }
     </style>
 

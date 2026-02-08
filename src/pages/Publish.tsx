@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { AIChat } from '../components/Tools';
 import { DB } from '../services/storageService';
-import { supabase } from '../lib/supabaseClient'; 
+import { supabase } from '../lib/supabaseClient';
+import { DEFAULT_USER_ID } from '../lib/constants'; 
 
 const FILTERS = [
   { name: 'Normal', style: {} },
@@ -152,7 +153,7 @@ const handleSubmit = async () => {
       // 3. Enregistrement dans Supabase (table 'posts') — URL image = celle retournée par Cloudinary
       addStatus('>> Patching Entry to Zenith Core Database...');
       const user = DB.getUser();
-      const userId = user?.id ?? 'anonymous';
+      const userId = (user?.id ?? DEFAULT_USER_ID) as string;
 
       const { data: newPost, error: insertError } = await supabase
         .from('posts')
@@ -191,8 +192,8 @@ const handleSubmit = async () => {
         setStatusSteps([]);
       }, 1000);
 
-    } catch (error: any) {
-      console.error(error);
+    } catch (error: unknown) {
+      if (import.meta.env.DEV) console.error(error);
       setIsUploading(false);
       addStatus(`!! SECURITY ALERT: ${error.message}`);
       alert(`⚠️ TRANSMISSION FAILED ⚠️\n\nReason: ${error.message}`);

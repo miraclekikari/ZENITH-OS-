@@ -36,10 +36,10 @@ export const getGeminiResponse = async (prompt: string, history: any[] = []): Pr
     const result = await chat.sendMessage(prompt);
     const response = await result.response;
     return response.text();
-  } catch (error: any) {
-    console.error("Erreur Gemini:", error);
-    // Si l'erreur 404 persiste, on renvoie un message clair au terminal de l'OS
-    return `ERREUR_IA : ${error.message}`;
+  } catch (error: unknown) {
+    const msg = error instanceof Error ? error.message : String(error);
+    if (import.meta.env.DEV) console.warn("Gemini:", msg);
+    return `ERREUR_IA : ${msg}`;
   }
 };
 

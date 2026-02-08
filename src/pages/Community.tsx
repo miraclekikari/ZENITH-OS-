@@ -2,15 +2,22 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Post, Story, Community as CommunityType } from '../types';
 import { generateCommunityNews } from '../services/geminiService';
 import { supabase } from '../lib/supabaseClient';
+import { DEFAULT_USER_ID } from '../lib/constants';
 import PostCard from '../components/PostCard';
+import CommentsDrawer from '../components/CommentsDrawer';
 
-/** Map une ligne Supabase (posts) vers le type Post de l'app */
-function mapSupabaseRowToPost(row: Record<string, unknown>): Post {
+/** Map une ligne Supabase (posts) vers le type Post + merge likes/comments/isLiked depuis post_likes et comments */
+function mapSupabaseRowToPost(
+  row: Record<string, unknown>,
+  likeCount: Record<string, number>,
+  commentCount: Record<string, number>,
+  likedByUser: Set<string>
+): Post {
   const id = typeof row.id === 'string' ? row.id : String(row.id ?? '');
   const content = typeof row.content === 'string' ? row.content : '';
   const imageUrl = row.image_url ?? row.image;
   const image = typeof imageUrl === 'string' ? imageUrl : undefined;
-  const userId = row.user_id ?? 'anonymous';
+  const userId = (row.user_id ?? DEFAULT_USER_ID) as string;
   const author = typeof row.author === 'string' ? row.author : String(userId);
   const created = row.created_at ?? row.timestamp;
   const timestamp = typeof created === 'string' ? created : (created ? new Date(created as string).toISOString() : new Date().toISOString());
@@ -20,13 +27,13 @@ function mapSupabaseRowToPost(row: Record<string, unknown>): Post {
     avatar: 'https://picsum.photos/seed/' + encodeURIComponent(String(userId)) + '/100/100',
     content,
     image,
-    likes: Number(row.likes) || 0,
-    comments: Number(row.comments) || 0,
+    likes: likeCount[id] ?? Number(row.likes) ?? 0,
+    comments: commentCount[id] ?? Number(row.comments) ?? 0,
     shares: Number(row.shares) || 0,
     isVerified: false,
     timestamp,
     isModerated: false,
-    isLiked: false,
+    isLiked: likedByUser.has(id),
     isReposted: false
   };
 }
@@ -39,62 +46,91 @@ const initialCommunities: CommunityType[] = [
   { id: 'c4', name: 'Off-World Tech', description: 'SpaceX & Beyond', members: 320, isPrivate: false, topic: 'Space Tech' },
 ];
 
-const mockStories: Story[] = [
-  { id: '1', user: 'DevMike', avatar: 'https://picsum.photos/seed/u2/200/200', image: '', isSeen: false },
-  { id: '2', user: 'Sarah_AI', avatar: 'https://picsum.photos/seed/u3/200/200', image: '', isSeen: true },
-  { id: '3', user: 'Ghost_01', avatar: 'https://picsum.photos/seed/ghost/200/200', image: '', isSeen: false },
-  { id: '4', user: 'NetRunner', avatar: 'https://picsum.photos/seed/net/200/200', image: '', isSeen: false },
-];
-
 const Community: React.FC = () => {
-  // --- STATE ---
   const [showDM, setShowDM] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false); // Nouveau : Menu mobile
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [news, setNews] = useState<string>("INITIALIZING ZENITH NEURAL LINK...");
   const [showCreateModal, setShowCreateModal] = useState(false);
-  
-  // Communities State (dynamique maintenant)
   const [communities, setCommunities] = useState<CommunityType[]>(initialCommunities);
   const [activeCommunity, setActiveCommunity] = useState<CommunityType>(initialCommunities[0]);
-  
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'feed' | 'trending'>('feed');
-
-  // Create Sector Form
   const [newSectorName, setNewSectorName] = useState('');
   const [newSectorTopic, setNewSectorTopic] = useState('');
   const [isPrivateSector, setIsPrivateSector] = useState(false);
-
-  // Data Store
   const [posts, setPosts] = useState<Post[]>([]);
+  const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [stories, setStories] = useState<Story[]>([]);
+  const [showStoryModal, setShowStoryModal] = useState(false);
+  const [storyUploading, setStoryUploading] = useState(false);
 
-  // --- LOGIC: SYNC FEED (Supabase) ---
-  useEffect(() => {
-    const syncFeed = async () => {
-      try {
-        const { data: rows, error } = await supabase.from('posts').select('*');
-        if (error) {
-          console.error("Neural Link Error:", error);
-          setPosts([]);
-          return;
-        }
-        const mapped = (rows ?? []).map(mapSupabaseRowToPost);
-        // Plus récents en premier (created_at desc)
-        const sorted = [...mapped].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        setPosts(sorted);
-      } catch (error) {
-        console.error("Neural Link Error:", error);
+  const refreshFeed = useCallback(async () => {
+    try {
+      const [postsRes, likesRes, commentsRes] = await Promise.all([
+        supabase.from('posts').select('*'),
+        supabase.from('post_likes').select('post_id, user_id'),
+        supabase.from('comments').select('post_id')
+      ]);
+      if (postsRes.error) {
+        if (import.meta.env.DEV) console.warn('Neural Link:', postsRes.error.message);
         setPosts([]);
-      } finally {
-        setIsLoading(false);
+        return;
       }
-    };
-
-    syncFeed();
-    const heartbeat = setInterval(syncFeed, 5000);
-    return () => clearInterval(heartbeat);
+      const rows = postsRes.data ?? [];
+      const likeRows = likesRes.data ?? [];
+      const commentRows = commentsRes.data ?? [];
+      const likeCount: Record<string, number> = {};
+      const likedByUser = new Set<string>();
+      likeRows.forEach((r: { post_id: string; user_id: string }) => {
+        likeCount[r.post_id] = (likeCount[r.post_id] ?? 0) + 1;
+        if (r.user_id === DEFAULT_USER_ID) likedByUser.add(r.post_id);
+      });
+      const commentCount: Record<string, number> = {};
+      commentRows.forEach((r: { post_id: string }) => {
+        commentCount[r.post_id] = (commentCount[r.post_id] ?? 0) + 1;
+      });
+      const mapped = rows.map((row: Record<string, unknown>) =>
+        mapSupabaseRowToPost(row, likeCount, commentCount, likedByUser)
+      );
+      const sorted = [...mapped].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+      setPosts(sorted);
+    } catch (_) {
+      setPosts([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  useEffect(() => {
+    refreshFeed();
+    const heartbeat = setInterval(refreshFeed, 15000);
+    return () => clearInterval(heartbeat);
+  }, [refreshFeed]);
+
+  const refreshStories = useCallback(async () => {
+    try {
+      const { data, error } = await supabase.from('stories').select('*').order('created_at', { ascending: false });
+      if (error) {
+        setStories([]);
+        return;
+      }
+      const list = (data ?? []).map((row: Record<string, unknown>) => ({
+        id: String(row.id ?? ''),
+        user: String(row.user_id ?? 'u1'),
+        avatar: `https://picsum.photos/seed/${encodeURIComponent(String(row.user_id ?? 'u1'))}/200/200`,
+        image: String(row.image_url ?? ''),
+        isSeen: false
+      }));
+      setStories(list);
+    } catch (_) {
+      setStories([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshStories();
+  }, [refreshStories]);
 
   // --- LOGIC: AI NEWS ---
   useEffect(() => {
@@ -114,15 +150,18 @@ const Community: React.FC = () => {
     return () => { mounted = false; clearInterval(interval); };
   }, [activeCommunity]);
 
-  // --- HANDLERS ---
-  const toggleLike = useCallback((id: string) => {
-    setPosts(currentPosts => currentPosts.map(p => {
-      if (p.id === id) {
-        return { ...p, likes: p.isLiked ? p.likes - 1 : p.likes + 1, isLiked: !p.isLiked };
-      }
-      return p;
-    }));
-  }, []);
+  const toggleLike = useCallback(async (id: string) => {
+    const post = posts.find(p => p.id === id);
+    if (!post) return;
+    const newLiked = !post.isLiked;
+    if (newLiked) {
+      const { error } = await supabase.from('post_likes').insert({ post_id: id, user_id: DEFAULT_USER_ID });
+      if (!error) await refreshFeed();
+    } else {
+      const { error } = await supabase.from('post_likes').delete().eq('post_id', id).eq('user_id', DEFAULT_USER_ID);
+      if (!error) await refreshFeed();
+    }
+  }, [posts, refreshFeed]);
 
   const toggleRepost = useCallback((id: string) => {
     setPosts(currentPosts => currentPosts.map(p => {
@@ -134,15 +173,36 @@ const Community: React.FC = () => {
   }, []);
 
   const handleComment = useCallback((id: string) => {
-    const commentText = prompt('Ajoutez un commentaire (simulation) :');
-    if (commentText !== null) {
-      setPosts(currentPosts => currentPosts.map(p => {
-        if (p.id === id) return { ...p, comments: p.comments + 1 };
-        return p;
-      }));
-      alert('Commentaire transmis au réseau Zenith.');
-    }
+    setCommentPostId(id);
   }, []);
+
+  const handleAddStory = useCallback(async (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+    setStoryUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('upload_preset', import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET ?? '');
+      const cloudRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${import.meta.env.VITE_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: formData }
+      );
+      if (!cloudRes.ok) throw new Error('Cloudinary upload failed');
+      const cloudData = await cloudRes.json();
+      const imageUrl = cloudData?.secure_url ?? '';
+      const { error } = await supabase.from('stories').insert({
+        id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+        user_id: DEFAULT_USER_ID,
+        image_url: imageUrl
+      });
+      if (!error) {
+        await refreshStories();
+        setShowStoryModal(false);
+      }
+    } finally {
+      setStoryUploading(false);
+    }
+  }, [refreshStories]);
 
   const handleCreateSector = () => {
      if(!newSectorName) return;
@@ -267,19 +327,21 @@ const Community: React.FC = () => {
             </div>
          </div>
 
-         {/* Stories Strip */}
+         {/* Stories Strip (Supabase) */}
          <div className="flex gap-4 overflow-x-auto pb-4 mb-6 px-4 scrollbar-hide">
-            <div className="flex flex-col items-center gap-1 cursor-pointer group min-w-[64px]">
+            <div
+              className="flex flex-col items-center gap-1 cursor-pointer group min-w-[64px]"
+              onClick={() => setShowStoryModal(true)}
+            >
                <div className="w-16 h-16 rounded-full border-2 border-dashed border-zenith-dim group-hover:border-zenith-green flex items-center justify-center bg-white/5 transition-all">
                   <i className="fas fa-plus text-zenith-dim group-hover:text-zenith-green text-xl"></i>
                </div>
                <span className="text-xs text-zenith-dim group-hover:text-white">Add Log</span>
             </div>
-            
-            {mockStories.map(story => (
+            {stories.map(story => (
                <div key={story.id} className="flex flex-col items-center gap-1 cursor-pointer group min-w-[64px]">
-                  <div className={`w-16 h-16 rounded-full p-[2px] ${story.isSeen ? 'bg-zenith-dim/30' : 'bg-gradient-to-tr from-yellow-400 to-zenith-green animate-spin-slow-hover'} group-hover:scale-105 transition-transform duration-300`}>
-                     <img src={story.avatar} className="w-full h-full rounded-full object-cover border-2 border-black" alt="story" />
+                  <div className={`w-16 h-16 rounded-full p-[2px] overflow-hidden ${story.isSeen ? 'bg-zenith-dim/30' : 'bg-gradient-to-tr from-yellow-400 to-zenith-green'} group-hover:scale-105 transition-transform duration-300`}>
+                     <img src={story.image || story.avatar} className="w-full h-full rounded-full object-cover border-2 border-black" alt="story" />
                   </div>
                   <span className="text-xs text-white truncate w-16 text-center group-hover:text-zenith-green transition-colors">{story.user}</span>
                </div>
@@ -328,7 +390,6 @@ const Community: React.FC = () => {
 
             {/* Posts Loop */}
             {!isLoading && filteredPosts.map(post => (
-               // Wrapper div to force responsiveness on children
                <div key={post.id} className="w-full break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:mt-2">
                  <PostCard 
                    post={post} 
@@ -338,6 +399,13 @@ const Community: React.FC = () => {
                  />
                </div>
             ))}
+
+            <CommentsDrawer
+              postId={commentPostId ?? ''}
+              isOpen={!!commentPostId}
+              onClose={() => setCommentPostId(null)}
+              onCommentAdded={refreshFeed}
+            />
 
             {!isLoading && filteredPosts.length > 0 && (
               <div className="text-center py-10 text-zenith-dim text-xs font-mono">
@@ -433,6 +501,33 @@ const Community: React.FC = () => {
             <i className="fas fa-comment-alt"></i>
             <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
          </button>
+      )}
+
+      {/* Story creation modal (Add Log) */}
+      {showStoryModal && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+          <div className="glass-card w-full max-w-sm rounded-2xl p-6 border border-zenith-green shadow-[0_0_30px_rgba(0,255,136,0.2)]">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-tech text-white text-sm tracking-wider">ADD STORY LOG</h3>
+              <button onClick={() => setShowStoryModal(false)} className="text-zenith-dim hover:text-white"><i className="fas fa-times"></i></button>
+            </div>
+            <p className="text-zenith-dim text-xs mb-4">Upload an image to add a story (Supabase + Cloudinary).</p>
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              id="story-file-input"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleAddStory(f);
+                e.target.value = '';
+              }}
+            />
+            <label htmlFor="story-file-input" className="block w-full py-4 border-2 border-dashed border-zenith-greenDim rounded-xl text-center text-zenith-green cursor-pointer hover:bg-zenith-greenDim/20 transition-colors">
+              {storyUploading ? <i className="fas fa-spinner fa-spin text-2xl"></i> : <><i className="fas fa-cloud-upload-alt text-2xl block mb-2"></i> Choose image</>}
+            </label>
+          </div>
+        </div>
       )}
 
       {/* Create Sector Modal (Enhanced) */}
