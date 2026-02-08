@@ -9,7 +9,7 @@ import { UserId } from '../types';
 export type UserStatus = 'online' | 'offline' | 'deep_sleep' | 'away';
 
 export interface UserStatusData {
-  user_id: UserId;
+  author_id: UserId;
   status: UserStatus;
   last_seen: string;
   session_id?: string;
@@ -27,7 +27,7 @@ export interface NeuralSearchResult {
 export interface DataFragment {
   id: string;
   original_post_id: string;
-  collector_user_id: UserId;
+  collector_author_id: UserId;
   fragment_type: 'copy' | 'analysis' | 'bookmark' | 'lab_sample';
   fragment_data?: Record<string, any>;
   collection_reason: string;
@@ -39,7 +39,7 @@ export interface DataFragment {
 }
 
 export interface UserLab {
-  user_id: UserId;
+  author_id: UserId;
   lab_name: string;
   lab_description?: string;
   fragment_count: number;
@@ -69,7 +69,7 @@ export const updateUserStatus = async (
   status: UserStatus = 'online'
 ) => {
   const { data, error } = await supabase.rpc('update_user_status', {
-    user_id_param: userId,
+    author_id_param: userId,
     status_param: status
   });
 
@@ -80,7 +80,7 @@ export const getUserStatus = async (userId: UserId = DEFAULT_USER_ID as UserId) 
   const { data, error } = await supabase
     .from('user_status')
     .select('*')
-    .eq('user_id', userId)
+    .eq('author_id', userId)
     .single();
 
   return { data: data as UserStatusData, error };
@@ -177,7 +177,7 @@ export const getUserFragments = async (
   let query = supabase
     .from('data_fragments')
     .select('*')
-    .eq('collector_user_id', userId);
+    .eq('collector_author_id', userId);
 
   if (includePublic) {
     query = query.or('is_public.eq.true');
@@ -217,7 +217,7 @@ export const getUserLab = async (userId: UserId = DEFAULT_USER_ID as UserId) => 
   const { data, error } = await supabase
     .from('user_labs')
     .select('*')
-    .eq('user_id', userId)
+    .eq('author_id', userId)
     .single();
 
   return { data: data as UserLab, error };
@@ -230,7 +230,7 @@ export const updateUserLab = async (
   const { data, error } = await supabase
     .from('user_labs')
     .update(updates)
-    .eq('user_id', userId)
+    .eq('author_id', userId)
     .select()
     .single();
 
@@ -254,7 +254,7 @@ export const getLabFragments = async (userId: UserId = DEFAULT_USER_ID as UserId
   const { data, error } = await supabase
     .from('lab_fragments_view')
     .select('*')
-    .eq('collector_user_id', userId)
+    .eq('collector_author_id', userId)
     .order('collected_at', { ascending: false });
 
   return { data, error };
@@ -272,7 +272,7 @@ export const initializeUserLab = async (
   const { data, error } = await supabase
     .from('user_labs')
     .upsert({
-      user_id: userId,
+      author_id: userId,
       lab_name: labName || 'Mon Labo Zenith',
       lab_description: labDescription || 'Laboratoire personnel Zenith'
     })

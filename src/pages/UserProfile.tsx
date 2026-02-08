@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getProfileByUsername, getUserPosts, getProfileStats } from '../lib/profileService';
 import { Profile } from '../types';
+import SafeImage from '../components/SafeImage';
 
 const UserProfile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
@@ -92,10 +93,11 @@ const UserProfile: React.FC = () => {
           {/* Avatar avec bordure néon */}
           <div className="relative">
             <div className={`w-32 h-32 rounded-full border-4 ${getStatusColor()} p-1 shadow-[0_0_20px_rgba(0,255,0,0.5)]`}>
-              <img
-                src={profile.avatar_url || getDefaultAvatar(profile.username)}
+              <SafeImage
+                src={profile.avatar_url || ''}
                 alt={profile.username}
-                className="w-full h-full rounded-full object-cover bg-zinc-800"
+                fallbackSeed={profile.username}
+                className="w-full h-full rounded-full bg-zinc-800"
               />
             </div>
             {profile.is_verified && (
@@ -190,10 +192,11 @@ const UserProfile: React.FC = () => {
                 key={post.id}
                 className="relative aspect-square group cursor-pointer overflow-hidden rounded-lg"
               >
-                <img
+                <SafeImage
                   src={post.image_url || 'https://picsum.photos/seed/post/400/400'}
                   alt="Post"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  fallbackSeed={post.id}
+                  className="w-full h-full transition-transform duration-300 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
                   <div className="text-white flex items-center gap-2">

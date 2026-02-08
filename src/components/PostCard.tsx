@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Post } from '../types';
+import SafeImage from './SafeImage';
 
 interface PostProps {
   post: Post;
@@ -63,7 +64,12 @@ const PostCard: React.FC<PostProps> = ({ post, onLike, onRepost, onComment }) =>
           onClick={handleProfileClick}
           className="w-10 h-10 rounded-full bg-gradient-to-tr from-zenith-green to-blue-500 border border-zenith-greenDim overflow-hidden cursor-pointer hover:scale-105 transition-transform"
         >
-          {post.avatar && <img src={post.avatar} alt="" className="w-full h-full object-cover" />}
+          <SafeImage 
+            src={post.avatar} 
+            alt={post.author}
+            fallbackSeed={post.username || post.author}
+            className="w-full h-full"
+          />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -84,7 +90,12 @@ const PostCard: React.FC<PostProps> = ({ post, onLike, onRepost, onComment }) =>
       {/* Media avec Double Tap */}
       <div className="relative aspect-square bg-black flex items-center justify-center cursor-pointer min-h-[200px]" onClick={handleDoubleTap}>
         {(post.image ?? (post as { imageUrl?: string }).imageUrl) ? (
-          <img src={post.image ?? (post as { imageUrl?: string }).imageUrl!} alt="content" className="w-full h-full object-cover" />
+          <SafeImage 
+            src={post.image ?? (post as { imageUrl?: string }).imageUrl!} 
+            alt="content"
+            fallbackSeed={post.id}
+            className="w-full h-full"
+          />
         ) : null}
         
         {/* L'animation du cœur qui pop */}
