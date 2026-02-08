@@ -1,5 +1,9 @@
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+<<<<<<< HEAD
 const MODEL = 'gemini-1.5-pro'; // ⚠️ SEUL MODÈLE QUI MARCHE
+=======
+const MODEL = 'gemini-1.5-pro'; // Ou 'gemini-1.5-pro' si flash échoue
+>>>>>>> 4964fe6bbbddc32358b7fce177e5b78dca44b4be
 
 console.log('🔧 Gemini config:', {
   modèle: MODEL,
