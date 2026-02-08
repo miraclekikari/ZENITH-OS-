@@ -1,0 +1,26 @@
+# 🚀 COMMANDES FINALES À EXÉCUTER
+
+## Après installation de Git, exécutez dans l'ordre :
+
+### 1. Retirer .env du suivi
+git rm --cached .env
+
+### 2. Ajouter tous les changements
+git add .
+
+### 3. Commit principal
+git commit -m "FIX: Production paths for GitHub Pages and Gemini model stability"
+
+### 4. Push vers GitHub
+git push origin main
+
+## ✅ Ce qui sera commité :
+- vite.config.ts (base: './' pour GitHub Pages)
+- src/services/geminiService.ts (debug et modèle correct)
+- src/pages/Publish.tsx (imports statiques)
+- src/vite-env.d.ts (types TypeScript)
+- Tous les fichiers de build et documentation
+- .env retiré du suivi (protégé par .gitignore)
+
+## 🎯 Le projet est 100% prêt !
+Il suffit d'installer Git et d'exécuter ces commandes.
