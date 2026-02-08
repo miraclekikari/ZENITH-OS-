@@ -95,7 +95,7 @@ export const createStory = async (imageUrl: string) => {
 export const getPosts = async () => {
   const { data, error } = await supabase
     .from('posts')
-    .select('*')
+    .select('*, profiles(username, avatar_url, full_name, is_verified)')
     .order('created_at', { ascending: false });
 
   return { data, error };
@@ -104,7 +104,7 @@ export const getPosts = async () => {
 export const getComments = async (postId?: string) => {
   let query = supabase
     .from('comments')
-    .select('*');
+    .select('*, profiles(username, avatar_url, full_name, is_verified)');
   
   if (postId) {
     query = query.eq('post_id', postId);

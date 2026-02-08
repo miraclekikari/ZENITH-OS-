@@ -1,0 +1,226 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabaseClient';
+import { Profile } from '../types';
+
+const UserProfile: React.FC = () => {
+  const { username } = useParams<{ username: string }>();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
+
+  useEffect(() => {
+    if (username) {
+      loadUserProfile();
+      loadUserPosts();
+    }
+  }, [username]);
+
+  const loadUserProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('username', username)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Erreur chargement profil:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadUserPosts = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('author_id', username)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setPosts(data || []);
+    } catch (error) {
+      console.error('Erreur chargement posts:', error);
+    }
+  };
+
+  const getStatusColor = () => {
+    // Simuler un statut en ligne (à remplacer par une vraie logique)
+    return 'bg-green-500';
+  };
+
+  const getDefaultAvatar = (username: string) => {
+    return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="w-12 h-12 border-4 border-zenith-green border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen text-center">
+        <div className="text-6xl mb-4">🔍</div>
+        <h1 className="text-2xl font-bold text-white mb-2">Profil introuvable</h1>
+        <p className="text-zenith-dim mb-6">L'utilisateur @{username} n'existe pas</p>
+        <button
+          onClick={() => navigate('/community')}
+          className="px-6 py-3 bg-zenith-green text-black font-bold rounded-lg hover:shadow-[0_0_15px_var(--z-primary)] transition-all"
+        >
+          Retour au réseau
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-6xl mx-auto p-6 space-y-8">
+      {/* Header du Profil */}
+      <div className="bg-zinc-950 border border-zenith-green rounded-2xl p-8">
+        <div className="flex flex-col md:flex-row items-center md:items-start gap-6">
+          {/* Avatar avec bordure néon */}
+          <div className="relative">
+            <div className={`w-32 h-32 rounded-full border-4 ${getStatusColor()} p-1 shadow-[0_0_20px_rgba(0,255,0,0.5)]`}>
+              <img
+                src={profile.avatar_url || getDefaultAvatar(profile.username)}
+                alt={profile.username}
+                className="w-full h-full rounded-full object-cover bg-zinc-800"
+              />
+            </div>
+            {profile.is_verified && (
+              <div className="absolute bottom-2 right-2 w-8 h-8 bg-cyan-500 rounded-full flex items-center justify-center border-2 border-zinc-950">
+                <i className="fas fa-check text-white text-sm"></i>
+              </div>
+            )}
+          </div>
+
+          {/* Infos du profil */}
+          <div className="flex-1 text-center md:text-left">
+            <div className="flex items-center gap-3 mb-2">
+              <h1 className="text-3xl font-bold text-white font-mono">
+                @{profile.username}
+              </h1>
+              {profile.is_verified && (
+                <span className="px-3 py-1 bg-cyan-500/20 text-cyan-400 text-xs font-bold rounded-full border border-cyan-500/30">
+                  VÉRIFIÉ
+                </span>
+              )}
+            </div>
+            
+            <p className="text-zenith-dim mb-4 font-mono text-sm">
+              {profile.full_name}
+            </p>
+
+            {profile.bio && (
+              <p className="text-white mb-6 font-mono text-sm leading-relaxed">
+                {profile.bio}
+              </p>
+            )}
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-8 mb-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white">{posts.length}</div>
+                <div className="text-xs text-zenith-dim uppercase">Posts</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white">0</div>
+                <div className="text-xs text-zenith-dim uppercase">Followers</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-white">0</div>
+                <div className="text-xs text-zenith-dim uppercase">Following</div>
+              </div>
+            </div>
+
+            {/* Boutons d'action */}
+            <div className="flex gap-4">
+              <button className="px-6 py-3 bg-zenith-green text-black font-bold rounded-lg hover:shadow-[0_0_15px_var(--z-primary)] transition-all">
+                S'abonner
+              </button>
+              <button className="px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors">
+                Message
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Onglets */}
+      <div className="flex border-b border-white/10">
+        <button
+          onClick={() => setActiveTab('posts')}
+          className={`px-6 py-3 text-sm font-bold transition-all ${
+            activeTab === 'posts'
+              ? 'border-b-2 border-zenith-green text-white'
+              : 'text-zenith-dim hover:text-white'
+          }`}
+        >
+          📸 Posts
+        </button>
+        <button
+          onClick={() => setActiveTab('saved')}
+          className={`px-6 py-3 text-sm font-bold transition-all ${
+            activeTab === 'saved'
+              ? 'border-b-2 border-zenith-green text-white'
+              : 'text-zenith-dim hover:text-white'
+          }`}
+        >
+          💾 Enregistrés
+        </button>
+      </div>
+
+      {/* Grille de contenu */}
+      <div className="grid grid-cols-3 gap-1 md:gap-4">
+        {activeTab === 'posts' ? (
+          posts.length > 0 ? (
+            posts.map((post) => (
+              <div
+                key={post.id}
+                className="relative aspect-square group cursor-pointer overflow-hidden rounded-lg"
+              >
+                <img
+                  src={post.image_url || 'https://picsum.photos/seed/post/400/400'}
+                  alt="Post"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                />
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
+                  <div className="text-white flex items-center gap-2">
+                    <i className="fas fa-heart"></i>
+                    <span className="font-bold">0</span>
+                  </div>
+                  <div className="text-white flex items-center gap-2">
+                    <i className="fas fa-comment"></i>
+                    <span className="font-bold">0</span>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-3 text-center py-12">
+              <div className="text-4xl mb-4">📸</div>
+              <p className="text-zenith-dim">Aucun post pour le moment</p>
+            </div>
+          )
+        ) : (
+          <div className="col-span-3 text-center py-12">
+            <div className="text-4xl mb-4">💾</div>
+            <p className="text-zenith-dim">Aucun contenu enregistré</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default UserProfile;

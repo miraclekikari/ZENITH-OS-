@@ -5,6 +5,19 @@ export type SubscriptionTier = 'LEVEL_1' | 'LEVEL_5' | 'LEVEL_10';
 // Type explicite pour user_id (string simple, pas UUID)
 export type UserId = string;
 
+// Interface pour les profiles utilisateurs
+export interface Profile {
+  id: string;
+  username: string;
+  full_name: string;
+  bio?: string;
+  avatar_url?: string;
+  is_verified?: boolean;
+  privacy?: 'PUBLIC' | 'PRIVATE' | 'ENCRYPTED';
+  created_at: string;
+  updated_at: string;
+}
+
 // Interfaces pour les tables Supabase avec author_id explicite en string
 export interface SupabasePost {
   id: string;
@@ -12,6 +25,7 @@ export interface SupabasePost {
   image_url: string | null;
   author_id: UserId; // Utiliser author_id pour cohérence
   created_at: string;
+  profiles?: Profile; // Jointure avec profiles
 }
 
 export interface SupabaseComment {
@@ -20,6 +34,7 @@ export interface SupabaseComment {
   author_id: UserId; // Utiliser author_id au lieu de user_id
   content: string;
   created_at: string;
+  profiles?: Profile; // Jointure avec profiles
 }
 
 export interface SupabasePostLike {

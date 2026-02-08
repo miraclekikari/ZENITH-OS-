@@ -2,12 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { DB } from '../services/storageService';
 import { UserProfile } from '../types';
+import ProfileSearch from './ProfileSearch';
 
 interface LayoutProps {
   children: React.ReactNode;
+  isAuthenticated?: boolean;
+  onLogin?: () => void;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children }) => {
+const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLogin }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isPlaying, setIsPlaying] = useState(false);
@@ -95,25 +98,32 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex bg-zenith-surface px-4 py-2 rounded-full border border-zenith-greenDim items-center gap-2 focus-within:border-zenith-green transition-colors">
-              <i className="fas fa-search text-zenith-dim text-sm"></i>
-              <input type="text" placeholder="Search modules..." className="bg-transparent border-none outline-none text-sm w-32 focus:w-48 transition-all text-white placeholder-zenith-dim" />
-            </div>
+            <ProfileSearch />
             
-            {/* Global Profile Link */}
-            <div 
-              onClick={() => navigate('/profile')}
-              className="group flex items-center gap-3 cursor-pointer p-1 rounded-full pr-4 hover:bg-white/5 transition-all border border-transparent hover:border-zenith-greenDim"
-            >
-               <div className="w-10 h-10 rounded-full border border-zenith-greenDim p-0.5 group-hover:border-zenith-green transition-colors relative">
-                  <img src={user?.avatar || "https://picsum.photos/seed/avatar/200/200"} className="w-full h-full rounded-full object-cover" alt="User" />
-                  <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-zenith-surface ${user?.privacy === 'ENCRYPTED' ? 'bg-red-500' : 'bg-green-500'}`}></div>
-               </div>
-               <div className="hidden md:block text-right">
-                 <div className="text-xs font-bold text-white">{user?.username}</div>
-                 <div className="text-[10px] text-zenith-dim uppercase">{user?.role}</div>
-               </div>
-            </div>
+            {/* Auth Button or Profile */}
+            {!isAuthenticated ? (
+              <button
+                onClick={onLogin}
+                className="px-4 py-2 bg-zenith-green text-black font-bold rounded-full text-sm hover:shadow-[0_0_15px_var(--z-primary)] transition-all flex items-center gap-2"
+              >
+                <i className="fas fa-link"></i>
+                CONNECT NEURAL LINK
+              </button>
+            ) : (
+              <div 
+                onClick={() => navigate('/profile')}
+                className="group flex items-center gap-3 cursor-pointer p-1 rounded-full pr-4 hover:bg-white/5 transition-all border border-transparent hover:border-zenith-greenDim"
+              >
+                 <div className="w-10 h-10 rounded-full border border-zenith-greenDim p-0.5 group-hover:border-zenith-green transition-colors relative">
+                    <img src={user?.avatar || "https://picsum.photos/seed/avatar/200/200"} className="w-full h-full rounded-full object-cover" alt="User" />
+                    <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-zenith-surface ${user?.privacy === 'ENCRYPTED' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                 </div>
+                 <div className="hidden md:block text-right">
+                   <div className="text-xs font-bold text-white">{user?.username}</div>
+                   <div className="text-[10px] text-zenith-dim uppercase">{user?.role}</div>
+                 </div>
+              </div>
+            )}
           </div>
         </header>
 

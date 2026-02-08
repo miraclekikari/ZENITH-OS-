@@ -6,6 +6,7 @@ import Academy from './pages/Academy';
 import Community from './pages/Community';
 import Lab from './pages/Lab';
 import Profile from './pages/Profile';
+import UserProfile from './pages/UserProfile';
 import Publish from './pages/Publish';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
@@ -34,24 +35,23 @@ const App: React.FC = () => {
       {showIntro ? (
         <Intro onComplete={() => setShowIntro(false)} />
       ) : (
-        !isAuthenticated ? (
-          <Login onLogin={handleLogin} />
-        ) : (
-          <Router>
-            <Layout>
-              <Routes>
-                <Route path="/" element={<Academy />} />
-                <Route path="/community" element={<Community />} />
-                <Route path="/publish" element={<Publish />} />
-                <Route path="/lab" element={<Lab />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/admin" element={<AdminPanel />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Layout>
-          </Router>
-        )
+        <Router>
+          <Layout isAuthenticated={isAuthenticated} onLogin={handleLogin}>
+            <Routes>
+              <Route path="/" element={<Community />} />
+              <Route path="/community" element={<Community />} />
+              <Route path="/publish" element={<Publish />} />
+              <Route path="/lab" element={<Lab />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile/:username" element={<UserProfile />} />
+              <Route path="/academy" element={<Academy />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/login" element={<Login onLogin={handleLogin} />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
+        </Router>
       )}
     </ThemeProvider>
   );
