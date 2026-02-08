@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase'; // <--- AJOUTE CETTE LIGNE
+import { supabase } from '../lib/supabaseClient';
 
 interface SupportTicket {
   name: string;
