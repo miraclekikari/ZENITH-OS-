@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS post_likes (
 CREATE TABLE IF NOT EXISTS comments (
   id TEXT PRIMARY KEY,
   post_id TEXT NOT NULL,
-  user_id TEXT NOT NULL DEFAULT 'u1',
+  author_id TEXT NOT NULL DEFAULT 'u1', -- Utiliser author_id pour cohérence
   content TEXT NOT NULL,
   created_at TIMESTAMPTZ DEFAULT now()
 );
