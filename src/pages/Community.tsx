@@ -18,19 +18,32 @@ function mapSupabaseRowToPost(
   const imageUrl = row.image_url ?? row.image;
   const image = typeof imageUrl === 'string' ? imageUrl : undefined;
   const authorId = (row.author_id ?? DEFAULT_USER_ID) as string;
-  const author = typeof row.author === 'string' ? row.author : String(authorId);
+  
+  // Utiliser les données du profil si disponibles
+  const profile = row.profiles as any;
+  const username = profile?.username || String(authorId);
+  const fullName = profile?.full_name || username;
+  const avatarUrl = profile?.avatar_url;
+  const isVerified = profile?.is_verified || false;
+  
+  // Avatar par défaut si non fourni
+  const defaultAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
+  const avatar = avatarUrl || defaultAvatar;
+  
   const created = row.created_at ?? row.timestamp;
   const timestamp = typeof created === 'string' ? created : (created ? new Date(created as string).toISOString() : new Date().toISOString());
+  
   return {
     id,
-    author,
-    avatar: 'https://picsum.photos/seed/' + encodeURIComponent(String(authorId)) + '/100/100',
+    author: fullName,
+    username, // Ajouter le username pour la navigation
+    avatar,
     content,
     image,
     likes: likeCount[id] ?? Number(row.likes) ?? 0,
     comments: commentCount[id] ?? Number(row.comments) ?? 0,
     shares: Number(row.shares) || 0,
-    isVerified: false,
+    isVerified,
     timestamp,
     isModerated: false,
     isLiked: likedByUser.has(id),

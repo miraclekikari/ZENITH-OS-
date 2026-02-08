@@ -72,6 +72,7 @@ export interface Community {
 export interface Post {
   id: string;
   author: string;
+  username: string; // Ajout pour la navigation vers les profils
   avatar: string;
   content: string;
   image?: string;

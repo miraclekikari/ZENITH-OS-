@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Post } from '../types';
 
 interface PostProps {
@@ -10,9 +11,16 @@ interface PostProps {
 
 const PostCard: React.FC<PostProps> = ({ post, onLike, onRepost, onComment }) => {
   const [showHeart, setShowHeart] = useState(false);
+  const navigate = useNavigate();
 
   const isLiked = post.isLiked ?? false;
   const isReposted = post.isReposted ?? false;
+
+  const handleProfileClick = () => {
+    if (post.username) {
+      navigate(`/profile/${post.username}`);
+    }
+  };
 
   // 1. Logique Double Tap (TikTok/Insta Style)
   const handleDoubleTap = (e: React.MouseEvent) => {
@@ -51,11 +59,24 @@ const PostCard: React.FC<PostProps> = ({ post, onLike, onRepost, onComment }) =>
     <div className="bg-zenith-surface border border-zenith-greenDim rounded-2xl overflow-hidden mb-6 group">
       {/* Header : Profil */}
       <div className="p-4 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-zenith-green to-blue-500 border border-zenith-greenDim overflow-hidden">
+        <div 
+          onClick={handleProfileClick}
+          className="w-10 h-10 rounded-full bg-gradient-to-tr from-zenith-green to-blue-500 border border-zenith-greenDim overflow-hidden cursor-pointer hover:scale-105 transition-transform"
+        >
           {post.avatar && <img src={post.avatar} alt="" className="w-full h-full object-cover" />}
         </div>
-        <div>
-          <div className="text-white font-bold text-sm">{post.author}</div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <div 
+              onClick={handleProfileClick}
+              className="text-white font-bold text-sm cursor-pointer hover:text-zenith-green transition-colors"
+            >
+              {post.author}
+            </div>
+            {post.isVerified && (
+              <i className="fas fa-check text-cyan-400 text-xs"></i>
+            )}
+          </div>
           <div className="text-zenith-dim text-[10px]">TRANSMISSION ENCRYPTED</div>
         </div>
       </div>

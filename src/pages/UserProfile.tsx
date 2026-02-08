@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import { getProfileByUsername, getUserPosts, getProfileStats } from '../lib/profileService';
 import { Profile } from '../types';
 
 const UserProfile: React.FC = () => {
@@ -8,6 +8,7 @@ const UserProfile: React.FC = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [posts, setPosts] = useState<any[]>([]);
+  const [stats, setStats] = useState({ posts: 0, followers: 0, following: 0 });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
 
@@ -15,17 +16,13 @@ const UserProfile: React.FC = () => {
     if (username) {
       loadUserProfile();
       loadUserPosts();
+      loadProfileStats();
     }
   }, [username]);
 
   const loadUserProfile = async () => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('username', username)
-        .single();
-
+      const { data, error } = await getProfileByUsername(username);
       if (error) throw error;
       setProfile(data);
     } catch (error) {
@@ -37,16 +34,20 @@ const UserProfile: React.FC = () => {
 
   const loadUserPosts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('author_id', username)
-        .order('created_at', { ascending: false });
-
+      const { data, error } = await getUserPosts(username);
       if (error) throw error;
       setPosts(data || []);
     } catch (error) {
       console.error('Erreur chargement posts:', error);
+    }
+  };
+
+  const loadProfileStats = async () => {
+    try {
+      const stats = await getProfileStats(username);
+      setStats(stats);
+    } catch (error) {
+      console.error('Erreur chargement stats:', error);
     }
   };
 
@@ -130,15 +131,15 @@ const UserProfile: React.FC = () => {
             {/* Stats */}
             <div className="grid grid-cols-3 gap-8 mb-6">
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">{posts.length}</div>
-                <div className="text-xs text-zenith-dim uppercase">Posts</div>
+                <div className="text-2xl font-bold text-white">{stats.posts}</div>
+                <div className="text-xs text-zenith-dim uppercase">Fragments</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">0</div>
+                <div className="text-2xl font-bold text-white">{stats.followers}</div>
                 <div className="text-xs text-zenith-dim uppercase">Followers</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-white">0</div>
+                <div className="text-2xl font-bold text-white">{stats.following}</div>
                 <div className="text-xs text-zenith-dim uppercase">Following</div>
               </div>
             </div>
