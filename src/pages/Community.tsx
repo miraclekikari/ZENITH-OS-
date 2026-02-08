@@ -1,8 +1,35 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Post, Story, Community as CommunityType } from '../types';
 import { generateCommunityNews } from '../services/geminiService';
-import { DB } from '../services/storageService';
+import { supabase } from '../lib/supabaseClient';
 import PostCard from '../components/PostCard';
+
+/** Map une ligne Supabase (posts) vers le type Post de l'app */
+function mapSupabaseRowToPost(row: Record<string, unknown>): Post {
+  const id = typeof row.id === 'string' ? row.id : String(row.id ?? '');
+  const content = typeof row.content === 'string' ? row.content : '';
+  const imageUrl = row.image_url ?? row.image;
+  const image = typeof imageUrl === 'string' ? imageUrl : undefined;
+  const userId = row.user_id ?? 'anonymous';
+  const author = typeof row.author === 'string' ? row.author : String(userId);
+  const created = row.created_at ?? row.timestamp;
+  const timestamp = typeof created === 'string' ? created : (created ? new Date(created as string).toISOString() : new Date().toISOString());
+  return {
+    id,
+    author,
+    avatar: 'https://picsum.photos/seed/' + encodeURIComponent(String(userId)) + '/100/100',
+    content,
+    image,
+    likes: Number(row.likes) || 0,
+    comments: Number(row.comments) || 0,
+    shares: Number(row.shares) || 0,
+    isVerified: false,
+    timestamp,
+    isModerated: false,
+    isLiked: false,
+    isReposted: false
+  };
+}
 
 // --- MOCK DATA INITIAL ---
 const initialCommunities: CommunityType[] = [
@@ -42,17 +69,23 @@ const Community: React.FC = () => {
   // Data Store
   const [posts, setPosts] = useState<Post[]>([]);
 
-  // --- LOGIC: SYNC FEED ---
+  // --- LOGIC: SYNC FEED (Supabase) ---
   useEffect(() => {
     const syncFeed = async () => {
       try {
-        const realPosts = await DB.getPosts();
-        if (realPosts && realPosts.length > 0) {
-          const sortedPosts = [...realPosts].reverse(); 
-          setPosts(sortedPosts);
+        const { data: rows, error } = await supabase.from('posts').select('*');
+        if (error) {
+          console.error("Neural Link Error:", error);
+          setPosts([]);
+          return;
         }
+        const mapped = (rows ?? []).map(mapSupabaseRowToPost);
+        // Plus récents en premier (created_at desc)
+        const sorted = [...mapped].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        setPosts(sorted);
       } catch (error) {
         console.error("Neural Link Error:", error);
+        setPosts([]);
       } finally {
         setIsLoading(false);
       }
@@ -82,30 +115,34 @@ const Community: React.FC = () => {
   }, [activeCommunity]);
 
   // --- HANDLERS ---
-  const toggleLike = (id: string) => {
+  const toggleLike = useCallback((id: string) => {
     setPosts(currentPosts => currentPosts.map(p => {
       if (p.id === id) {
         return { ...p, likes: p.isLiked ? p.likes - 1 : p.likes + 1, isLiked: !p.isLiked };
       }
       return p;
     }));
-  };
+  }, []);
 
-  const toggleRepost = (id: string) => {
+  const toggleRepost = useCallback((id: string) => {
     setPosts(currentPosts => currentPosts.map(p => {
       if (p.id === id) {
         return { ...p, shares: p.isReposted ? p.shares - 1 : p.shares + 1, isReposted: !p.isReposted };
       }
       return p;
     }));
-  };
+  }, []);
 
-  const handleComment = (id: string) => {
-    setPosts(currentPosts => currentPosts.map(p => {
-      if (p.id === id) return { ...p, comments: p.comments + 1 };
-      return p;
-    }));
-  };
+  const handleComment = useCallback((id: string) => {
+    const commentText = prompt('Ajoutez un commentaire (simulation) :');
+    if (commentText !== null) {
+      setPosts(currentPosts => currentPosts.map(p => {
+        if (p.id === id) return { ...p, comments: p.comments + 1 };
+        return p;
+      }));
+      alert('Commentaire transmis au réseau Zenith.');
+    }
+  }, []);
 
   const handleCreateSector = () => {
      if(!newSectorName) return;

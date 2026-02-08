@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { moderateContent, generateCreativeCaption } from '../services/geminiService';
 import { AIChat } from '../components/Tools';
-import { DB } from '../services/storageService'; 
+import { DB } from '../services/storageService';
+import { supabase } from '../lib/supabaseClient'; 
 
 const FILTERS = [
   { name: 'Normal', style: {} },
@@ -137,27 +138,35 @@ const handleSubmit = async () => {
         addStatus('>> Media Fragment Encrypted & Cloud-Stored.');
       }
 
-      // 3. Publication immédiate (Correction : on poste avant le scan IA)
+      // 3. Enregistrement dans Supabase (table 'posts')
       addStatus('>> Patching Entry to Zenith Core Database...');
-      const newPost = await DB.addPost(caption, uploadedUrl);
+      const user = DB.getUser();
+      const userId = user?.id ?? 'anonymous';
 
-      // 4. Shadow Sentinel (Correction du bug "Bonjour")
-      // On ne lance l'IA que si le texte est assez long pour être analysé
+      const { data: newPost, error: insertError } = await supabase
+        .from('posts')
+        .insert({
+          content: caption.trim() || null,
+          image_url: uploadedUrl || null,
+          user_id: userId
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        throw new Error(insertError.message || 'Supabase insert failed');
+      }
+
+      // 4. Shadow Sentinel (modération optionnelle)
       if (caption.trim().length > 5) {
-        moderateContent(caption).then(async (result) => {
-          // Si l'IA détecte un risque (ex: insulte), elle modifie le post en base après coup
+        moderateContent(caption).then((result) => {
           if (result.riskScore >= 6) {
             console.warn("Sentinel: Post flagging post-upload.");
-            await DB.updatePostStatus(newPost.id, {
-              visibility: result.riskScore >= 8 ? 'private' : 'restricted',
-              risk_score: result.riskScore,
-              violation_type: result.reason
-            });
           }
         }).catch(err => console.error("Sentinel Offline:", err));
       }
 
-      // 5. Finalisation (Inchangé)
+      // 5. Finalisation
       addStatus('>> TRANSMISSION COMPLETE.');
       
       setTimeout(() => {

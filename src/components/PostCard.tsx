@@ -1,42 +1,49 @@
 import React, { useState } from 'react';
-import { DB } from '../services/storageService';
+import { Post } from '../types';
 
 interface PostProps {
-  post: any;
+  post: Post;
+  onLike?: () => void;
+  onRepost?: () => void;
+  onComment?: () => void;
 }
 
-const PostCard: React.FC<PostProps> = ({ post }) => {
+const PostCard: React.FC<PostProps> = ({ post, onLike, onRepost, onComment }) => {
   const [showHeart, setShowHeart] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+
+  const isLiked = post.isLiked ?? false;
+  const isReposted = post.isReposted ?? false;
 
   // 1. Logique Double Tap (TikTok/Insta Style)
   const handleDoubleTap = (e: React.MouseEvent) => {
-    // On détecte le double clic
     if (e.detail === 2) {
       setShowHeart(true);
-      setIsLiked(true);
-      DB.toggleLike(post.id);
-      
+      onLike?.();
       if (navigator.vibrate) navigator.vibrate(50);
-      
-      // On cache le cœur après l'animation
       setTimeout(() => setShowHeart(false), 1000);
     }
   };
 
-  // 2. Logique Partage
+  // 2. Logique Partage (navigator.share sur mobile et ordi)
   const handleShare = async () => {
-    const shareData = {
+    const shareData: ShareData = {
       title: 'Zenith Transmission',
-      text: post.caption,
+      text: post.content || undefined,
       url: window.location.origin + '/post/' + post.id
     };
 
     if (navigator.share) {
-      try { await navigator.share(shareData); } catch {}
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        if ((err as Error).name !== 'AbortError') {
+          await navigator.clipboard?.writeText(shareData.url);
+          alert('Lien copié dans le presse-papiers.');
+        }
+      }
     } else {
-      navigator.clipboard.writeText(shareData.url);
-      alert("Link copied to neural clipboard!");
+      await navigator.clipboard?.writeText(shareData.url);
+      alert('Lien copié dans le presse-papiers.');
     }
   };
 
@@ -44,18 +51,20 @@ const PostCard: React.FC<PostProps> = ({ post }) => {
     <div className="bg-zenith-surface border border-zenith-greenDim rounded-2xl overflow-hidden mb-6 group">
       {/* Header : Profil */}
       <div className="p-4 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-zenith-green to-blue-500 border border-zenith-greenDim"></div>
+        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-zenith-green to-blue-500 border border-zenith-greenDim overflow-hidden">
+          {post.avatar && <img src={post.avatar} alt="" className="w-full h-full object-cover" />}
+        </div>
         <div>
-          <div className="text-white font-bold text-sm">Zenith_Explorer</div>
+          <div className="text-white font-bold text-sm">{post.author}</div>
           <div className="text-zenith-dim text-[10px]">TRANSMISSION ENCRYPTED</div>
         </div>
       </div>
 
       {/* Media avec Double Tap */}
-      <div className="relative aspect-square bg-black flex items-center justify-center cursor-pointer" onClick={handleDoubleTap}>
-        {post.imageUrl && (
-          <img src={post.imageUrl} alt="content" className="w-full h-full object-cover" />
-        )}
+      <div className="relative aspect-square bg-black flex items-center justify-center cursor-pointer min-h-[200px]" onClick={handleDoubleTap}>
+        {(post.image ?? (post as { imageUrl?: string }).imageUrl) ? (
+          <img src={post.image ?? (post as { imageUrl?: string }).imageUrl!} alt="content" className="w-full h-full object-cover" />
+        ) : null}
         
         {/* L'animation du cœur qui pop */}
         {showHeart && (
@@ -68,17 +77,20 @@ const PostCard: React.FC<PostProps> = ({ post }) => {
       {/* Barre d'actions "Lourde" */}
       <div className="p-4">
         <div className="flex justify-between items-center mb-4">
-          <div className="flex gap-5">
-            <button onClick={() => setIsLiked(!isLiked)} className={`transition-transform active:scale-150 ${isLiked ? 'text-red-500' : 'text-white'}`}>
+          <div className="flex gap-5 items-center">
+            <button onClick={onLike} className={`transition-transform active:scale-150 flex items-center gap-1.5 ${isLiked ? 'text-red-500' : 'text-white'}`} title="Like">
               <i className={`${isLiked ? 'fas' : 'far'} fa-heart text-2xl`}></i>
+              {post.likes > 0 && <span className="text-sm">{post.likes}</span>}
             </button>
-            <button className="text-white hover:text-zenith-green transition-colors">
+            <button onClick={onComment} className="text-white hover:text-zenith-green transition-colors flex items-center gap-1.5" title="Commenter">
               <i className="far fa-comment text-2xl"></i>
+              {post.comments > 0 && <span className="text-sm">{post.comments}</span>}
             </button>
-            <button className="text-white hover:text-zenith-green transition-colors" title="Repost">
+            <button onClick={onRepost} className={`transition-colors flex items-center gap-1.5 ${isReposted ? 'text-zenith-green' : 'text-white hover:text-zenith-green'}`} title="Repost">
               <i className="fas fa-retweet text-2xl"></i>
+              {post.shares > 0 && <span className="text-sm">{post.shares}</span>}
             </button>
-            <button onClick={handleShare} className="text-white hover:text-zenith-green transition-colors">
+            <button onClick={handleShare} className="text-white hover:text-zenith-green transition-colors" title="Partager">
               <i className="far fa-paper-plane text-2xl"></i>
             </button>
           </div>
@@ -90,12 +102,14 @@ const PostCard: React.FC<PostProps> = ({ post }) => {
         {/* Caption & Commentaires */}
         <div className="space-y-2">
           <p className="text-white text-sm">
-            <span className="font-bold mr-2">Zenith_Explorer</span>
-            {post.caption}
+            <span className="font-bold mr-2">{post.author}</span>
+            {post.content ?? (post as { caption?: string }).caption ?? ''}
           </p>
-          <button className="text-zenith-dim text-xs font-bold uppercase tracking-widest hover:text-white">
-            View all 12 encrypted comments
-          </button>
+          {post.comments > 0 && (
+            <button onClick={onComment} className="text-zenith-dim text-xs font-bold uppercase tracking-widest hover:text-white">
+              Voir les {post.comments} commentaire(s) chiffré(s)
+            </button>
+          )}
         </div>
       </div>
     </div>
