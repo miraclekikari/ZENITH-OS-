@@ -5,12 +5,12 @@ export type SubscriptionTier = 'LEVEL_1' | 'LEVEL_5' | 'LEVEL_10';
 // Type explicite pour user_id (string simple, pas UUID)
 export type UserId = string;
 
-// Interfaces pour les tables Supabase avec user_id explicite en string
+// Interfaces pour les tables Supabase avec author_id explicite en string
 export interface SupabasePost {
   id: string;
   content: string | null;
   image_url: string | null;
-  user_id: UserId; // Explicitement string, pas UUID
+  author_id: UserId; // Utiliser author_id pour cohérence
   created_at: string;
 }
 
@@ -24,13 +24,13 @@ export interface SupabaseComment {
 
 export interface SupabasePostLike {
   post_id: string;
-  user_id: UserId; // Explicitement string, pas UUID
+  author_id: UserId; // Utiliser author_id pour cohérence
   created_at: string;
 }
 
 export interface SupabaseStory {
   id: string;
-  user_id: UserId; // Explicitement string, pas UUID
+  author_id: UserId; // Utiliser author_id pour cohérence
   image_url: string;
   created_at: string;
 }

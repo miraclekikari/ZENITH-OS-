@@ -6,16 +6,16 @@ import { UserId, SupabasePost, SupabaseComment, SupabasePostLike, SupabaseStory 
 interface PostInsert {
   content: string | null;
   image_url: string | null;
-  user_id: UserId;
+  author_id: UserId;
 }
 
 interface PostLikeInsert {
   post_id: string;
-  user_id: UserId;
+  author_id: UserId;
 }
 
 interface StoryInsert {
-  user_id: UserId;
+  author_id: UserId;
   image_url: string;
 }
 
@@ -25,7 +25,7 @@ export const createPost = async (content: string | null, imageUrl: string | null
   const postData: PostInsert = {
     content: content || '', // Utiliser une chaîne vide par défaut si null
     image_url: imageUrl,
-    user_id: DEFAULT_USER_ID as UserId, // Forcé explicitement en string
+    author_id: DEFAULT_USER_ID as UserId, // Forcé explicitement en string
   };
 
   const { data, error } = await supabase
@@ -54,7 +54,7 @@ export const createComment = async (postId: string, content: string) => {
 };
 
 export const togglePostLike = async (postId: string, isLiked: boolean) => {
-  const userId = DEFAULT_USER_ID as UserId; // Forcé explicitement en string
+  const authorId = DEFAULT_USER_ID as UserId; // Forcé explicitement en string
 
   if (isLiked) {
     // Supprimer le like
@@ -62,13 +62,13 @@ export const togglePostLike = async (postId: string, isLiked: boolean) => {
       .from('post_likes')
       .delete()
       .eq('post_id', postId)
-      .eq('user_id', userId);
+      .eq('author_id', authorId);
     return { error };
   } else {
     // Ajouter un like
     const likeData: PostLikeInsert = {
       post_id: postId,
-      user_id: userId,
+      author_id: authorId,
     };
 
     const { data, error } = await supabase
@@ -80,7 +80,7 @@ export const togglePostLike = async (postId: string, isLiked: boolean) => {
 
 export const createStory = async (imageUrl: string) => {
   const storyData: StoryInsert = {
-    user_id: DEFAULT_USER_ID as UserId, // Forcé explicitement en string
+    author_id: DEFAULT_USER_ID as UserId, // Forcé explicitement en string
     image_url: imageUrl,
   };
 
@@ -118,7 +118,7 @@ export const getComments = async (postId?: string) => {
 export const getPostLikes = async () => {
   const { data, error } = await supabase
     .from('post_likes')
-    .select('post_id, user_id');
+    .select('post_id, author_id');
 
   return { data, error };
 };

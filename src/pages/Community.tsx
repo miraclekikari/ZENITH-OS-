@@ -17,14 +17,14 @@ function mapSupabaseRowToPost(
   const content = typeof row.content === 'string' ? row.content : '';
   const imageUrl = row.image_url ?? row.image;
   const image = typeof imageUrl === 'string' ? imageUrl : undefined;
-  const userId = (row.user_id ?? DEFAULT_USER_ID) as string;
-  const author = typeof row.author === 'string' ? row.author : String(userId);
+  const authorId = (row.author_id ?? DEFAULT_USER_ID) as string;
+  const author = typeof row.author === 'string' ? row.author : String(authorId);
   const created = row.created_at ?? row.timestamp;
   const timestamp = typeof created === 'string' ? created : (created ? new Date(created as string).toISOString() : new Date().toISOString());
   return {
     id,
     author,
-    avatar: 'https://picsum.photos/seed/' + encodeURIComponent(String(userId)) + '/100/100',
+    avatar: 'https://picsum.photos/seed/' + encodeURIComponent(String(authorId)) + '/100/100',
     content,
     image,
     likes: likeCount[id] ?? Number(row.likes) ?? 0,
@@ -82,9 +82,9 @@ const Community: React.FC = () => {
       const commentRows = commentsRes.data ?? [];
       const likeCount: Record<string, number> = {};
       const likedByUser = new Set<string>();
-      likeRows.forEach((r: { post_id: string; user_id: string }) => {
+      likeRows.forEach((r: { post_id: string; author_id: string }) => {
         likeCount[r.post_id] = (likeCount[r.post_id] ?? 0) + 1;
-        if (r.user_id === DEFAULT_USER_ID) likedByUser.add(r.post_id);
+        if (r.author_id === DEFAULT_USER_ID) likedByUser.add(r.post_id);
       });
       const commentCount: Record<string, number> = {};
       commentRows.forEach((r: { post_id: string }) => {
@@ -117,8 +117,8 @@ const Community: React.FC = () => {
       }
       const list = (data ?? []).map((row: Record<string, unknown>) => ({
         id: String(row.id ?? ''),
-        user: String(row.user_id ?? 'u1'),
-        avatar: `https://picsum.photos/seed/${encodeURIComponent(String(row.user_id ?? 'u1'))}/200/200`,
+        user: String(row.author_id ?? 'u1'),
+        avatar: `https://picsum.photos/seed/${encodeURIComponent(String(row.author_id ?? 'u1'))}/200/200`,
         image: String(row.image_url ?? ''),
         isSeen: false
       }));
