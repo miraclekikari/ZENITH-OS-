@@ -260,3 +260,5 @@ export const Support: React.FC = () => {
     </div>
   );
 };
+// À ajouter tout en bas de ton fichier Support.tsx
+export default Support;
