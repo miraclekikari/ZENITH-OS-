@@ -1,7 +1,16 @@
+import { validateGeminiInput } from '../utils/validation';
+
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 const MODEL = 'gemini-1.5-flash'; // Ou 'gemini-1.5-pro' si flash échoue
 
 export const generateContent = async (prompt: string) => {
+  // Validation de l'entrée
+  const validation = validateGeminiInput(prompt);
+  if (!validation.valid) {
+    console.error('🔴 Validation failed:', validation.error);
+    return `Erreur de validation: ${validation.error}`;
+  }
+
   if (!API_KEY) {
     console.error('🔴 ERREUR: Clé API manquante');
     return 'Configuration IA manquante. Vérifiez les variables d\'environnement.';

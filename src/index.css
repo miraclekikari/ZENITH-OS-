@@ -66,21 +66,32 @@ html, body {
 
 /* Animations personnalisées */
 @keyframes scale-up {
-  0% { transform: scale(0.8); opacity: 0; }
-  100% { transform: scale(1); opacity: 1; }
+  from { transform: scale(0.8); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 @keyframes expand-line {
-  0% { width: 0; opacity: 0; }
-  100% { width: 100%; opacity: 1; }
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes typingDots {
+  0%, 20% { opacity: 0; }
+  50% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.typing-dots::after {
+  content: '...';
+  animation: typingDots 1.5s infinite;
 }
 
 .animate-scale-up {
-  animation: scale-up 1s ease-out forwards;
+  animation: scale-up 0.5s ease-out;
 }
 
 .animate-expand-line {
-  animation: expand-line 1.5s ease-out 0.5s forwards;
+  animation: expand-line 1s ease-out;
 }
 
 /* Scrollbar personnalisée */
