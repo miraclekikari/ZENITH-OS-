@@ -23,7 +23,7 @@ interface StoryInsert {
 
 export const createPost = async (content: string | null, imageUrl: string | null) => {
   const postData: PostInsert = {
-    content,
+    content: content || '', // Utiliser une chaîne vide par défaut si null
     image_url: imageUrl,
     user_id: DEFAULT_USER_ID as UserId, // Forcé explicitement en string
   };

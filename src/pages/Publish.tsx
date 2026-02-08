@@ -156,7 +156,7 @@ const handleSubmit = async () => {
       const userId = (user?.id ?? DEFAULT_USER_ID) as string;
 
       const { data: newPost, error: insertError } = await createPost(
-        caption.trim() || null,
+        caption.trim() || '', // Utiliser une chaîne vide au lieu de null
         uploadedUrl || null
       );
 
