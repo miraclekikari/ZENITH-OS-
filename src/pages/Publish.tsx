@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { AIChat } from '../components/Tools';
 import { DB } from '../services/storageService';
-import { supabase } from '../lib/supabaseClient';
+import { createPost } from '../lib/supabaseService';
 import { DEFAULT_USER_ID } from '../lib/constants'; 
 
 const FILTERS = [
@@ -155,15 +155,10 @@ const handleSubmit = async () => {
       const user = DB.getUser();
       const userId = (user?.id ?? DEFAULT_USER_ID) as string;
 
-      const { data: newPost, error: insertError } = await supabase
-        .from('posts')
-        .insert({
-          content: caption.trim() || null,
-          image_url: uploadedUrl || null,
-          user_id: userId
-        })
-        .select()
-        .single();
+      const { data: newPost, error: insertError } = await createPost(
+        caption.trim() || null,
+        uploadedUrl || null
+      );
 
       if (insertError) {
         throw new Error(insertError.message || 'Supabase insert failed');

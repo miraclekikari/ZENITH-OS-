@@ -2,6 +2,39 @@ export type UserRole = 'USER' | 'ADMIN' | 'ROOT';
 export type PrivacyStatus = 'PUBLIC' | 'PRIVATE' | 'ENCRYPTED';
 export type SubscriptionTier = 'LEVEL_1' | 'LEVEL_5' | 'LEVEL_10';
 
+// Type explicite pour user_id (string simple, pas UUID)
+export type UserId = string;
+
+// Interfaces pour les tables Supabase avec user_id explicite en string
+export interface SupabasePost {
+  id: string;
+  content: string | null;
+  image_url: string | null;
+  user_id: UserId; // Explicitement string, pas UUID
+  created_at: string;
+}
+
+export interface SupabaseComment {
+  id: string;
+  post_id: string;
+  user_id: UserId; // Explicitement string, pas UUID
+  content: string;
+  created_at: string;
+}
+
+export interface SupabasePostLike {
+  post_id: string;
+  user_id: UserId; // Explicitement string, pas UUID
+  created_at: string;
+}
+
+export interface SupabaseStory {
+  id: string;
+  user_id: UserId; // Explicitement string, pas UUID
+  image_url: string;
+  created_at: string;
+}
+
 export interface Course {
   id: string;
   title: string;

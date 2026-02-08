@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { createComment, getComments } from '../lib/supabaseService';
 import { DEFAULT_USER_ID } from '../lib/constants';
+import { UserId, SupabaseComment } from '../types';
 
 export interface CommentRow {
   id: string;
   post_id: string;
-  user_id: string;
+  user_id: UserId; // Explicitement string
   content: string;
   created_at?: string;
 }
@@ -34,11 +35,7 @@ const CommentsDrawer: React.FC<CommentsDrawerProps> = ({
     if (!postId) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('comments')
-        .select('id, post_id, user_id, content, created_at')
-        .eq('post_id', postId)
-        .order('created_at', { ascending: true });
+      const { data, error } = await getComments(postId);
       if (!error) setComments((data ?? []) as CommentRow[]);
     } finally {
       setLoading(false);
@@ -55,12 +52,7 @@ const CommentsDrawer: React.FC<CommentsDrawerProps> = ({
     if (!text || sending) return;
     setSending(true);
     try {
-      const { error } = await supabase.from('comments').insert({
-        id: `c-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        post_id: postId,
-        user_id: DEFAULT_USER_ID,
-        content: text
-      });
+      const { error } = await createComment(postId, text);
       if (!error) {
         setInput('');
         await fetchComments();

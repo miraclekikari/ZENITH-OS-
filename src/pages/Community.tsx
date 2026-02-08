@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Post, Story, Community as CommunityType } from '../types';
 import { generateCommunityNews } from '../services/geminiService';
-import { supabase } from '../lib/supabaseClient';
+import { getPosts, getPostLikes, getComments, togglePostLike, createStory, getStories } from '../lib/supabaseService';
 import { DEFAULT_USER_ID } from '../lib/constants';
 import PostCard from '../components/PostCard';
 import CommentsDrawer from '../components/CommentsDrawer';
@@ -68,9 +68,9 @@ const Community: React.FC = () => {
   const refreshFeed = useCallback(async () => {
     try {
       const [postsRes, likesRes, commentsRes] = await Promise.all([
-        supabase.from('posts').select('*'),
-        supabase.from('post_likes').select('post_id, user_id'),
-        supabase.from('comments').select('post_id')
+        getPosts(),
+        getPostLikes(),
+        getComments('') // Récupérer tous les commentaires
       ]);
       if (postsRes.error) {
         if (import.meta.env.DEV) console.warn('Neural Link:', postsRes.error.message);
@@ -110,7 +110,7 @@ const Community: React.FC = () => {
 
   const refreshStories = useCallback(async () => {
     try {
-      const { data, error } = await supabase.from('stories').select('*').order('created_at', { ascending: false });
+      const { data, error } = await getStories();
       if (error) {
         setStories([]);
         return;
@@ -154,13 +154,8 @@ const Community: React.FC = () => {
     const post = posts.find(p => p.id === id);
     if (!post) return;
     const newLiked = !post.isLiked;
-    if (newLiked) {
-      const { error } = await supabase.from('post_likes').insert({ post_id: id, user_id: DEFAULT_USER_ID });
-      if (!error) await refreshFeed();
-    } else {
-      const { error } = await supabase.from('post_likes').delete().eq('post_id', id).eq('user_id', DEFAULT_USER_ID);
-      if (!error) await refreshFeed();
-    }
+    const { error } = await togglePostLike(id, newLiked);
+    if (!error) await refreshFeed();
   }, [posts, refreshFeed]);
 
   const toggleRepost = useCallback((id: string) => {
@@ -190,11 +185,7 @@ const Community: React.FC = () => {
       if (!cloudRes.ok) throw new Error('Cloudinary upload failed');
       const cloudData = await cloudRes.json();
       const imageUrl = cloudData?.secure_url ?? '';
-      const { error } = await supabase.from('stories').insert({
-        id: `s-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
-        user_id: DEFAULT_USER_ID,
-        image_url: imageUrl
-      });
+      const { error } = await createStory(imageUrl);
       if (!error) {
         await refreshStories();
         setShowStoryModal(false);
