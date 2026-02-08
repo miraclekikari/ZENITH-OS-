@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase'; // <--- AJOUTE CETTE LIGNE
 
 interface SupportTicket {
   name: string;
@@ -31,20 +32,29 @@ export const Support: React.FC = () => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Validation
-    if (!formData.name || !formData.email || !formData.subject || !formData.message) {
-      alert('⚠️ Veuillez remplir tous les champs obligatoires.');
-      return;
-    }
+    const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
+  // --- NOUVELLE VÉRIFICATION SÉCURISÉE ---
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    alert("Accès refusé. Identité ZENITH-OS non détectée.");
+    return;
+  }
+  // ----------------------------------------
+
+  // 2. Validation des champs (ton code actuel)
+  if (!formData.name || !formData.email || !formData.subject || !formData.message) {
+    alert('⚠️ Veuillez remplir tous les champs obligatoires.');
+    return;
+  }
+  // ... la suite de ton code
+    
     if (!validateURL(formData.link || '')) {
       alert('⚠️ Veuillez fournir une URL valide (commençant par http:// ou https://).');
       return;
@@ -52,8 +62,15 @@ export const Support: React.FC = () => {
 
     setIsSubmitting(true);
 
-    try {
-      // Simulation d'envoi - remplacer avec emailjs plus tard
+try { 
+  // 1. On crée la variable d'abord
+  const user_token = user.id; 
+  
+  // 2. On peut maintenant l'utiliser
+  console.log("Protocole d'authentification ID:", user_token);
+  
+  // 3. Suite de l'envoi...
+  await new Promise(resolve => setTimeout(resolve, 1500));
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       setSubmitStatus('success');
