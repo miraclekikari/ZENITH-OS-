@@ -1,7 +1,7 @@
 import { validateGeminiInput } from '../utils/validation';
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const MODEL = 'gemini-1.5-flash'; // Ou 'gemini-1.5-pro' si flash échoue
+const MODEL = 'gemini-1.5-pro'; // Ou 'gemini-1.5-pro' si flash échoue
 
 export const generateContent = async (prompt: string) => {
   // Validation de l'entrée
