@@ -13,5 +13,11 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
       },
     },
+    define: {
+      // Définir les types pour import.meta.env
+      'import.meta.env': {
+        VITE_GEMINI_API_KEY: JSON.stringify(env.VITE_GEMINI_API_KEY || ''),
+      },
+    },
   };
 });

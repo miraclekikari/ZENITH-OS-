@@ -2,7 +2,8 @@ import React, { useState, useRef } from 'react';
 import { AIChat } from '../components/Tools';
 import { DB } from '../services/storageService';
 import { createPost } from '../lib/supabaseService';
-import { DEFAULT_USER_ID } from '../lib/constants'; 
+import { DEFAULT_USER_ID } from '../lib/constants';
+import { generateCreativeCaption, moderateContent } from '../services/geminiService'; 
 
 const FILTERS = [
   { name: 'Normal', style: {} },
@@ -101,7 +102,6 @@ const Publish: React.FC = () => {
     const context = caption || (files.length > 0 ? `A photo of ${files[0].name}` : 'A cool tech update');
     const fallback = caption || 'A moment in time.';
     try {
-      const { generateCreativeCaption } = await import('../services/geminiService').catch(() => ({ generateCreativeCaption: async () => '' }));
       const newCaption = await generateCreativeCaption(context);
       if (newCaption && typeof newCaption === 'string' && !newCaption.startsWith('ERREUR_')) {
         setCaption(newCaption);
@@ -167,7 +167,6 @@ const handleSubmit = async () => {
       // 4. Modération optionnelle (IA) — n’empêche pas la publication si Gemini échoue ou est absent
       if (caption.trim().length > 5) {
         try {
-          const { moderateContent } = await import('../services/geminiService').catch(() => ({}));
           if (typeof moderateContent === 'function') {
             moderateContent(caption).then((result) => {
               if (result === false) console.warn("Sentinel: Post flagged post-upload.");

@@ -2,6 +2,11 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
+// Debug: Confirmer le chargement de la clé au démarrage
+if (import.meta.env.DEV) {
+  console.log('🔑 Gemini API Key:', API_KEY ? '✅ Chargée' : '❌ Manquante');
+}
+
 let genAIInstance: any = null;
 
 export const getGenAI = () => {
