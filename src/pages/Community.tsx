@@ -432,21 +432,21 @@ const Community: React.FC = () => {
             )}
 
             {/* Posts Loop */}
-            {!isLoading && filteredPosts.map((post, index) => (
-              <React.Fragment key={post.id}>
-                <div className="w-full break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:mt-2">
-                  <PostCard 
-                    post={post} 
-                    onLike={() => toggleLike(post.id)}
-                    onRepost={() => toggleRepost(post.id)}
-                    onComment={() => handleComment(post.id)}
-                  />
-                </div>
-                
-                {/* INSERTION DE LA PUB APRÈS LE 2ÈME POST */}
-                {index === 1 && <AdSensePost />}
-              </React.Fragment>
-            ))}
+{!isLoading && filteredPosts.map((post, index) => (
+  <React.Fragment key={post.id}>
+    <div className="w-full break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:mt-2">
+      <PostCard 
+        post={post} 
+        onLike={() => toggleLike(post.id)}
+        onRepost={() => toggleRepost(post.id)}
+        onComment={() => handleComment(post.id)}
+      />
+    </div>
+    
+    {/* INSERTION DE LA PUB APRÈS LE 2ÈME POST */}
+    {index === 1 && <AdSensePost />}
+  </React.Fragment>
+))}
 
             <CommentsDrawer
               postId={commentPostId ?? ''}
