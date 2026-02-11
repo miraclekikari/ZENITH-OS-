@@ -5,6 +5,7 @@ import { getPosts, getPostLikes, getComments, togglePostLike, createStory, getSt
 import { DEFAULT_USER_ID } from '../lib/constants';
 import PostCard from '../components/PostCard';
 import CommentsDrawer from '../components/CommentsDrawer';
+
 // Sous-composant pour la publicité style Instagram
 const AdSensePost = () => {
   useEffect(() => {
@@ -43,6 +44,7 @@ const AdSensePost = () => {
     </div>
   );
 };
+
 /** Map une ligne Supabase (posts) vers le type Post + merge likes/comments/isLiked depuis post_likes et comments */
 function mapSupabaseRowToPost(
   row: Record<string, unknown>,
@@ -204,7 +206,7 @@ const Community: React.FC = () => {
     const post = posts.find(p => p.id === id);
     if (!post) return;
     const newLiked = !post.isLiked;
-    const { error } = await togglePostLike(id, newLiked);
+    const { error } = await togglePostLike(id); // Correction : la fonction ne prend qu'un paramètre
     if (!error) await refreshFeed();
   }, [posts, refreshFeed]);
 
@@ -429,7 +431,7 @@ const Community: React.FC = () => {
               </div>
             )}
 
-       {/* Posts Loop */}
+            {/* Posts Loop */}
             {!isLoading && filteredPosts.map((post, index) => (
               <React.Fragment key={post.id}>
                 <div className="w-full break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:mt-2">
@@ -459,104 +461,6 @@ const Community: React.FC = () => {
               </div>
             )}
           </div>
-      </div>
-
-      {/* 3. RIGHT SIDEBAR (Secure Comms) - Ton code ici est correct */}
-      <div className={`fixed inset-y-0 right-0 w-80 bg-black/95 backdrop-blur-xl border-l border-zenith-greenDim transform transition-transform duration-300 z-40 ${showDM ? 'translate-x-0' : 'translate-x-full'}`}>
-         {/* ... (contenu de ta sidebar droite) ... */}
-         {/* Je passe au footer pour la concision, garde ton contenu existant */}
-      </div>
-
-      {/* Floating Action Button (Mobile Only) */}
-      {!showDM && (
-          <button 
-            onClick={() => setShowDM(true)}
-            className="md:hidden fixed bottom-24 right-6 w-12 h-12 bg-zenith-green text-black rounded-full shadow-[0_0_20px_var(--z-primary)] flex items-center justify-center text-xl hover:scale-110 active:scale-90 transition-all z-30"
-          >
-            <i className="fas fa-comment-alt"></i>
-            <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
-          </button>
-      )}
-
-      {/* Story creation modal */}
-      {showStoryModal && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-           {/* ... (ton code Story Modal) ... */}
-        </div>
-      )}
-
-      {/* Create Sector Modal (Enhanced) */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
-           <div className="glass-card w-full max-w-md rounded-2xl p-0 overflow-hidden relative animate-scale-up border border-zenith-green shadow-[0_0_30px_rgba(0,255,136,0.2)]">
-              {/* Header */}
-              <div className="bg-zenith-green/10 p-6 border-b border-zenith-green/20">
-                  <button onClick={() => setShowCreateModal(false)} className="absolute top-4 right-4 text-zenith-dim hover:text-white transition-colors"><i className="fas fa-times text-xl"></i></button>
-                  <h2 className="text-2xl font-tech text-white mb-1">INITIALIZE SECTOR</h2>
-                  <p className="text-xs text-zenith-green font-mono">PROTOCOL: NEW_COMMUNITY_ESTABLISHMENT</p>
-              </div>
-
-              {/* Body */}
-              <div className="p-6 space-y-5">
-                  <div className="space-y-1">
-                     <label className="text-[10px] font-bold text-zenith-dim tracking-wider">SECTOR IDENTIFIER</label>
-                     <div className="relative">
-                        <i className="fas fa-globe absolute left-3 top-3 text-zenith-green"></i>
-                        <input value={newSectorName} onChange={e => setNewSectorName(e.target.value)} className="w-full bg-black/50 border border-zenith-greenDim rounded-lg pl-10 p-2.5 text-white outline-none focus:border-zenith-green transition-all" placeholder="e.g. Quantum Computing" />
-                     </div>
-                  </div>
-                  
-                  <div className="space-y-1">
-                     <label className="text-[10px] font-bold text-zenith-dim tracking-wider">PRIMARY FREQUENCY (TOPIC)</label>
-                     <div className="relative">
-                        <i className="fas fa-tag absolute left-3 top-3 text-zenith-green"></i>
-                        <input value={newSectorTopic} onChange={e => setNewSectorTopic(e.target.value)} className="w-full bg-black/50 border border-zenith-greenDim rounded-lg pl-10 p-2.5 text-white outline-none focus:border-zenith-green transition-all" placeholder="e.g. Physics" />
-                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 bg-zenith-greenDim/10 p-3 rounded-lg border border-zenith-greenDim/30 hover:border-zenith-green/50 transition-colors cursor-pointer" onClick={() => setIsPrivateSector(!isPrivateSector)}>
-                     <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isPrivateSector ? 'bg-zenith-green border-zenith-green' : 'border-zenith-dim'}`}>
-                        {isPrivateSector && <i className="fas fa-check text-black text-xs"></i>}
-                     </div>
-                     <div className="flex-1">
-                        <div className="text-sm font-bold text-white">Encrypted Sector</div>
-                        <div className="text-[10px] text-zenith-dim">Access restricted to authorized keys only.</div>
-                     </div>
-                  </div>
-
-                  <button 
-                    onClick={handleCreateSector} 
-                    className="w-full bg-zenith-green text-black py-4 rounded-xl font-tech font-bold tracking-widest hover:bg-[#00ff88] hover:shadow-[0_0_20px_rgba(0,255,136,0.4)] active:scale-95 transition-all mt-4"
-                  >
-                    ESTABLISH SECTOR
-                  </button>
-              </div>
-           </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default Community;
-    {/* INSERTION DE LA PUB APRÈS LE 2ÈME POST */}
-    {index === 1 && <AdSensePost />}
-  </React.Fragment>
-))}
-
-            <CommentsDrawer
-              postId={commentPostId ?? ''}
-              isOpen={!!commentPostId}
-              onClose={() => setCommentPostId(null)}
-              onCommentAdded={refreshFeed}
-            />
-
-            {!isLoading && filteredPosts.length > 0 && (
-              <div className="text-center py-10 text-zenith-dim text-xs font-mono">
-                -- END OF TRANSMISSION --
-              </div>
-            )}
-         </div>
       </div>
 
       {/* 3. RIGHT SIDEBAR (Secure Comms) */}
