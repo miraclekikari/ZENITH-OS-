@@ -17,20 +17,26 @@
   --z-dim: #666666;
 }
 
-/* Force le noir profond pour éviter le gris d'Opera */
+/* CORRECTION RESPONSIVE : On force le respect de la largeur écran */
 html, body {
   background-color: #050505 !important;
   color: #00ffcc !important;
   margin: 0;
   padding: 0;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden; /* EMPÊCHE LE SITE DE GLISSER SUR LES CÔTÉS */
   min-height: 100vh;
   font-family: 'Rajdhani', sans-serif;
+  -webkit-text-size-adjust: 100%; /* Évite le zoom automatique du texte sur iPhone */
 }
 
-/* Scanlines fixes pour l'effet rétro-futuriste */
+/* Scanlines fixes : Changement de 100% à 100vw pour plus de précision */
 .scanlines {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100vh;
   background: linear-gradient(
     to bottom,
     transparent 50%,
@@ -41,19 +47,24 @@ html, body {
   pointer-events: none;
 }
 
-/* On s'assure que le container React prend toute la place */
+/* On s'assure que le container React ne déborde jamais */
 #root {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100%;
 }
 
-/* Styles de base pour les composants */
+/* CORRECTION : On s'assure que les cartes ne cassent pas le layout sur petit écran */
 .glass-card {
   background: rgba(5, 5, 5, 0.8);
   backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(0, 255, 204, 0.3);
   border-radius: 0.5rem;
+  max-width: 100%; /* Important pour mobile */
+  word-wrap: break-word; /* Évite que le texte ne pousse les murs */
 }
 
 .font-tech {
@@ -64,7 +75,7 @@ html, body {
   font-family: 'Rajdhani', monospace;
 }
 
-/* Animations personnalisées */
+/* Animations (inchangées mais sécurisées) */
 @keyframes scale-up {
   from { transform: scale(0.8); opacity: 0; }
   to { transform: scale(1); opacity: 1; }
@@ -94,9 +105,9 @@ html, body {
   animation: expand-line 1s ease-out;
 }
 
-/* Scrollbar personnalisée */
+/* Scrollbar personnalisée (masquée sur mobile pour plus de fluidité si tu veux) */
 ::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 ::-webkit-scrollbar-track {
