@@ -122,3 +122,6 @@ html, body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--z-primary);
 }
+* {
+  outline: 1px solid red !important;
+}
