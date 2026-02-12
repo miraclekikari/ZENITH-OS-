@@ -49,7 +49,7 @@ html, body {
 
 /* On s'assure que le container React ne déborde jamais */
 #root {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -121,7 +121,4 @@ html, body {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--z-primary);
-}
-* {
-  outline: 1px solid red !important;
 }
