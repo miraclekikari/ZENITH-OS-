@@ -5,7 +5,7 @@ import { getPosts, getPostLikes, getComments, togglePostLike, createStory, getSt
 import { DEFAULT_USER_ID } from '../lib/constants';
 import PostCard from '../components/PostCard';
 import CommentsDrawer from '../components/CommentsDrawer';
-
+import AdSensePost from '../components/AdSensePost';
 /** Map une ligne Supabase (posts) vers le type Post + merge likes/comments/isLiked depuis post_likes et comments */
 function mapSupabaseRowToPost(
   row: Record<string, unknown>,
