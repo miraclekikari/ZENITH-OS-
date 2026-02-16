@@ -34,6 +34,8 @@ import EmojiPicker from '../components/EmojiPicker';
 import CallControls from '../components/CallControls';
 import GroupSettings from '../components/GroupSettings';
 import ContactsModal from '../components/ContactsModal';
+import CallManager from '../components/CallManager';
+import liveCallService from '../services/liveCallService';
 import { useNotificationSound } from '../hooks/useNotificationSound';
 import { supabase } from '../lib/supabaseClient';
 
@@ -66,6 +68,7 @@ const Chat: React.FC = () => {
   const [showCreateChannel, setShowCreateChannel] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [showContacts, setShowContacts] = useState(false);
+  const [showCallManager, setShowCallManager] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelType, setNewChannelType] = useState<'private' | 'group' | 'channel'>('private');
   const [showCallControls, setShowCallControls] = useState(false);
@@ -323,6 +326,28 @@ const Chat: React.FC = () => {
     handleChannelSelect(privateChannel);
   };
 
+  const handleVoiceCall = async (contact: any) => {
+    try {
+      const callId = await liveCallService.initiateCall(contact.id);
+      if (callId) {
+        setShowCallManager(true);
+      }
+    } catch (error) {
+      console.error('Error initiating voice call:', error);
+    }
+  };
+
+  const handleVideoCall = async (contact: any) => {
+    try {
+      const callId = await liveCallService.initiateCall(contact.id);
+      if (callId) {
+        setShowCallManager(true);
+      }
+    } catch (error) {
+      console.error('Error initiating video call:', error);
+    }
+  };
+
   const handleChannelUpdate = (updates: Partial<Channel>) => {
     if (!activeChannel) return;
     
@@ -476,6 +501,33 @@ const Chat: React.FC = () => {
                     onClick={() => setIsSearchVisible(!isSearchVisible)}
                     className="p-2 hover:bg-zenith-greenDim/20 rounded-lg transition-colors"
                   >
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
+                          const contactId = activeChannel.id.replace('private_', '');
+                          handleVoiceCall({ id: contactId });
+                        }}
+                        className="p-2 text-gray-400 hover:text-zenith-primary transition-colors"
+                        title="Voice Call"
+                      >
+                        <FontAwesomeIcon icon={faPhone} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
+                          const contactId = activeChannel.id.replace('private_', '');
+                          handleVideoCall({ id: contactId });
+                        }}
+                        className="p-2 text-gray-400 hover:text-zenith-primary transition-colors"
+                        title="Video Call"
+                      >
+                        <FontAwesomeIcon icon={faVideo} />
+                      </button>
+                    </div>
                     <FontAwesomeIcon icon={faSearch} className="text-zenith-dim" />
                   </button>
                   
@@ -819,6 +871,12 @@ const Chat: React.FC = () => {
           isOpen={showContacts}
           onClose={() => setShowContacts(false)}
           onSelectContact={handleContactSelect}
+        />
+      )}
+      {/* Call Manager */}
+      {showCallManager && (
+        <CallManager
+          onCallEnd={() => setShowCallManager(false)}
         />
       )}
     </div>
