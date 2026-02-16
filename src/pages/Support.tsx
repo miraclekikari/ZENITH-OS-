@@ -1,14 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
-
-interface SupportTicket {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-  link?: string;
-}
+import { SupportTicket } from '../types';
 
 export const Support: React.FC = () => {
   const navigate = useNavigate();

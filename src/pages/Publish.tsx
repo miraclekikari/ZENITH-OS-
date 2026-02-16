@@ -103,8 +103,8 @@ const Publish: React.FC = () => {
     const fallback = caption || 'A moment in time.';
     try {
       const newCaption = await generateCreativeCaption(context);
-      if (newCaption && typeof newCaption === 'string' && !newCaption.startsWith('ERREUR_')) {
-        setCaption(newCaption);
+      if (newCaption && typeof newCaption.caption === 'string' && !newCaption.caption.startsWith('ERREUR_')) {
+        setCaption(newCaption.caption);
       } else {
         setCaption(prev => prev || fallback);
       }
@@ -168,7 +168,7 @@ const handleSubmit = async () => {
       if (caption.trim().length > 5) {
         try {
           if (typeof moderateContent === 'function') {
-            moderateContent(caption).then((result) => {
+            moderateContent(caption).then((result: any) => {
               if (result === false) console.warn("Sentinel: Post flagged post-upload.");
             }).catch(() => {});
           }
@@ -186,10 +186,10 @@ const handleSubmit = async () => {
         setStatusSteps([]);
       }, 1000);
 
-    } catch (error: unknown) {
+    } catch (error: any) {
       if (import.meta.env.DEV) console.error(error);
       setIsUploading(false);
-      addStatus(`!! SECURITY ALERT: ${error.message}`);
+      addStatus(`!! SECURITY ALERT: ${error.message || 'Unknown error'}`);
       alert(`⚠️ TRANSMISSION FAILED ⚠️\n\nReason: ${error.message}`);
     }
 };

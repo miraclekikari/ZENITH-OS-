@@ -1,4 +1,4 @@
-import type { SupportTicket } from '../pages/Support';
+import type { SupportTicket } from '../types';
 
 // Configuration EmailJS (à remplacer avec vos vraies clés)
 const EMAILJS_CONFIG = {

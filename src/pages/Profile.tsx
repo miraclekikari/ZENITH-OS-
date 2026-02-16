@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Post, UserProfile } from '../types';
+import { Post, UserProfile, PrivacyStatus } from '../types';
 import { DB } from '../services/storageService';
 import { SkillMatrix } from '../components/SkillMatrix';
 
@@ -18,6 +18,7 @@ const Profile: React.FC = () => {
         const initialPosts: Post[] = Array.from({ length: 9 }).map((_, i) => ({
             id: `p${i}`,
             author: currentUser.username,
+            username: currentUser.username, // Ajout du username manquant
             avatar: currentUser.avatar,
             content: i % 2 === 0 ? 'Deploying new neural architecture to the main grid. #CyberSec #AI' : 'Just hit Level 5 clearance! The restricted sectors are wild.',
             image: `https://picsum.photos/seed/${i + 200}/600/400`,
@@ -37,7 +38,7 @@ const Profile: React.FC = () => {
   const togglePrivacy = () => {
     if (!user) return;
     const newStatus = user.privacy === 'PUBLIC' ? 'ENCRYPTED' : 'PUBLIC';
-    const updatedUser = { ...user, privacy: newStatus };
+    const updatedUser = { ...user, privacy: newStatus as PrivacyStatus };
     setUser(updatedUser);
     DB.saveUser({ privacy: newStatus });
   };

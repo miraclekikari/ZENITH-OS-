@@ -436,9 +436,10 @@ const Settings: React.FC = () => {
                             <span className="text-sm text-white font-bold">{setting.label}</span>
                           </div>
                           <select
-                            value={privacySettings[setting.key as keyof PrivacySettings]}
-                            onChange={(e) => updatePrivacySetting(setting.key as keyof PrivacySettings, e.target.value)}
+                            value={privacySettings[setting.key as keyof PrivacySettings] as any}
+                            onChange={(e) => updatePrivacySetting(setting.key as keyof PrivacySettings, e.target.value as 'everyone' | 'contacts' | 'nobody')}
                             className="bg-black/50 border border-zenith-greenDim rounded-lg px-3 py-1 text-zenith-dim focus:border-zenith-green focus:outline-none"
+                            style={{ color: 'white' }}
                           >
                             <option value="everyone">Everyone</option>
                             <option value="contacts">Contacts</option>

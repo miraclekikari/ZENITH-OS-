@@ -13,7 +13,7 @@ export interface Profile {
   bio?: string;
   avatar_url?: string;
   is_verified?: boolean;
-  privacy?: 'PUBLIC' | 'PRIVATE' | 'ENCRYPTED';
+  privacy: PrivacyStatus; // Utiliser le type PrivacyStatus au lieu de chaîne littérale
   created_at: string;
   updated_at: string;
 }
@@ -91,6 +91,7 @@ export interface Post {
 export interface Story {
   id: string;
   user: string;
+  username: string; // Ajout pour la cohérence
   avatar: string;
   image: string;
   isSeen: boolean;
@@ -125,6 +126,14 @@ export interface SkillNode {
   y: number; // Percentage 0-100
   dependencies: string[]; // IDs of prerequisite skills
   icon: string;
+}
+
+export interface SupportTicket {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  link?: string;
 }
 
 export enum Tab {

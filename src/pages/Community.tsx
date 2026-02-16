@@ -131,8 +131,9 @@ const Community: React.FC = () => {
       const list = (data ?? []).map((row: Record<string, unknown>) => ({
         id: String(row.id ?? ''),
         user: String(row.author_id ?? 'u1'),
+        username: String(row.author_id ?? 'u1'), // Ajout du username manquant
         avatar: `https://picsum.photos/seed/${encodeURIComponent(String(row.author_id ?? 'u1'))}/200/200`,
-        image: String(row.image_url ?? ''),
+        image: String(row.image_url || ''),
         isSeen: false
       }));
       setStories(list);
