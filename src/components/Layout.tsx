@@ -4,6 +4,7 @@ import { DB } from '../services/storageService';
 import { UserProfile } from '../types';
 import ProfileSearch from './ProfileSearch';
 import Icon from './Icon';
+import NotificationDropdown from './NotificationDropdown';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -101,6 +102,9 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
 
           <div className="flex items-center gap-4">
             <ProfileSearch />
+            
+            {/* Notification Dropdown */}
+            {isAuthenticated && <NotificationDropdown />}
             
             {/* Support Button */}
             <button
