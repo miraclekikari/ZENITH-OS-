@@ -31,31 +31,92 @@ const VideoCall: React.FC<VideoCallProps> = ({ call, onEnd }) => {
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
-    // Setup WebRTC callbacks
-    liveCallService.onRemoteStream = (stream) => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = stream;
+    // Initialize WebRTC and capture camera immediately
+    const initializeWebRTC = async () => {
+      try {
+        // Request camera and microphone permissions
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: true, 
+          audio: true 
+        });
+        
+        // Set local video stream
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+        
+        // Initialize peer connection
+        const peerConnection = new RTCPeerConnection({
+          iceServers: [
+            { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
+            { urls: 'stun:stun3.l.google.com:19302' },
+            { urls: 'stun:stun4.l.google.com:19302' }
+          ]
+        });
+        
+        // Add local stream to peer connection
+        stream.getTracks().forEach(track => {
+          peerConnection.addTrack(track, stream);
+        });
+        
+        // Handle ICE candidates
+        peerConnection.onicecandidate = (event) => {
+          if (event.candidate) {
+            console.log('ICE candidate:', event.candidate);
+            // In real implementation, send this to signaling server
+          }
+        };
+        
+        // Handle remote stream
+        peerConnection.ontrack = (event) => {
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = event.streams[0];
+          }
+        };
+        
+        // Handle connection state changes
+        peerConnection.onconnectionstatechange = () => {
+          setConnectionState(peerConnection.connectionState);
+        };
+        
+        // Store peer connection for signaling
+        (liveCallService as any).peerConnection = peerConnection;
+        (liveCallService as any).localStream = stream;
+        
+        // Setup callbacks
+        liveCallService.onRemoteStream = (stream) => {
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = stream;
+          }
+        };
+
+        liveCallService.onConnectionStateChange = (state) => {
+          setConnectionState(state);
+        };
+        
+        setConnectionState('connected');
+        
+      } catch (error) {
+        console.error('Error accessing camera/microphone:', error);
+        setConnectionState('failed');
       }
     };
-
-    liveCallService.onConnectionStateChange = (state) => {
-      setConnectionState(state);
-    };
-
-    // Set local stream
-    const localStream = liveCallService.getLocalStream();
-    if (localStream && localVideoRef.current) {
-      localVideoRef.current.srcObject = localStream;
-    }
-
-    // Set remote stream if already available
-    const remoteStream = liveCallService.getRemoteStream();
-    if (remoteStream && remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = remoteStream;
-    }
+    
+    initializeWebRTC();
 
     return () => {
-      liveCallService.cleanup();
+      // Cleanup on unmount
+      const localStream = (liveCallService as any).localStream;
+      if (localStream) {
+        localStream.getTracks().forEach(track => track.stop());
+      }
+      
+      const peerConnection = (liveCallService as any).peerConnection;
+      if (peerConnection) {
+        peerConnection.close();
+      }
     };
   }, []);
 

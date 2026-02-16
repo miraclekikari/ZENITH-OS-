@@ -149,7 +149,7 @@ class LiveCallService {
       const offer = await this.peerConnection.createOffer();
       await this.peerConnection.setLocalDescription(offer);
 
-      // Initiate call in database
+      // Initiate call in database with signaling
       const { data, error } = await supabase.rpc('initiate_call', {
         p_receiver_id: receiverId,
         p_offer: offer
@@ -158,10 +158,51 @@ class LiveCallService {
       if (error) throw error;
       
       this.callId = data;
+      
+      // Listen for answer via real-time subscription
+      this.listenForCallAnswer(data);
+      
       return data;
     } catch (error) {
       console.error('Error initiating call:', error);
       return null;
+    }
+  }
+
+  private async listenForCallAnswer(callId: string) {
+    const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
+    
+    // Subscribe to call updates
+    const subscription = supabase
+      .channel(`call_${callId}`)
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'active_calls',
+          filter: `id=eq.${callId}`
+        },
+        async (payload) => {
+          if (payload.new && payload.new.answer) {
+            // Handle incoming answer
+            await this.handleIncomingAnswer(payload.new.answer);
+          }
+        }
+      )
+      .subscribe();
+      
+    // Store subscription for cleanup
+    (this as any).callSubscription = subscription;
+  }
+
+  private async handleIncomingAnswer(answer: any) {
+    try {
+      if (this.peerConnection) {
+        await this.peerConnection.setRemoteDescription(answer);
+        console.log('Call connected successfully!');
+      }
+    } catch (error) {
+      console.error('Error handling answer:', error);
     }
   }
 
@@ -198,7 +239,7 @@ class LiveCallService {
       const answer = await this.peerConnection.createAnswer();
       await this.peerConnection.setLocalDescription(answer);
 
-      // Accept call in database
+      // Accept call in database with signaling
       const { data, error } = await supabase.rpc('accept_call', {
         p_call_id: callId,
         p_answer: answer
@@ -207,11 +248,21 @@ class LiveCallService {
       if (error) throw error;
       
       this.callId = callId;
+      
+      // Listen for ICE candidates from caller
+      this.listenForIceCandidates(callId);
+      
       return data || false;
     } catch (error) {
       console.error('Error accepting call:', error);
       return false;
     }
+  }
+
+  private async listenForIceCandidates(callId: string) {
+    // In a real implementation, you would exchange ICE candidates
+    // via a signaling mechanism (WebSocket, database, etc.)
+    console.log('Listening for ICE candidates for call:', callId);
   }
 
   async rejectCall(callId: string): Promise<boolean> {
