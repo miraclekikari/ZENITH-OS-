@@ -29,9 +29,33 @@ html, body {
   min-height: 100vh;
   font-family: 'Rajdhani', sans-serif;
   -webkit-text-size-adjust: 100%; /* Évite le zoom automatique du texte sur iPhone */
+  scroll-behavior: smooth;
 }
 
-/* Scanlines fixes : Changement de 100% à 100vw pour plus de précision */
+/* Optimisations mobile */
+@media (max-width: 768px) {
+  html, body {
+    font-size: 14px;
+  }
+  
+  .glass-card {
+    margin: 0.5rem;
+    border-radius: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  html, body {
+    font-size: 12px;
+  }
+  
+  .glass-card {
+    margin: 0.25rem;
+    padding: 0.75rem;
+  }
+}
+
+/* Scanlines optimisées avec GPU acceleration et réduction d'impact */
 .scanlines {
   position: fixed;
   inset: 0;
@@ -40,11 +64,21 @@ html, body {
   background: linear-gradient(
     to bottom,
     transparent 50%,
-    rgba(0, 0, 0, 0.2) 50%
+    rgba(0, 0, 0, 0.1) 50%
   );
   background-size: 100% 4px;
   z-index: 9999;
   pointer-events: none;
+  will-change: opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  opacity: 0.3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanlines {
+    display: none;
+  }
 }
 
 /* On s'assure que le container React ne déborde jamais */
@@ -65,6 +99,30 @@ html, body {
   border-radius: 0.5rem;
   max-width: 100%; /* Important pour mobile */
   word-wrap: break-word; /* Évite que le texte ne pousse les murs */
+  overflow-wrap: break-word;
+  hyphens: auto;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 12px rgba(0, 255, 204, 0.2);
+}
+
+/* Optimisations pour les images */
+img {
+  max-width: 100%;
+  height: auto;
+  object-fit: cover;
+  loading: lazy;
+}
+
+/* Optimisations pour les vidéos */
+video, iframe {
+  max-width: 100%;
+  height: auto;
+  border-radius: 0.5rem;
 }
 
 .font-tech {
@@ -75,15 +133,27 @@ html, body {
   font-family: 'Rajdhani', monospace;
 }
 
-/* Animations (inchangées mais sécurisées) */
+/* Animations optimisées */
 @keyframes scale-up {
-  from { transform: scale(0.8); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from { 
+    transform: scale(0.8) translateZ(0);
+    opacity: 0; 
+  }
+  to { 
+    transform: scale(1) translateZ(0);
+    opacity: 1; 
+  }
 }
 
 @keyframes expand-line {
-  from { width: 0; }
-  to { width: 100%; }
+  from { 
+    width: 0%;
+    transform: translateZ(0);
+  }
+  to { 
+    width: 100%;
+    transform: translateZ(0);
+  }
 }
 
 @keyframes typingDots {
@@ -92,33 +162,318 @@ html, body {
   100% { opacity: 0; }
 }
 
+@keyframes pulse-glow {
+  0%, 100% { 
+    box-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
+  }
+  50% { 
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+  }
+}
+
 .typing-dots::after {
   content: '...';
   animation: typingDots 1.5s infinite;
+  will-change: opacity;
 }
 
 .animate-scale-up {
   animation: scale-up 0.5s ease-out;
+  will-change: transform, opacity;
 }
 
 .animate-expand-line {
   animation: expand-line 1s ease-out;
+  will-change: transform, width;
 }
 
-/* Scrollbar personnalisée (masquée sur mobile pour plus de fluidité si tu veux) */
+.animate-pulse-fast {
+  animation: pulse-glow 2s infinite;
+  will-change: box-shadow;
+}
+
+/* Animations supplémentaires pour une interface vivante */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bounce-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse-slow {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 5px currentColor;
+  }
+  50% {
+    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Classes d'animation utilitaires */
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 2s infinite;
+}
+
+.animate-glow-pulse {
+  animation: glow-pulse 2s infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Toggle checkbox personnalisé */
+.toggle-checkbox {
+  appearance: none;
+  width: 48px;
+  height: 24px;
+  background: #374151;
+  border-radius: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.toggle-checkbox:checked {
+  background: var(--z-primary, #00ff88);
+}
+
+.toggle-checkbox::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  top: 2px;
+  left: 2px;
+  transition: all 0.3s ease;
+}
+
+.toggle-checkbox:checked::after {
+  left: 26px;
+}
+
+/* Effet de transition de thème */
+.theme-transition-wrapper {
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.theme-transitioning {
+  opacity: 0.8;
+  transform: scale(0.98);
+}
+
+/* Boutons avec effets avancés */
+.btn-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-glow::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-glow:hover::before {
+  left: 100%;
+}
+
+/* Cards avec effets de survol */
+.card-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-hover:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(0, 255, 136, 0.3);
+}
+
+/* Loading states animés */
+.loading-skeleton {
+  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Notifications animées */
+.notification-enter {
+  animation: slide-in 0.3s ease-out;
+}
+
+.notification-exit {
+  animation: slide-in 0.3s ease-out reverse;
+}
+
+/* Effets de focus améliorés */
+.focus-glow:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--z-primary), 0 0 20px rgba(0, 255, 136, 0.5);
+}
+
+/* Scrollbar animée */
+.scrollbar-animated::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, var(--z-primary), var(--z-secondary));
+  animation: glow-pulse 2s infinite;
+}
+
+/* Texte avec effet de néon */
+.text-neon {
+  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
+}
+
+/* Badges animés */
+.badge-pulse {
+  animation: pulse-glow 2s infinite;
+}
+
+/* Indicateurs de chargement */
+.loading-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.loading-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--z-primary);
+  animation: bounce-gentle 1.4s infinite ease-in-out both;
+}
+
+.loading-dots span:nth-child(1) {
+  animation-delay: -0.32s;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: -0.16s;
+}
+
+/* Scrollbar personnalisée optimisée */
 ::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
   background: rgba(5, 5, 5, 0.5);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: var(--z-green);
-  border-radius: 4px;
+  border-radius: 3px;
+  transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--z-primary);
+}
+
+/* Scrollbar pour Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--z-green) rgba(5, 5, 5, 0.5);
+}
+
+/* Optimisations de performance */
+* {
+  box-sizing: border-box;
+}
+
+/* Réduction des mouvements pour l'accessibilité */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  
+  .scanlines {
+    display: none;
+  }
+}
+
+/* Mode sombre amélioré */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --z-background: #030303;
+    --z-surface: rgba(3, 3, 3, 0.9);
+  }
 }

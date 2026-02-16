@@ -29,6 +29,40 @@ export const DB = {
     const t = localStorage.getItem('zenith_theme');
     return t ? JSON.parse(t) : null;
   },
+  getThemeSettings: () => {
+    const t = localStorage.getItem('zenith_theme_settings');
+    return t ? JSON.parse(t) : null;
+  },
+  saveThemeSettings: (settings: any) => {
+    localStorage.setItem('zenith_theme_settings', JSON.stringify(settings));
+  },
+
+  // Notification Settings
+  saveNotificationSettings: (settings: any) => {
+    localStorage.setItem('zenith_notifications', JSON.stringify(settings));
+  },
+  getNotificationSettings: () => {
+    const n = localStorage.getItem('zenith_notifications');
+    return n ? JSON.parse(n) : null;
+  },
+
+  // Privacy Settings
+  savePrivacySettings: (settings: any) => {
+    localStorage.setItem('zenith_privacy', JSON.stringify(settings));
+  },
+  getPrivacySettings: () => {
+    const p = localStorage.getItem('zenith_privacy');
+    return p ? JSON.parse(p) : null;
+  },
+
+  // Clearance Level
+  saveClearanceLevel: (data: any) => {
+    localStorage.setItem('zenith_clearance', JSON.stringify(data));
+  },
+  getClearanceLevel: () => {
+    const c = localStorage.getItem('zenith_clearance');
+    return c ? JSON.parse(c) : null;
+  },
 
   // Auth Persistence
   saveUser: (user: Partial<UserProfile>) => {
