@@ -33,6 +33,7 @@ import { DB } from '../services/storageService';
 import EmojiPicker from '../components/EmojiPicker';
 import CallControls from '../components/CallControls';
 import GroupSettings from '../components/GroupSettings';
+import ContactsModal from '../components/ContactsModal';
 import { useNotificationSound } from '../hooks/useNotificationSound';
 import { supabase } from '../lib/supabaseClient';
 
@@ -64,6 +65,7 @@ const Chat: React.FC = () => {
   const [showChannelMenu, setShowChannelMenu] = useState(false);
   const [showCreateChannel, setShowCreateChannel] = useState(false);
   const [showGroupSettings, setShowGroupSettings] = useState(false);
+  const [showContacts, setShowContacts] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelType, setNewChannelType] = useState<'private' | 'group' | 'channel'>('private');
   const [showCallControls, setShowCallControls] = useState(false);
@@ -300,6 +302,27 @@ const Chat: React.FC = () => {
   }, [currentUser?.id]);
 
   // Channel update handler
+  const handleContactSelect = (contact: any) => {
+    // Create or navigate to private channel with this contact
+    const privateChannel: Channel = {
+      id: `private_${contact.id}`,
+      name: contact.full_name,
+      type: 'private',
+      description: contact.bio,
+      avatar: contact.avatar_url,
+      members: [contact.id],
+      admins: [contact.id],
+      unreadCount: 0,
+      isPinned: false,
+      isMuted: false,
+      createdAt: new Date().toISOString(),
+      createdBy: contact.id
+    };
+    
+    setChannels(prev => [privateChannel, ...prev]);
+    handleChannelSelect(privateChannel);
+  };
+
   const handleChannelUpdate = (updates: Partial<Channel>) => {
     if (!activeChannel) return;
     
@@ -332,15 +355,24 @@ const Chat: React.FC = () => {
       }}>
         {/* Search Header */}
         <div className="p-4 border-b border-zenith-greenDim/30">
-          <div className="relative">
-            <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-3 text-zenith-dim" />
-            <input
-              type="text"
-              placeholder="Search channels, messages..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-zenith-greenDim rounded-lg focus:border-zenith-primary focus:outline-none text-sm text-black placeholder-gray-500"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-3 text-zenith-dim" />
+              <input
+                type="text"
+                placeholder="Search channels, messages..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-white border border-zenith-greenDim rounded-lg focus:border-zenith-primary focus:outline-none text-sm text-black placeholder-gray-500"
+              />
+            </div>
+            <button
+              onClick={() => setShowContacts(true)}
+              className="p-2 bg-white border border-zenith-greenDim rounded-lg hover:bg-zenith-greenDim/10 transition-colors"
+              title="Contacts"
+            >
+              <FontAwesomeIcon icon={faUserPlus} className="text-zenith-dim" />
+            </button>
           </div>
         </div>
 
@@ -779,6 +811,15 @@ const Chat: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      
+      {/* Contacts Modal */}
+      {showContacts && (
+        <ContactsModal
+          isOpen={showContacts}
+          onClose={() => setShowContacts(false)}
+          onSelectContact={handleContactSelect}
+        />
       )}
     </div>
   );
