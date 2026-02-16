@@ -5,7 +5,7 @@ import react from '@vitejs/plugin-react';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
-    base: '/ZENITH-OS/',
+    base: '/ZENITH-OS-/',
     plugins: [react()],
     resolve: {
       alias: {
@@ -30,6 +30,12 @@ export default defineConfig(({ mode }) => {
         }
       },
       chunkSizeWarningLimit: 1000,
+      assetsDir: 'assets',
+      sourcemap: true,
+    },
+    server: {
+      port: 3000,
+      host: true,
     },
   };
 });
