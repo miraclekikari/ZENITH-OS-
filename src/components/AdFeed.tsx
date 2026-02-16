@@ -1,10 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 const AdFeed = () => {
+  const isInitialized = useRef(false);
+  
   useEffect(() => {
+    if (isInitialized.current) return;
+    
     try {
       // @ts-ignore
       (window.adsbygoogle = window.adsbygoogle || []).push({});
+      isInitialized.current = true;
     } catch (e) {
       console.error("AdSense error:", e);
     }

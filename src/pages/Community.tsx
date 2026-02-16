@@ -6,50 +6,7 @@ import { DEFAULT_USER_ID } from '../lib/constants';
 import PostCard from '../components/PostCard';
 import CommentsDrawer from '../components/CommentsDrawer';
 import AdSensePost from '../components/AdSensePost';
-/** Map une ligne Supabase (posts) vers le type Post + merge likes/comments/isLiked depuis post_likes et comments */
-function mapSupabaseRowToPost(
-  row: Record<string, unknown>,
-  likeCount: Record<string, number>,
-  commentCount: Record<string, number>,
-  likedByUser: Set<string>
-): Post {
-  const id = typeof row.id === 'string' ? row.id : String(row.id ?? '');
-  const content = typeof row.content === 'string' ? row.content : '';
-  const imageUrl = row.image_url ?? row.image;
-  const image = typeof imageUrl === 'string' ? imageUrl : undefined;
-  const authorId = (row.author_id ?? DEFAULT_USER_ID) as string;
-  
-  // Utiliser les données du profil si disponibles
-  const profile = row.profiles as any;
-  const username = profile?.username || String(authorId);
-  const fullName = profile?.full_name || username;
-  const avatarUrl = profile?.avatar_url;
-  const isVerified = profile?.is_verified || false;
-  
-  // Avatar par défaut si non fourni
-  const defaultAvatar = `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
-  const avatar = avatarUrl || defaultAvatar;
-  
-  const created = row.created_at ?? row.timestamp;
-  const timestamp = typeof created === 'string' ? created : (created ? new Date(created as string).toISOString() : new Date().toISOString());
-  
-  return {
-    id,
-    author: fullName,
-    username, // Ajouter le username pour la navigation
-    avatar,
-    content,
-    image,
-    likes: likeCount[id] ?? Number(row.likes) ?? 0,
-    comments: commentCount[id] ?? Number(row.comments) ?? 0,
-    shares: Number(row.shares) || 0,
-    isVerified,
-    timestamp,
-    isModerated: false,
-    isLiked: likedByUser.has(id),
-    isReposted: false
-  };
-}
+import { mapSupabaseRowToPost } from '../utils/mapSupabaseRowToPost';
 
 // --- MOCK DATA INITIAL ---
 const initialCommunities: CommunityType[] = [
@@ -118,7 +75,9 @@ const Community: React.FC = () => {
   useEffect(() => {
     refreshFeed();
     const heartbeat = setInterval(refreshFeed, 15000);
-    return () => clearInterval(heartbeat);
+    return () => {
+      clearInterval(heartbeat);
+    };
   }, [refreshFeed]);
 
   const refreshStories = useCallback(async () => {
@@ -150,18 +109,27 @@ const Community: React.FC = () => {
   useEffect(() => {
     let mounted = true;
     const fetchNews = async () => {
-      if (mounted) setNews(`Scanning ${activeCommunity.name} frequencies...`);
+      if (mounted) {
+        setNews(`Scanning ${activeCommunity.name} frequencies...`);
+      }
       // Fallback simple si l'API échoue ou met du temps
       try {
         const headline = await generateCommunityNews(activeCommunity.topic);
-        if (mounted && headline) setNews(headline);
+        if (mounted && headline) {
+          setNews(headline);
+        }
       } catch (e) {
-        if (mounted) setNews("Secure connection established. Waiting for data packets...");
+        if (mounted) {
+          setNews("Secure connection established. Waiting for data packets...");
+        }
       }
     };
     fetchNews();
     const interval = setInterval(fetchNews, 60000); 
-    return () => { mounted = false; clearInterval(interval); };
+    return () => { 
+      mounted = false;
+      clearInterval(interval);
+    };
   }, [activeCommunity]);
 
   const toggleLike = useCallback(async (id: string) => {

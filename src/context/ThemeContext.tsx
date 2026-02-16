@@ -151,20 +151,30 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   useEffect(() => {
     if (!themeSettings.timeBased) return;
 
-    const hour = new Date().getHours();
-    let targetTheme;
+    const checkTimeBasedTheme = () => {
+      const hour = new Date().getHours();
+      let targetTheme;
+      
+      if (hour >= 6 && hour < 12) {
+        targetTheme = THEMES.SOLAR_FLARE;
+      } else if (hour >= 12 && hour < 18) {
+        targetTheme = THEMES.ZENITH_DEFAULT;
+      } else if (hour >= 18 && hour < 22) {
+        targetTheme = THEMES.ROYAL_BLUE;
+      } else {
+        targetTheme = THEMES.MATRIX_GREEN;
+      }
+      
+      setCurrentTheme(targetTheme);
+    };
     
-    if (hour >= 6 && hour < 12) {
-      targetTheme = THEMES.SOLAR_FLARE;
-    } else if (hour >= 12 && hour < 18) {
-      targetTheme = THEMES.ZENITH_DEFAULT;
-    } else if (hour >= 18 && hour < 22) {
-      targetTheme = THEMES.ROYAL_BLUE;
-    } else {
-      targetTheme = THEMES.MATRIX_GREEN;
-    }
+    // Vérifier immédiatement, puis chaque minute
+    checkTimeBasedTheme();
+    const interval = setInterval(checkTimeBasedTheme, 60000); // Chaque minute
     
-    setCurrentTheme(targetTheme);
+    return () => {
+      clearInterval(interval);
+    };
   }, [themeSettings.timeBased]);
 
   const applyTheme = useCallback((theme: any) => {
