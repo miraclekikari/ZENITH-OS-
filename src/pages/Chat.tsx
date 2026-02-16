@@ -339,7 +339,7 @@ const Chat: React.FC = () => {
               placeholder="Search channels, messages..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-zenith-bg border border-zenith-greenDim rounded-lg focus:border-zenith-primary focus:outline-none text-sm"
+              className="w-full pl-10 pr-4 py-2 bg-white border border-zenith-greenDim rounded-lg focus:border-zenith-primary focus:outline-none text-sm text-black placeholder-gray-500"
             />
           </div>
         </div>
@@ -376,7 +376,7 @@ const Chat: React.FC = () => {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm truncate">{channel.name}</span>
+                  <span className="font-medium text-sm truncate text-black">{channel.name}</span>
                   {channel.isPinned && (
                     <FontAwesomeIcon icon={faThumbTack} className="text-zenith-primary text-xs" />
                   )}
@@ -384,7 +384,7 @@ const Chat: React.FC = () => {
                     <FontAwesomeIcon icon={faBellSlash} className="text-zenith-dim text-xs" />
                   )}
                 </div>
-                <div className="text-xs text-zenith-dim truncate">
+                <div className="text-xs text-gray-600 truncate">
                   {channel.description || 'No messages yet'}
                 </div>
               </div>
@@ -392,14 +392,14 @@ const Chat: React.FC = () => {
           ))}
         </div>
 
-        {/* Create Channel Button */}
-        <div className="p-4 border-t border-zenith-greenDim/30">
+        {/* Floating Create Channel Button */}
+        <div className="absolute bottom-6 right-6">
           <button
             onClick={() => setShowCreateChannel(true)}
-            className="w-full py-2 bg-zenith-primary text-black rounded-lg hover:bg-zenith-primary/80 transition-colors flex items-center justify-center gap-2"
+            className="w-14 h-14 bg-zenith-primary text-black rounded-full hover:bg-zenith-primary/80 transition-all duration-200 flex items-center justify-center shadow-lg hover:shadow-xl"
+            title="Create Channel"
           >
-            <FontAwesomeIcon icon={faPlus} />
-            Create Channel
+            <FontAwesomeIcon icon={faPlus} className="text-lg" />
           </button>
         </div>
       </div>
@@ -494,7 +494,7 @@ const Chat: React.FC = () => {
                       value={globalSearchQuery}
                       onChange={(e) => handleGlobalSearch(e.target.value)}
                       placeholder="Search messages in all channels..."
-                      className="w-full px-4 py-2 pl-10 bg-zenith-bg border border-zenith-greenDim rounded-lg text-zenith-primary focus:border-zenith-primary focus:outline-none"
+                      className="w-full px-4 py-2 pl-10 bg-white border border-zenith-greenDim rounded-lg text-black focus:border-zenith-primary focus:outline-none placeholder-gray-500"
                     />
                     <FontAwesomeIcon 
                       icon={faSearch} 
@@ -648,13 +648,13 @@ const Chat: React.FC = () => {
             {/* Input Area */}
             <div className="p-4 border-t border-zenith-greenDim/30" style={{ backgroundColor: 'var(--z-surface)' }}>
               {replyingTo && (
-                <div className="flex items-center justify-between bg-zenith-greenDim/20 px-4 py-2 rounded-t-lg mb-2">
-                  <span className="text-sm text-zenith-dim">
+                <div className="flex items-center justify-between bg-gray-100 px-4 py-2 rounded-t-lg mb-2">
+                  <span className="text-sm text-gray-700">
                     Replying to {replyingTo.senderName}
                   </span>
                   <button
                     onClick={() => setReplyingTo(null)}
-                    className="text-zenith-dim hover:text-white"
+                    className="text-gray-500 hover:text-gray-700"
                   >
                     ×
                   </button>
@@ -678,7 +678,7 @@ const Chat: React.FC = () => {
                     onKeyDown={handleKeyPress}
                     placeholder="Type a message..."
                     rows={1}
-                    className="w-full px-4 py-2 bg-zenith-bg border border-zenith-greenDim rounded-lg focus:border-zenith-primary focus:outline-none resize-none max-h-32"
+                    className="w-full px-4 py-2 bg-white border border-zenith-greenDim rounded-lg focus:border-zenith-primary focus:outline-none resize-none max-h-32 text-black placeholder-gray-500"
                     style={{ minHeight: '40px' }}
                   />
                 </div>
@@ -734,6 +734,51 @@ const Chat: React.FC = () => {
           onClose={() => setShowGroupSettings(false)}
           onUpdate={handleChannelUpdate}
         />
+      )}
+      
+      {/* Create Channel Modal */}
+      {showCreateChannel && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-6 w-80 shadow-2xl">
+            <h3 className="text-lg font-bold mb-4 text-black">Create New Channel</h3>
+            <input
+              type="text"
+              placeholder="Channel name"
+              value={newChannelName}
+              onChange={(e) => setNewChannelName(e.target.value)}
+              className="w-full px-4 py-2 bg-white border border-gray-300 rounded-lg focus:border-zenith-primary focus:outline-none mb-4 text-black placeholder-gray-500"
+            />
+            <div className="flex gap-2 mb-4">
+              {(['private', 'group', 'channel'] as const).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setNewChannelType(type)}
+                  className={`flex-1 py-2 rounded-lg text-sm capitalize ${
+                    newChannelType === type
+                      ? 'bg-zenith-primary text-black'
+                      : 'bg-gray-100 text-black border border-gray-300'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowCreateChannel(false)}
+                className="flex-1 py-2 bg-gray-100 text-black border border-gray-300 rounded-lg hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateChannel}
+                className="flex-1 py-2 bg-zenith-primary text-black rounded-lg hover:bg-zenith-primary/80"
+              >
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
