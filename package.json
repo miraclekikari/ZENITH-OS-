@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && cp public/sitemap.xml dist/ && cp public/google*.html dist/",
+    "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
