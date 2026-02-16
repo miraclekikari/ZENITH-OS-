@@ -20,11 +20,16 @@ import {
   faForward,
   faCheck,
   faCheckDouble,
-  faClock
+  faClock,
+  faBroadcastTower,
+  faSettings
 } from '@fortawesome/free-solid-svg-icons';
 import { Message, Channel, ChatUser, TypingIndicator, SearchResult } from '../types/chat';
-import ChatService from '../services/chatService';
+import SupabaseChatService from '../services/supabaseChatService';
 import { DB } from '../services/storageService';
+import EmojiPicker from '../components/EmojiPicker';
+import CallControls from '../components/CallControls';
+import GroupSettings from '../components/GroupSettings';
 
 // Mock users for demonstration
 const MOCK_USERS: ChatUser[] = [
@@ -36,7 +41,7 @@ const MOCK_USERS: ChatUser[] = [
 
 const Chat: React.FC = () => {
   const navigate = useNavigate();
-  const chatService = ChatService;
+  const chatService = SupabaseChatService;
   const currentUser = DB.getUser();
   
   // State
@@ -53,8 +58,10 @@ const Chat: React.FC = () => {
   const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
   const [showChannelMenu, setShowChannelMenu] = useState(false);
   const [showCreateChannel, setShowCreateChannel] = useState(false);
+  const [showGroupSettings, setShowGroupSettings] = useState(false);
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelType, setNewChannelType] = useState<'private' | 'group' | 'channel'>('private');
+  const [showCallControls, setShowCallControls] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -62,66 +69,77 @@ const Chat: React.FC = () => {
 
   // Initialize
   useEffect(() => {
-    chatService.init();
-    setChannels(chatService.getChannels());
+    if (!currentUser) return;
     
-    // Select first channel if none selected
-    const allChannels = chatService.getChannels();
-    if (allChannels.length > 0 && !activeChannel) {
-      handleChannelSelect(allChannels[0]);
-    }
-  }, []);
+    const initializeChat = async () => {
+      try {
+        // Create default channels if they don't exist
+        await chatService.createDefaultChannels();
+        
+        // Load user's channels
+        const userChannels = await chatService.getChannels(currentUser.id);
+        setChannels(userChannels);
+        
+        // Select first channel if none selected
+        if (userChannels.length > 0 && !activeChannel) {
+          handleChannelSelect(userChannels[0]);
+        }
+      } catch (error) {
+        console.error('Failed to initialize chat:', error);
+      }
+    };
+    
+    initializeChat();
+    
+    // Cleanup on unmount
+    return () => {
+      chatService.cleanup();
+    };
+  }, [currentUser]);
 
   // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Typing indicator simulation
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInputText(e.target.value);
+  // Realtime subscription for active channel
+  useEffect(() => {
+    if (!activeChannel) return;
     
-    if (activeChannel && e.target.value.length > 0) {
-      chatService.setTyping(activeChannel.id, currentUser?.id || 'u1', currentUser?.username || 'User');
-      
-      // Clear typing after 3 seconds
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current);
-      }
-      
-      typingTimeoutRef.current = setTimeout(() => {
-        if (activeChannel) {
-          chatService.clearTyping(activeChannel.id, currentUser?.id || 'u1');
-        }
-      }, 3000);
-    }
-  };
-
-  // Channel selection
-  const handleChannelSelect = useCallback((channel: Channel) => {
-    setActiveChannel(channel);
-    const channelMessages = chatService.getMessages(channel.id, 100);
-    setMessages(channelMessages);
+    chatService.subscribeToChannel(activeChannel.id, {
+      onNewMessage: (message) => {
+        setMessages(prev => [...prev, message]);
+      },
+      onMessageUpdated: (message) => {
+        setMessages(prev => prev.map(m => m.id === message.id ? message : m));
+      },
+      onMessageDeleted: (messageId) => {
+        setMessages(prev => prev.filter(m => m.id !== messageId));
+      },
+      onUserJoined: (userId) => {
+        console.log(`User ${userId} joined the channel`);
+      },
+      onUserLeft: (userId) => {
+        console.log(`User ${userId} left the channel`);
+      },
+    });
     
-    // Reset unread count
-    if (channel.unreadCount > 0) {
-      channel.unreadCount = 0;
-      setChannels([...channels]);
-    }
-  }, [channels]);
+    return () => {
+      chatService.unsubscribeFromChannel(activeChannel.id);
+    };
+  }, [activeChannel?.id]);
 
   // Send message
   const handleSendMessage = async () => {
     if (!inputText.trim() || !activeChannel) return;
     
     try {
-      const newMessage = await chatService.sendMessage(
+      await chatService.sendMessage(
         activeChannel.id,
         inputText.trim(),
         replyingTo?.id
       );
       
-      setMessages([...messages, newMessage]);
       setInputText('');
       setReplyingTo(null);
       inputRef.current?.focus();
@@ -130,36 +148,55 @@ const Chat: React.FC = () => {
     }
   };
 
-  // Search functionality
-  const handleSearch = useCallback((query: string) => {
-    setSearchQuery(query);
+  // Channel selection
+  const handleChannelSelect = useCallback(async (channel: Channel) => {
+    setActiveChannel(channel);
     
-    if (query.length >= 2) {
-      const results = chatService.search(query);
-      setSearchResults(results);
-      setIsSearching(true);
-    } else {
-      setSearchResults([]);
-      setIsSearching(false);
+    try {
+      const channelMessages = await chatService.getMessages(channel.id, 100);
+      setMessages(channelMessages);
+    } catch (error) {
+      console.error('Failed to load messages:', error);
+      setMessages([]);
     }
   }, []);
 
   // Create new channel
   const handleCreateChannel = async () => {
-    if (!newChannelName.trim()) return;
+    if (!newChannelName.trim() || !currentUser) return;
     
     try {
       const newChannel = await chatService.createChannel({
         name: newChannelName.trim(),
         type: newChannelType,
+        description: `${newChannelType} channel created by ${currentUser.username}`,
       });
       
-      setChannels([...channels, newChannel]);
+      setChannels(prev => [newChannel, ...prev]);
       setNewChannelName('');
       setShowCreateChannel(false);
       handleChannelSelect(newChannel);
     } catch (error) {
       console.error('Failed to create channel:', error);
+    }
+  };
+
+  // Handle input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputText(e.target.value);
+    
+    // Auto-resize textarea
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+      inputRef.current.style.height = `${Math.min(inputRef.current.scrollHeight, 120)}px`;
+    }
+  };
+
+  // Handle key press
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -170,11 +207,8 @@ const Chat: React.FC = () => {
   };
 
   const handleDeleteMessage = async (messageId: string) => {
-    if (!activeChannel) return;
-    
     try {
-      await chatService.deleteMessage(activeChannel.id, messageId);
-      setMessages(messages.filter(m => m.id !== messageId));
+      await chatService.deleteMessage(messageId);
       setSelectedMessage(null);
     } catch (error) {
       console.error('Failed to delete message:', error);
@@ -182,16 +216,35 @@ const Chat: React.FC = () => {
   };
 
   const handleReaction = async (messageId: string, emoji: string) => {
+    // TODO: Implement reaction functionality
+    console.log(`Add reaction ${emoji} to message ${messageId}`);
+  };
+
+  // Emoji and sticker handlers
+  const handleEmojiSelect = (emoji: string) => {
+    setInputText(prev => prev + emoji);
+    inputRef.current?.focus();
+  };
+
+  const handleStickerSelect = async (stickerUrl: string) => {
     if (!activeChannel) return;
     
     try {
-      await chatService.addReaction(activeChannel.id, messageId, emoji);
-      // Refresh messages to show new reaction
-      const updatedMessages = chatService.getMessages(activeChannel.id, 100);
-      setMessages(updatedMessages);
+      await chatService.sendMessage(activeChannel.id, `[STICKER]${stickerUrl}[/STICKER]`);
     } catch (error) {
-      console.error('Failed to add reaction:', error);
+      console.error('Failed to send sticker:', error);
     }
+  };
+
+  // Channel update handler
+  const handleChannelUpdate = (updates: Partial<Channel>) => {
+    if (!activeChannel) return;
+    
+    setChannels(prev => prev.map(ch => 
+      ch.id === activeChannel.id ? { ...ch, ...updates } : ch
+    ));
+    
+    setActiveChannel(prev => prev ? { ...prev, ...updates } : null);
   };
 
   // Format timestamp

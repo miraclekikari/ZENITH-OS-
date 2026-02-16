@@ -401,6 +401,66 @@ BEGIN;
 COMMIT;
 
 -- ============================================
+-- STORED FUNCTIONS (RPC)
+-- ============================================
+
+-- Function to increment channel member count
+CREATE OR REPLACE FUNCTION increment_channel_member_count(channel_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE channels 
+    SET member_count = (
+        SELECT COUNT(*) 
+        FROM channel_members 
+        WHERE channel_members.channel_id = channels.id
+    )
+    WHERE channels.id = increment_channel_member_count.channel_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get unread message count for a user in a channel
+CREATE OR REPLACE FUNCTION get_unread_count(channel_id UUID, user_id UUID)
+RETURNS INTEGER AS $$
+DECLARE
+    unread_count INTEGER;
+    last_read TIMESTAMP WITH TIME ZONE;
+BEGIN
+    -- Get user's last read timestamp for this channel
+    SELECT last_read_at INTO last_read
+    FROM channel_members
+    WHERE channel_members.channel_id = get_unread_count.channel_id
+    AND channel_members.user_id = get_unread_count.user_id;
+    
+    -- Count messages after last read time
+    IF last_read IS NULL THEN
+        SELECT COUNT(*) INTO unread_count
+        FROM messages
+        WHERE messages.channel_id = get_unread_count.channel_id
+        AND messages.is_deleted = FALSE;
+    ELSE
+        SELECT COUNT(*) INTO unread_count
+        FROM messages
+        WHERE messages.channel_id = get_unread_count.channel_id
+        AND messages.created_at > last_read
+        AND messages.is_deleted = FALSE;
+    END IF;
+    
+    RETURN COALESCE(unread_count, 0);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to update last read timestamp
+CREATE OR REPLACE FUNCTION update_last_read(channel_id UUID, user_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE channel_members
+    SET last_read_at = NOW()
+    WHERE channel_members.channel_id = update_last_read.channel_id
+    AND channel_members.user_id = update_last_read.user_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================
 -- VIEWS (for easier querying)
 -- ============================================
 

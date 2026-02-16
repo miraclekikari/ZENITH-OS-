@@ -16,6 +16,49 @@ const initialCommunities: CommunityType[] = [
   { id: 'c4', name: 'Off-World Tech', description: 'SpaceX & Beyond', members: 320, isPrivate: false, topic: 'Space Tech' },
 ];
 
+// Mock live streams data
+const mockLiveStreams = [
+  {
+    id: 'live1',
+    title: 'Building React Components with TypeScript',
+    streamer: 'Commander Zenith',
+    streamerAvatar: 'https://picsum.photos/seed/streamer1/100/100',
+    thumbnail: 'https://picsum.photos/seed/live1/400/225',
+    viewers: 245,
+    category: 'Development',
+    tags: ['React', 'TypeScript', 'Frontend'],
+    startedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
+    isLive: true,
+    channelId: 'c1'
+  },
+  {
+    id: 'live2',
+    title: 'Cybersecurity Best Practices 2024',
+    streamer: 'CyberPilot',
+    streamerAvatar: 'https://picsum.photos/seed/streamer2/100/100',
+    thumbnail: 'https://picsum.photos/seed/live2/400/225',
+    viewers: 189,
+    category: 'Security',
+    tags: ['Cybersecurity', 'Best Practices', '2024'],
+    startedAt: new Date(Date.now() - 1 * 60 * 60 * 1000), // 1 hour ago
+    isLive: true,
+    channelId: 'c2'
+  },
+  {
+    id: 'live3',
+    title: 'AI Model Training Workshop',
+    streamer: 'Neural Link',
+    streamerAvatar: 'https://picsum.photos/seed/streamer3/100/100',
+    thumbnail: 'https://picsum.photos/seed/live3/400/225',
+    viewers: 567,
+    category: 'AI/ML',
+    tags: ['AI', 'Machine Learning', 'Training'],
+    startedAt: new Date(Date.now() - 3 * 60 * 60 * 1000), // 3 hours ago
+    isLive: true,
+    channelId: 'c3'
+  }
+];
+
 const Community: React.FC = () => {
   const [showDM, setShowDM] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -25,7 +68,7 @@ const Community: React.FC = () => {
   const [activeCommunity, setActiveCommunity] = useState<CommunityType>(initialCommunities[0]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'feed' | 'trending'>('feed');
+  const [activeTab, setActiveTab] = useState<'feed' | 'trending' | 'live'>('feed');
   const [newSectorName, setNewSectorName] = useState('');
   const [newSectorTopic, setNewSectorTopic] = useState('');
   const [isPrivateSector, setIsPrivateSector] = useState(false);
@@ -197,6 +240,19 @@ const Community: React.FC = () => {
      alert(`Sector "${newSectorName}" established successfully.`);
   };
 
+  // Helper function to format stream duration
+  const formatDuration = (startedAt: Date) => {
+    const now = new Date();
+    const diff = now.getTime() - startedAt.getTime();
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  };
+
   // --- FILTERING ---
   const filteredPosts = useMemo(() => {
     if (!searchQuery) return posts;
@@ -335,6 +391,13 @@ const Community: React.FC = () => {
             >
               TRENDING <span className="text-[10px] align-top text-zenith-green">●</span>
             </button>
+            <button 
+              onClick={() => setActiveTab('live')}
+              className={`pb-2 border-b-2 transition-all flex items-center gap-2 ${activeTab === 'live' ? 'border-red-500 text-white' : 'border-transparent text-zenith-dim hover:text-white'}`}
+            >
+              <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+              LIVE
+            </button>
          </div>
 
          {/* --- THE FEED --- */}
@@ -342,7 +405,7 @@ const Community: React.FC = () => {
          <div className="space-y-6 max-w-2xl mx-auto px-4">
             
             {/* Loading State */}
-            {isLoading && (
+            {isLoading && activeTab !== 'live' && (
               <div className="text-center py-20">
                 <div className="inline-block w-12 h-12 border-4 border-zenith-green border-t-transparent rounded-full animate-spin mb-4"></div>
                 <div className="text-zenith-green font-mono text-sm animate-pulse">ESTABLISHING NEURAL LINK...</div>
@@ -350,7 +413,7 @@ const Community: React.FC = () => {
             )}
 
             {/* Empty State */}
-            {!isLoading && filteredPosts.length === 0 && (
+            {!isLoading && filteredPosts.length === 0 && activeTab !== 'live' && (
               <div className="glass-card p-10 text-center rounded-2xl border-dashed border border-zenith-dim/30 bg-white/5">
                 <i className="fas fa-satellite-dish text-4xl text-zenith-dim mb-4"></i>
                 <h3 className="text-white font-bold text-lg">No Signals Detected</h3>
@@ -362,7 +425,7 @@ const Community: React.FC = () => {
             )}
 
             {/* Posts Loop */}
-            {!isLoading && filteredPosts.map(post => (
+            {!isLoading && activeTab !== 'live' && filteredPosts.map(post => (
                <div key={post.id} className="w-full break-words [&_img]:max-w-full [&_img]:h-auto [&_img]:rounded-lg [&_img]:mt-2">
                  <PostCard 
                    post={post} 
@@ -380,9 +443,101 @@ const Community: React.FC = () => {
               onCommentAdded={refreshFeed}
             />
 
-            {!isLoading && filteredPosts.length > 0 && (
+            {!isLoading && filteredPosts.length > 0 && activeTab !== 'live' && (
               <div className="text-center py-10 text-zenith-dim text-xs font-mono">
                 -- END OF TRANSMISSION --
+              </div>
+            )}
+
+            {/* LIVE SECTION */}
+            {activeTab === 'live' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-2xl font-bold text-white flex items-center gap-3">
+                    <span className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></span>
+                    Live Streams
+                  </h2>
+                  <span className="text-sm text-zenith-green font-mono">
+                    {mockLiveStreams.length} streams active
+                  </span>
+                </div>
+
+                {mockLiveStreams.map(stream => (
+                  <div key={stream.id} className="glass-card rounded-xl overflow-hidden border border-zenith-greenDim/30 hover:border-zenith-green/50 transition-all group">
+                    {/* Thumbnail with Live Badge */}
+                    <div className="relative">
+                      <img 
+                        src={stream.thumbnail} 
+                        alt={stream.title}
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
+                        <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+                        LIVE
+                      </div>
+                      <div className="absolute top-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                        <i className="fas fa-eye mr-1"></i>
+                        {stream.viewers.toLocaleString()}
+                      </div>
+                      <div className="absolute bottom-3 left-3 right-3">
+                        <h3 className="text-white font-bold text-lg mb-1 line-clamp-2">
+                          {stream.title}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <img 
+                            src={stream.streamerAvatar}
+                            alt={stream.streamer}
+                            className="w-6 h-6 rounded-full border border-white/20"
+                          />
+                          <span className="text-white text-sm">{stream.streamer}</span>
+                          <span className="text-zenith-dim text-xs">
+                            • {formatDuration(stream.startedAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stream Info */}
+                    <div className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs text-zenith-green font-mono bg-zenith-green/10 px-2 py-1 rounded">
+                          {stream.category}
+                        </span>
+                        <div className="flex gap-1">
+                          {stream.tags.map(tag => (
+                            <span key={tag} className="text-xs text-zenith-dim bg-white/5 px-2 py-1 rounded">
+                              #{tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button className="flex-1 bg-zenith-primary text-white py-2 rounded-lg hover:bg-zenith-primary/80 transition-colors flex items-center justify-center gap-2">
+                          <i className="fas fa-play"></i>
+                          Watch Stream
+                        </button>
+                        <button className="p-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors">
+                          <i className="fas fa-bell"></i>
+                        </button>
+                        <button className="p-2 bg-white/10 text-white rounded-lg hover:bg-white/20 transition-colors">
+                          <i className="fas fa-share"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {mockLiveStreams.length === 0 && (
+                  <div className="glass-card p-10 text-center rounded-2xl border-dashed border border-zenith-dim/30 bg-white/5">
+                    <i className="fas fa-broadcast-tower text-4xl text-zenith-dim mb-4"></i>
+                    <h3 className="text-white font-bold text-lg">No Live Streams</h3>
+                    <p className="text-zenith-dim text-sm mt-2">No streams are currently active.</p>
+                    <button className="mt-4 px-6 py-2 bg-red-500 text-white font-bold rounded-full hover:bg-red-600 transition-colors">
+                      Start Your Own Stream
+                    </button>
+                  </div>
+                )}
               </div>
             )}
          </div>
