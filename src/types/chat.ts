@@ -1,5 +1,6 @@
 export interface Message {
   id: string;
+  channelId: string;
   text: string;
   senderId: string;
   senderName: string;
@@ -7,6 +8,7 @@ export interface Message {
   timestamp: string;
   isOwn: boolean;
   isEdited?: boolean;
+  isDeleted?: boolean;
   replyTo?: string;
   reactions?: Reaction[];
   attachments?: Attachment[];
@@ -42,6 +44,11 @@ export interface Channel {
   isPinned: boolean;
   createdAt: string;
   createdBy: string;
+  isLive?: boolean;
+  liveTitle?: string;
+  liveDescription?: string;
+  liveStartedAt?: string;
+  liveEndedAt?: string;
 }
 
 export interface ChatUser {

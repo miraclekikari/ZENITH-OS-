@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { supabase } from '../lib/supabaseClient';
 import { Message, Channel, ChatUser, TypingIndicator } from '../types/chat';
 import { DB } from './storageService';
 
@@ -326,9 +326,8 @@ class SupabaseChatService {
       timestamp: supabaseMessage.created_at,
       isEdited: supabaseMessage.is_edited,
       isDeleted: supabaseMessage.is_deleted,
+      isOwn: supabaseMessage.sender_id === currentUser.id,
       replyTo: supabaseMessage.reply_to,
-      forwardedFrom: supabaseMessage.forwarded_from,
-      forwardedChannelId: supabaseMessage.forwarded_channel_id,
       reactions: [],
       attachments: [],
     };

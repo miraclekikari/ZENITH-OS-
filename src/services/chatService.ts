@@ -89,6 +89,7 @@ class ChatService {
     
     const message: Message = {
       id: `msg_${Date.now()}_${Math.random()}`,
+      channelId,
       text,
       senderId: currentUser.id,
       senderName: currentUser.username,

@@ -22,7 +22,10 @@ import {
   faCheckDouble,
   faClock,
   faBroadcastTower,
-  faSettings
+  faCog,
+  faTimes,
+  faVolumeUp,
+  faVolumeMute
 } from '@fortawesome/free-solid-svg-icons';
 import { Message, Channel, ChatUser, TypingIndicator, SearchResult } from '../types/chat';
 import SupabaseChatService from '../services/supabaseChatService';
@@ -30,6 +33,8 @@ import { DB } from '../services/storageService';
 import EmojiPicker from '../components/EmojiPicker';
 import CallControls from '../components/CallControls';
 import GroupSettings from '../components/GroupSettings';
+import { useNotificationSound } from '../hooks/useNotificationSound';
+import { supabase } from '../lib/supabaseClient';
 
 // Mock users for demonstration
 const MOCK_USERS: ChatUser[] = [
@@ -62,10 +67,18 @@ const Chat: React.FC = () => {
   const [newChannelName, setNewChannelName] = useState('');
   const [newChannelType, setNewChannelType] = useState<'private' | 'group' | 'channel'>('private');
   const [showCallControls, setShowCallControls] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('');
+  const [globalSearchResults, setGlobalSearchResults] = useState<Message[]>([]);
+  const [isGlobalSearching, setIsGlobalSearching] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Notification sound hook
+  const { playSound } = useNotificationSound({ enabled: soundEnabled, volume: 0.3 });
 
   // Initialize
   useEffect(() => {
@@ -109,6 +122,10 @@ const Chat: React.FC = () => {
     chatService.subscribeToChannel(activeChannel.id, {
       onNewMessage: (message) => {
         setMessages(prev => [...prev, message]);
+        // Play notification sound if message is not from current user
+        if (message.senderId !== currentUser?.id) {
+          playSound();
+        }
       },
       onMessageUpdated: (message) => {
         setMessages(prev => prev.map(m => m.id === message.id ? message : m));
@@ -127,7 +144,7 @@ const Chat: React.FC = () => {
     return () => {
       chatService.unsubscribeFromChannel(activeChannel.id);
     };
-  }, [activeChannel?.id]);
+  }, [activeChannel?.id, currentUser?.id, playSound]);
 
   // Send message
   const handleSendMessage = async () => {
@@ -236,6 +253,52 @@ const Chat: React.FC = () => {
     }
   };
 
+  // Global search function
+  const handleGlobalSearch = useCallback(async (query: string) => {
+    setGlobalSearchQuery(query);
+    
+    if (query.length < 2) {
+      setGlobalSearchResults([]);
+      setIsGlobalSearching(false);
+      return;
+    }
+    
+    setIsGlobalSearching(true);
+    try {
+      // Search messages across all channels
+      const { data, error } = await supabase
+        .from('messages')
+        .select('*')
+        .ilike('text', `%${query}%`)
+        .eq('is_deleted', false)
+        .order('created_at', { ascending: false })
+        .limit(50);
+      
+      if (!error && data) {
+        const formattedResults = data.map(msg => ({
+          id: msg.id,
+          channelId: msg.channel_id,
+          senderId: msg.sender_id,
+          senderName: 'Unknown User',
+          senderAvatar: 'https://picsum.photos/seed/unknown/100/100',
+          text: msg.text,
+          timestamp: msg.created_at,
+          isEdited: msg.is_edited,
+          isDeleted: msg.is_deleted,
+          replyTo: msg.reply_to,
+          isOwn: msg.sender_id === currentUser?.id,
+          reactions: [],
+          attachments: [],
+        }));
+        setGlobalSearchResults(formattedResults);
+      }
+    } catch (error) {
+      console.error('Search failed:', error);
+    } finally {
+      setIsGlobalSearching(false);
+    }
+  }, [currentUser?.id]);
+
   // Channel update handler
   const handleChannelUpdate = (updates: Partial<Channel>) => {
     if (!activeChannel) return;
@@ -275,153 +338,70 @@ const Chat: React.FC = () => {
               type="text"
               placeholder="Search channels, messages..."
               value={searchQuery}
-              onChange={(e) => handleSearch(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-zenith-bg border border-zenith-greenDim rounded-lg focus:border-zenith-primary focus:outline-none text-sm"
             />
-            {isSearching && searchResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-1 bg-zenith-surface border border-zenith-greenDim rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-                {searchResults.map((result) => (
-                  <div
-                    key={result.id}
-                    onClick={() => {
-                      if (result.type === 'channel') {
-                        const channel = channels.find(c => c.id === result.id);
-                        if (channel) handleChannelSelect(channel);
-                      }
-                      setSearchQuery('');
-                      setIsSearching(false);
-                    }}
-                    className="p-3 hover:bg-zenith-greenDim/20 cursor-pointer border-b border-zenith-greenDim/20 last:border-0"
-                  >
-                    <div className="flex items-center gap-3">
-                      {result.avatar && (
-                        <img src={result.avatar} alt="" className="w-8 h-8 rounded-full" />
-                      )}
-                      <div>
-                        <div className="font-medium text-sm">{result.title}</div>
-                        {result.subtitle && (
-                          <div className="text-xs text-zenith-dim truncate max-w-48">
-                            {result.subtitle}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         </div>
 
         {/* Channel List */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-2">
-            <div className="flex items-center justify-between px-2 py-2">
-              <span className="text-xs font-bold text-zenith-dim uppercase tracking-wider">Channels</span>
-              <button
-                onClick={() => setShowCreateChannel(true)}
-                className="p-1.5 hover:bg-zenith-greenDim/20 rounded-lg transition-colors"
-              >
-                <FontAwesomeIcon icon={faPlus} className="text-zenith-primary text-sm" />
-              </button>
-            </div>
-            
-            {channels.map((channel) => (
-              <div
-                key={channel.id}
-                onClick={() => handleChannelSelect(channel)}
-                className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                  activeChannel?.id === channel.id 
-                    ? 'bg-zenith-primary/20 border-l-2 border-zenith-primary' 
-                    : 'hover:bg-zenith-greenDim/10'
-                }`}
-              >
-                <div className="relative">
-                  {channel.type === 'private' ? (
-                    <img
-                      src={channel.avatar || `https://picsum.photos/seed/${channel.id}/50/50`}
-                      alt=""
-                      className="w-12 h-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full bg-zenith-primary/20 flex items-center justify-center">
-                      <span className="text-lg font-bold text-zenith-primary">
-                        {channel.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
+          {channels.map((channel) => (
+            <div
+              key={channel.id}
+              onClick={() => handleChannelSelect(channel)}
+              className={`flex items-center gap-3 p-4 hover:bg-zenith-greenDim/10 cursor-pointer border-b border-zenith-greenDim/20 ${
+                activeChannel?.id === channel.id ? 'bg-zenith-greenDim/20' : ''
+              }`}
+            >
+              <div className="relative">
+                {channel.type === 'private' ? (
+                  <img
+                    src={channel.avatar || `https://picsum.photos/seed/${channel.id}/50/50`}
+                    alt=""
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-zenith-primary/20 flex items-center justify-center">
+                    <span className="text-lg font-bold text-zenith-primary">
+                      {channel.name.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                )}
+                {channel.unreadCount > 0 && (
+                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold">
+                    {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-sm truncate">{channel.name}</span>
+                  {channel.isPinned && (
+                    <FontAwesomeIcon icon={faThumbTack} className="text-zenith-primary text-xs" />
                   )}
-                  {channel.unreadCount > 0 && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center text-xs font-bold">
-                      {channel.unreadCount > 99 ? '99+' : channel.unreadCount}
-                    </div>
+                  {channel.isMuted && (
+                    <FontAwesomeIcon icon={faBellSlash} className="text-zenith-dim text-xs" />
                   )}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-sm truncate">{channel.name}</span>
-                    {channel.isPinned && (
-                      <FontAwesomeIcon icon={faThumbTack} className="text-zenith-primary text-xs" />
-                    )}
-                    {channel.isMuted && (
-                      <FontAwesomeIcon icon={faBellSlash} className="text-zenith-dim text-xs" />
-                    )}
-                  </div>
-                  <div className="text-xs text-zenith-dim truncate">
-                    {channel.lastMessage 
-                      ? `${channel.lastMessage.senderName}: ${channel.lastMessage.text.substring(0, 30)}`
-                      : channel.description || 'No messages yet'
-                    }
-                  </div>
+                <div className="text-xs text-zenith-dim truncate">
+                  {channel.description || 'No messages yet'}
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
 
-        {/* Create Channel Modal */}
-        {showCreateChannel && (
-          <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-zenith-surface border border-zenith-greenDim rounded-xl p-6 w-80">
-              <h3 className="text-lg font-bold mb-4">New Channel</h3>
-              <input
-                type="text"
-                placeholder="Channel name"
-                value={newChannelName}
-                onChange={(e) => setNewChannelName(e.target.value)}
-                className="w-full px-4 py-2 bg-zenith-bg border border-zenith-greenDim rounded-lg focus:border-zenith-primary focus:outline-none mb-4"
-              />
-              <div className="flex gap-2 mb-4">
-                {(['private', 'group', 'channel'] as const).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setNewChannelType(type)}
-                    className={`flex-1 py-2 rounded-lg text-sm capitalize ${
-                      newChannelType === type
-                        ? 'bg-zenith-primary text-black'
-                        : 'bg-zenith-bg border border-zenith-greenDim'
-                    }`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowCreateChannel(false)}
-                  className="flex-1 py-2 bg-zenith-bg border border-zenith-greenDim rounded-lg hover:bg-zenith-greenDim/20"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleCreateChannel}
-                  className="flex-1 py-2 bg-zenith-primary text-black rounded-lg hover:bg-zenith-primary/80"
-                >
-                  Create
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Create Channel Button */}
+        <div className="p-4 border-t border-zenith-greenDim/30">
+          <button
+            onClick={() => setShowCreateChannel(true)}
+            className="w-full py-2 bg-zenith-primary text-black rounded-lg hover:bg-zenith-primary/80 transition-colors flex items-center justify-center gap-2"
+          >
+            <FontAwesomeIcon icon={faPlus} />
+            Create Channel
+          </button>
+        </div>
       </div>
 
       {/* Center - Chat Area */}
@@ -429,86 +409,147 @@ const Chat: React.FC = () => {
         {activeChannel ? (
           <>
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b border-zenith-greenDim/30 bg-zenith-surface">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  {activeChannel.type === 'private' ? (
-                    <img
-                      src={activeChannel.avatar || `https://picsum.photos/seed/${activeChannel.id}/50/50`}
-                      alt=""
-                      className="w-10 h-10 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-zenith-primary/20 flex items-center justify-center">
-                      <span className="font-bold text-zenith-primary">
-                        {activeChannel.name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                  )}
+            <div className="p-4 border-b border-zenith-greenDim/30" style={{ backgroundColor: 'var(--z-surface)' }}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    {activeChannel.type === 'private' ? (
+                      <img
+                        src={activeChannel.avatar || `https://picsum.photos/seed/${activeChannel.id}/50/50`}
+                        alt=""
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-zenith-primary/20 flex items-center justify-center">
+                        <span className="font-bold text-zenith-primary">
+                          {activeChannel.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    {activeChannel.isLive && (
+                      <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse border-2 border-zenith-surface" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-bold">{activeChannel.name}</h3>
+                    <p className="text-xs text-zenith-dim">
+                      {activeChannel.members?.length || 0} members • Online
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-bold">{activeChannel.name}</h3>
-                  <p className="text-xs text-zenith-dim">
-                    {activeChannel.members.length} members • {typingUsers.length > 0 
-                      ? `${typingUsers.map(u => u.username).join(', ')} typing...`
-                      : 'Online'
-                    }
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <button className="p-2 hover:bg-zenith-greenDim/20 rounded-lg transition-colors">
-                  <FontAwesomeIcon icon={faSearch} className="text-zenith-dim" />
-                </button>
-                <button className="p-2 hover:bg-zenith-greenDim/20 rounded-lg transition-colors">
-                  <FontAwesomeIcon icon={faPhone} className="text-zenith-dim" />
-                </button>
-                <button className="p-2 hover:bg-zenith-greenDim/20 rounded-lg transition-colors">
-                  <FontAwesomeIcon icon={faVideo} className="text-zenith-dim" />
-                </button>
-                <div className="relative">
+                
+                <div className="flex items-center gap-2">
+                  {/* Search Button */}
                   <button
-                    onClick={() => setShowChannelMenu(!showChannelMenu)}
+                    onClick={() => setIsSearchVisible(!isSearchVisible)}
                     className="p-2 hover:bg-zenith-greenDim/20 rounded-lg transition-colors"
                   >
-                    <FontAwesomeIcon icon={faEllipsisH} className="text-zenith-dim" />
+                    <FontAwesomeIcon icon={faSearch} className="text-zenith-dim" />
                   </button>
-                  {showChannelMenu && (
-                    <div className="absolute right-0 top-full mt-1 bg-zenith-surface border border-zenith-greenDim rounded-lg shadow-lg z-50 w-48">
-                      <button
-                        onClick={() => {
-                          activeChannel.isMuted = !activeChannel.isMuted;
-                          setShowChannelMenu(false);
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-zenith-greenDim/20 flex items-center gap-3"
-                      >
-                        <FontAwesomeIcon icon={activeChannel.isMuted ? faBell : faBellSlash} />
-                        {activeChannel.isMuted ? 'Unmute' : 'Mute'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          activeChannel.isPinned = !activeChannel.isPinned;
-                          setShowChannelMenu(false);
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-zenith-greenDim/20 flex items-center gap-3"
-                      >
-                        <FontAwesomeIcon icon={faThumbTack} />
-                        {activeChannel.isPinned ? 'Unpin' : 'Pin'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          chatService.leaveChannel(activeChannel.id);
-                          setShowChannelMenu(false);
-                        }}
-                        className="w-full px-4 py-2 text-left hover:bg-red-500/20 text-red-400 flex items-center gap-3"
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                        Leave Channel
-                      </button>
+                  
+                  {/* Call Controls */}
+                  <button
+                    onClick={() => setShowCallControls(true)}
+                    className="p-2 hover:bg-zenith-greenDim/20 rounded-lg transition-colors"
+                    title="Start Voice Call"
+                  >
+                    <FontAwesomeIcon icon={faPhone} className="text-zenith-dim" />
+                  </button>
+                  <button
+                    onClick={() => setShowCallControls(true)}
+                    className="p-2 hover:bg-zenith-greenDim/20 rounded-lg transition-colors"
+                    title="Start Video Call"
+                  >
+                    <FontAwesomeIcon icon={faVideo} className="text-zenith-dim" />
+                  </button>
+                  
+                  {/* Settings */}
+                  <button
+                    onClick={() => setShowGroupSettings(true)}
+                    className="p-2 hover:bg-zenith-greenDim/20 rounded-lg transition-colors"
+                  >
+                    <FontAwesomeIcon icon={faCog} className="text-zenith-dim" />
+                  </button>
+                  
+                  {/* Sound Toggle */}
+                  <button
+                    onClick={() => setSoundEnabled(!soundEnabled)}
+                    className="p-2 hover:bg-zenith-greenDim/20 rounded-lg transition-colors"
+                    title={soundEnabled ? 'Mute notifications' : 'Enable notifications'}
+                  >
+                    <FontAwesomeIcon 
+                      icon={soundEnabled ? faVolumeUp : faVolumeMute} 
+                      className={soundEnabled ? 'text-zenith-primary' : 'text-zenith-dim'} 
+                    />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Search Bar */}
+              {isSearchVisible && (
+                <div className="mt-3">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={globalSearchQuery}
+                      onChange={(e) => handleGlobalSearch(e.target.value)}
+                      placeholder="Search messages in all channels..."
+                      className="w-full px-4 py-2 pl-10 bg-zenith-bg border border-zenith-greenDim rounded-lg text-zenith-primary focus:border-zenith-primary focus:outline-none"
+                    />
+                    <FontAwesomeIcon 
+                      icon={faSearch} 
+                      className="absolute left-3 top-3 text-zenith-dim"
+                    />
+                    {isGlobalSearching && (
+                      <div className="absolute right-3 top-3">
+                        <div className="w-4 h-4 border-2 border-zenith-primary border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Search Results */}
+                  {globalSearchResults.length > 0 && (
+                    <div className="mt-2 max-h-60 overflow-y-auto bg-zenith-surface border border-zenith-greenDim rounded-lg">
+                      {globalSearchResults.map(result => (
+                        <div
+                          key={result.id}
+                          className="p-3 hover:bg-zenith-greenDim/10 cursor-pointer border-b border-zenith-greenDim/20 last:border-b-0"
+                          onClick={() => {
+                            const channel = channels.find(ch => ch.id === result.channelId);
+                            if (channel) {
+                              handleChannelSelect(channel);
+                              setIsSearchVisible(false);
+                              setGlobalSearchQuery('');
+                              setGlobalSearchResults([]);
+                            }
+                          }}
+                        >
+                          <div className="flex items-start gap-2">
+                            <img
+                              src={result.senderAvatar}
+                              alt=""
+                              className="w-6 h-6 rounded-full flex-shrink-0"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-medium text-zenith-primary">
+                                  {result.senderName}
+                                </span>
+                                <span className="text-xs text-zenith-dim">
+                                  {formatTime(result.timestamp)}
+                                </span>
+                              </div>
+                              <p className="text-sm text-zenith-primary truncate">
+                                {result.text}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Messages */}
@@ -565,25 +606,6 @@ const Chat: React.FC = () => {
                           {message.isEdited && <span className="text-xs text-zenith-dim">edited</span>}
                         </div>
                         
-                        {/* Reactions */}
-                        {message.reactions && message.reactions.length > 0 && (
-                          <div className="flex gap-1 mt-1">
-                            {message.reactions.map((reaction) => (
-                              <button
-                                key={reaction.emoji}
-                                onClick={() => handleReaction(message.id, reaction.emoji)}
-                                className={`px-2 py-0.5 rounded-full text-xs ${
-                                  reaction.users.includes(currentUser?.id || 'u1')
-                                    ? 'bg-zenith-primary/30 border border-zenith-primary'
-                                    : 'bg-zenith-greenDim/20'
-                                }`}
-                              >
-                                {reaction.emoji} {reaction.count}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                        
                         {/* Message Actions */}
                         {selectedMessage === message.id && (
                           <div className={`flex gap-1 mt-2 ${message.isOwn ? 'justify-end' : 'justify-start'}`}>
@@ -624,7 +646,7 @@ const Chat: React.FC = () => {
             </div>
 
             {/* Input Area */}
-            <div className="p-4 border-t border-zenith-greenDim/30 bg-zenith-surface">
+            <div className="p-4 border-t border-zenith-greenDim/30" style={{ backgroundColor: 'var(--z-surface)' }}>
               {replyingTo && (
                 <div className="flex items-center justify-between bg-zenith-greenDim/20 px-4 py-2 rounded-t-lg mb-2">
                   <span className="text-sm text-zenith-dim">
@@ -653,12 +675,7 @@ const Chat: React.FC = () => {
                     ref={inputRef}
                     value={inputText}
                     onChange={handleInputChange}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
+                    onKeyDown={handleKeyPress}
                     placeholder="Type a message..."
                     rows={1}
                     className="w-full px-4 py-2 bg-zenith-bg border border-zenith-greenDim rounded-lg focus:border-zenith-primary focus:outline-none resize-none max-h-32"
@@ -691,6 +708,33 @@ const Chat: React.FC = () => {
           </div>
         )}
       </div>
+      
+      {/* Emoji Picker */}
+      {showEmojiPicker && (
+        <EmojiPicker
+          onEmojiSelect={handleEmojiSelect}
+          onStickerSelect={handleStickerSelect}
+          onClose={() => setShowEmojiPicker(false)}
+        />
+      )}
+      
+      {/* Call Controls */}
+      {showCallControls && activeChannel && (
+        <CallControls
+          channelId={activeChannel.id}
+          channelName={activeChannel.name}
+          onClose={() => setShowCallControls(false)}
+        />
+      )}
+      
+      {/* Group Settings */}
+      {showGroupSettings && activeChannel && (
+        <GroupSettings
+          channel={activeChannel}
+          onClose={() => setShowGroupSettings(false)}
+          onUpdate={handleChannelUpdate}
+        />
+      )}
     </div>
   );
 };

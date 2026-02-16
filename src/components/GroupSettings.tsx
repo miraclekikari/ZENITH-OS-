@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes, faBroadcastTower, faUsers, faSettings, faLock, faGlobe, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faBroadcastTower, faUsers, faCog, faLock, faGlobe, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import { Channel } from '../types/chat';
 
 interface GroupSettingsProps {
@@ -13,6 +13,7 @@ const GroupSettings: React.FC<GroupSettingsProps> = ({ channel, onClose, onUpdat
   const [isLive, setIsLive] = useState(false);
   const [liveTitle, setLiveTitle] = useState('');
   const [liveDescription, setLiveDescription] = useState('');
+  const [newChannelType, setNewChannelType] = useState<'private' | 'group' | 'channel'>(channel.type);
   const [channelName, setChannelName] = useState(channel.name);
   const [channelDescription, setChannelDescription] = useState(channel.description || '');
   const [isPrivate, setIsPrivate] = useState(channel.type === 'private');
@@ -60,7 +61,7 @@ const GroupSettings: React.FC<GroupSettingsProps> = ({ channel, onClose, onUpdat
     const updates = {
       name: channelName.trim(),
       description: channelDescription.trim(),
-      type: isPrivate ? 'private' : 'channel' as const,
+      type: newChannelType,
     };
     
     onUpdate(updates);
@@ -73,7 +74,7 @@ const GroupSettings: React.FC<GroupSettingsProps> = ({ channel, onClose, onUpdat
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-zenith-greenDim">
           <h3 className="font-semibold text-zenith-primary flex items-center gap-2">
-            <FontAwesomeIcon icon={faSettings} />
+            <FontAwesomeIcon icon={faCog} />
             Group Settings
           </h3>
           <button
