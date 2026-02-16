@@ -46,26 +46,81 @@ const ContactsModal: React.FC<ContactsModalProps> = ({ isOpen, onClose, onSelect
       const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
       if (!currentUser.id) return;
 
-      // Fetch all profiles except current user
-      const { data, error } = await supabase
-        .from('chat_profiles')
-        .select('*')
-        .neq('id', currentUser.id)
-        .order('username');
+      // Mock contacts for demonstration
+      const mockContacts: Contact[] = [
+        {
+          id: 'u1',
+          username: 'Commander',
+          full_name: 'Commander Zenith',
+          avatar_url: 'https://picsum.photos/seed/u1/200/200',
+          is_online: true,
+          last_seen: new Date().toISOString(),
+          bio: 'Admin of ZENITH OS'
+        },
+        {
+          id: 'u2',
+          username: 'CyberPilot',
+          full_name: 'Cyber Pilot',
+          avatar_url: 'https://picsum.photos/seed/u2/200/200',
+          is_online: true,
+          last_seen: new Date(Date.now() - 300000).toISOString(),
+          bio: 'Tech enthusiast'
+        },
+        {
+          id: 'u3',
+          username: 'NeuralLink',
+          full_name: 'Neural Link',
+          avatar_url: 'https://picsum.photos/seed/u3/200/200',
+          is_online: false,
+          last_seen: new Date(Date.now() - 3600000).toISOString(),
+          bio: 'AI researcher'
+        },
+        {
+          id: 'u4',
+          username: 'Quantum',
+          full_name: 'Quantum User',
+          avatar_url: 'https://picsum.photos/seed/u4/200/200',
+          is_online: true,
+          last_seen: new Date(Date.now() - 600000).toISOString(),
+          bio: 'Developer'
+        },
+        {
+          id: 'u5',
+          username: 'StarGazer',
+          full_name: 'Star Gazer',
+          avatar_url: 'https://picsum.photos/seed/u5/200/200',
+          is_online: false,
+          last_seen: new Date(Date.now() - 7200000).toISOString(),
+          bio: 'Astronomy enthusiast'
+        }
+      ];
 
-      if (error) throw error;
+      // Try to fetch from database first, fallback to mock
+      try {
+        const { data, error } = await supabase
+          .from('chat_profiles')
+          .select('*')
+          .neq('id', currentUser.id)
+          .order('username');
 
-      const transformedContacts: Contact[] = (data || []).map(profile => ({
-        id: profile.id,
-        username: profile.username,
-        full_name: profile.full_name || profile.username,
-        avatar_url: profile.avatar_url,
-        is_online: Math.random() > 0.5, // Simulated online status
-        last_seen: profile.updated_at,
-        bio: profile.bio
-      }));
-
-      setContacts(transformedContacts);
+        if (!error && data && data.length > 0) {
+          const transformedContacts: Contact[] = data.map(profile => ({
+            id: profile.id,
+            username: profile.username,
+            full_name: profile.full_name || profile.username,
+            avatar_url: profile.avatar_url,
+            is_online: Math.random() > 0.5,
+            last_seen: profile.updated_at,
+            bio: profile.bio
+          }));
+          setContacts(transformedContacts);
+        } else {
+          setContacts(mockContacts);
+        }
+      } catch (dbError) {
+        console.log('Database fetch failed, using mock contacts:', dbError);
+        setContacts(mockContacts);
+      }
     } catch (error) {
       console.error('Error fetching contacts:', error);
     } finally {

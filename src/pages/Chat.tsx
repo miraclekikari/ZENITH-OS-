@@ -25,7 +25,8 @@ import {
   faCog,
   faTimes,
   faVolumeUp,
-  faVolumeMute
+  faVolumeMute,
+  faComment
 } from '@fortawesome/free-solid-svg-icons';
 import { Message, Channel, ChatUser, TypingIndicator, SearchResult } from '../types/chat';
 import SupabaseChatService from '../services/supabaseChatService';
@@ -45,6 +46,96 @@ const MOCK_USERS: ChatUser[] = [
   { id: 'u2', username: 'CyberPilot', fullName: 'Cyber Pilot', avatar: 'https://picsum.photos/seed/u2/200/200', status: 'away', bio: 'Tech enthusiast', isVerified: false },
   { id: 'u3', username: 'NeuralLink', fullName: 'Neural Link', avatar: 'https://picsum.photos/seed/u3/200/200', status: 'offline', bio: 'AI researcher', isVerified: true },
   { id: 'u4', username: 'Quantum', fullName: 'Quantum User', avatar: 'https://picsum.photos/seed/u4/200/200', status: 'online', bio: 'Developer', isVerified: false },
+];
+
+// Mock messages for demonstration
+const MOCK_MESSAGES: Message[] = [
+  {
+    id: 'm1',
+    channelId: 'general',
+    senderId: 'u1',
+    senderName: 'Commander Zenith',
+    senderAvatar: 'https://picsum.photos/seed/u1/200/200',
+    text: 'Welcome to ZENITH OS Chat! 🚀',
+    timestamp: new Date(Date.now() - 3600000).toISOString(),
+    isOwn: false
+  },
+  {
+    id: 'm2',
+    channelId: 'general',
+    senderId: 'u2',
+    senderName: 'Cyber Pilot',
+    senderAvatar: 'https://picsum.photos/seed/u2/200/200',
+    text: 'This is amazing! The interface looks great.',
+    timestamp: new Date(Date.now() - 1800000).toISOString(),
+    isOwn: false
+  },
+  {
+    id: 'm3',
+    channelId: 'general',
+    senderId: 'u3',
+    senderName: 'Neural Link',
+    senderAvatar: 'https://picsum.photos/seed/u3/200/200',
+    text: 'Love the real-time features! 💯',
+    timestamp: new Date(Date.now() - 600000).toISOString(),
+    isOwn: false
+  },
+  {
+    id: 'm4',
+    channelId: 'tech',
+    senderId: 'u4',
+    senderName: 'Quantum',
+    senderAvatar: 'https://picsum.photos/seed/u4/200/200',
+    text: 'The WebRTC integration is working perfectly!',
+    timestamp: new Date(Date.now() - 300000).toISOString(),
+    isOwn: false
+  }
+];
+
+// Mock channels for demonstration
+const MOCK_CHANNELS: Channel[] = [
+  {
+    id: 'general',
+    name: 'General',
+    type: 'channel',
+    description: 'General discussion channel',
+    avatar: 'https://picsum.photos/seed/general/50/50',
+    members: ['u1', 'u2', 'u3', 'u4'],
+    admins: ['u1'],
+    unreadCount: 3,
+    isPinned: true,
+    isMuted: false,
+    createdAt: new Date().toISOString(),
+    createdBy: 'u1'
+  },
+  {
+    id: 'random',
+    name: 'Random',
+    type: 'channel',
+    description: 'Random conversations',
+    avatar: 'https://picsum.photos/seed/random/50/50',
+    members: ['u1', 'u2', 'u3'],
+    admins: ['u1'],
+    unreadCount: 0,
+    isPinned: false,
+    isMuted: false,
+    createdAt: new Date().toISOString(),
+    createdBy: 'u1'
+  },
+  {
+    id: 'tech',
+    name: 'Tech Talk',
+    type: 'channel',
+    description: 'Technology discussions',
+    avatar: 'https://picsum.photos/seed/tech/50/50',
+    members: ['u1', 'u2', 'u4'],
+    admins: ['u1', 'u2'],
+    unreadCount: 1,
+    isPinned: false,
+    isMuted: false,
+    createdAt: new Date().toISOString(),
+    createdBy: 'u1'
+  }
 ];
 
 const Chat: React.FC = () => {
@@ -91,19 +182,35 @@ const Chat: React.FC = () => {
     
     const initializeChat = async () => {
       try {
-        // Create default channels if they don't exist
-        await chatService.createDefaultChannels();
-        
-        // Load user's channels
+        // Try to load user's channels from database
         const userChannels = await chatService.getChannels(currentUser.id);
-        setChannels(userChannels);
         
-        // Select first channel if none selected
-        if (userChannels.length > 0 && !activeChannel) {
-          handleChannelSelect(userChannels[0]);
+        // If no channels exist, use mock channels
+        if (userChannels.length === 0) {
+          console.log('No channels found, using mock channels');
+          setChannels(MOCK_CHANNELS);
+          if (MOCK_CHANNELS.length > 0 && !activeChannel) {
+            handleChannelSelect(MOCK_CHANNELS[0]);
+          }
+          // Load mock messages
+          const mockMessages = MOCK_MESSAGES.filter(msg => msg.channelId === MOCK_CHANNELS[0].id);
+          setMessages(mockMessages);
+        } else {
+          setChannels(userChannels);
+          if (userChannels.length > 0 && !activeChannel) {
+            handleChannelSelect(userChannels[0]);
+          }
         }
+        
+        // Create default channels in background
+        await chatService.createDefaultChannels();
       } catch (error) {
-        console.error('Failed to initialize chat:', error);
+        console.error('Failed to initialize chat, using mock channels:', error);
+        // Fallback to mock channels
+        setChannels(MOCK_CHANNELS);
+        if (MOCK_CHANNELS.length > 0 && !activeChannel) {
+          handleChannelSelect(MOCK_CHANNELS[0]);
+        }
       }
     };
     
@@ -879,6 +986,18 @@ const Chat: React.FC = () => {
           onCallEnd={() => setShowCallManager(false)}
         />
       )}
+      
+      {/* Floating New Discussion Button - WhatsApp Style */}
+      <button
+        onClick={() => setShowContacts(true)}
+        className="fixed bottom-6 right-6 w-14 h-14 bg-zenith-primary text-black rounded-full shadow-lg hover:bg-zenith-primary/80 transition-all duration-200 flex items-center justify-center group hover:scale-110 z-40"
+        title="New Discussion"
+      >
+        <FontAwesomeIcon icon={faComment} className="text-xl" />
+        <div className="absolute bottom-full mb-2 px-3 py-1 bg-gray-800 text-white text-sm rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+          New Discussion
+        </div>
+      </button>
     </div>
   );
 };
