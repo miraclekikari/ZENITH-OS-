@@ -109,6 +109,7 @@ interface ThemeSettings {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [currentTheme, setCurrentTheme] = useState(THEMES.ZENITH_DEFAULT);
+  const [currentThemeName, setCurrentThemeName] = useState<keyof typeof THEMES>('ZENITH_DEFAULT');
   const [themeSettings, setThemeSettings] = useState<ThemeSettings>({
     autoSwitch: false,
     timeBased: false,
@@ -181,27 +182,32 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const root = document.documentElement;
     const finalTheme = { ...theme, ...customTheme };
     
+    // Appliquer toutes les variables CSS au niveau racine
     Object.entries(finalTheme).forEach(([key, value]) => {
       root.style.setProperty(key, value as string);
     });
+    
+    // Appliquer le thème au body pour une couverture complète
+    root.className = `theme-${currentThemeName}`;
+    document.body.className = `theme-${currentThemeName} ${themeSettings.animations ? 'animations-enabled' : ''}`;
     
     // Animation de transition
     if (themeSettings.animations) {
       root.style.setProperty('--theme-transition', 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)');
     }
     
+    // Sauvegarder
     DB.saveTheme(theme);
     DB.saveThemeSettings(themeSettings);
-  }, [customTheme, themeSettings.animations]);
+  }, [customTheme, themeSettings.animations, currentThemeName]);
 
   const changeTheme = useCallback((themeName: keyof typeof THEMES) => {
     setCurrentTheme(THEMES[themeName]);
+    setCurrentThemeName(themeName);
     
-    // Effet sonore simulé (optionnel)
     if (themeSettings.animations) {
       const audio = new Audio();
       audio.volume = 0.1;
-      // Simuler un son de transition
     }
   }, [themeSettings.animations]);
 

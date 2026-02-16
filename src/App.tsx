@@ -6,7 +6,7 @@ import { ThemeProvider } from './context/ThemeContext';
 import { DB } from './services/storageService';
 
 // Lazy loading des composants lourds
-const Academy = lazy(() => import('./pages/Academy'));
+const Chat = lazy(() => import('./pages/Chat'));
 const Community = lazy(() => import('./pages/Community'));
 const Lab = lazy(() => import('./pages/Lab'));
 const Profile = lazy(() => import('./pages/Profile'));
@@ -56,7 +56,8 @@ const App: React.FC = () => {
                 <Route path="/lab" element={<Lab />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/:username" element={<UserProfile />} />
-                <Route path="/academy" element={<Academy />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/academy" element={<Navigate to="/chat" replace />} />
                 <Route path="/settings" element={<Settings />} />
                 <Route path="/admin" element={<AdminPanel />} />
                 <Route path="/support" element={<Support />} />

@@ -5,16 +5,31 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Variables CSS personnalisées */
+/* Variables CSS personnalisées - Thème par défaut */
 :root {
-  --z-primary: #00ffcc;
+  /* Couleurs principales */
+  --z-primary: #00ff88;
   --z-secondary: #ff3333;
   --z-background: #050505;
-  --z-surface: rgba(5, 5, 5, 0.8);
-  --z-border: rgba(0, 255, 204, 0.3);
+  --z-surface: #0a0e14;
+  --z-surface-light: rgba(13, 17, 23, 0.7);
+  --z-border: rgba(0, 255, 136, 0.3);
   --z-green: #00ff88;
   --z-green-dim: rgba(0, 255, 136, 0.3);
   --z-dim: #666666;
+  --z-text: #e6edf3;
+  
+  /* Variables du système de thème */
+  --z-bg: #05070a;
+  --z-glass: rgba(13, 17, 23, 0.7);
+  --z-primary-dim: rgba(0, 255, 136, 0.15);
+  --z-gradient: linear-gradient(135deg, #00ff88, #00ccff);
+  --z-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+  --animation-speed: 0.3s;
+  
+  /* Application automatique du thème */
+  background-color: var(--z-bg);
+  color: var(--z-text);
 }
 
 /* CORRECTION RESPONSIVE : On force le respect de la largeur écran */

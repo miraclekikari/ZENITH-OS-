@@ -29,6 +29,19 @@ export const DB = {
     const t = localStorage.getItem('zenith_theme');
     return t ? JSON.parse(t) : null;
   },
+  
+  // Generic Data Persistence
+  saveData: (key: string, data: any) => {
+    localStorage.setItem(key, JSON.stringify(data));
+  },
+  getData: (key: string) => {
+    const d = localStorage.getItem(key);
+    return d ? JSON.parse(d) : null;
+  },
+  removeData: (key: string) => {
+    localStorage.removeItem(key);
+  },
+  
   getThemeSettings: () => {
     const t = localStorage.getItem('zenith_theme_settings');
     return t ? JSON.parse(t) : null;
