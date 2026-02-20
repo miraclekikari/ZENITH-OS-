@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import { Message, Channel, ChatUser, TypingIndicator } from '../types/chat';
-import { DB } from './storageService';
+import { getUser } from './storageService';
 
 export interface SupabaseChannel {
   id: string;
@@ -55,7 +55,7 @@ class SupabaseChatService {
   // === CHANNEL MANAGEMENT ===
   
   async createChannel(data: Partial<Channel>): Promise<Channel> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) throw new Error('User not authenticated');
 
     const { data: channel, error } = await supabase
@@ -107,14 +107,14 @@ class SupabaseChatService {
   }
 
   async joinChannel(channelId: string): Promise<void> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) throw new Error('User not authenticated');
 
     await this.addMember(channelId, currentUser.id, 'member');
   }
 
   async leaveChannel(channelId: string): Promise<void> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) throw new Error('User not authenticated');
 
     const { error } = await supabase
@@ -148,7 +148,7 @@ class SupabaseChatService {
   // === MESSAGE MANAGEMENT ===
   
   async sendMessage(channelId: string, text: string, replyTo?: string): Promise<Message> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) throw new Error('User not authenticated');
 
     const { data: message, error } = await supabase
@@ -180,12 +180,12 @@ class SupabaseChatService {
 
     if (error) throw error;
 
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     return messages?.reverse().map(msg => this.mapSupabaseMessageToMessage(msg, currentUser)) || [];
   }
 
   async editMessage(messageId: string, newText: string): Promise<void> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) throw new Error('User not authenticated');
 
     const { error } = await supabase
@@ -202,7 +202,7 @@ class SupabaseChatService {
   }
 
   async deleteMessage(messageId: string): Promise<void> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) throw new Error('User not authenticated');
 
     const { error } = await supabase
@@ -239,7 +239,7 @@ class SupabaseChatService {
           filter: `channel_id=eq.${channelId}`
         }, 
         async (payload) => {
-          const currentUser = DB.getUser();
+          const currentUser = getUser();
           if (currentUser) {
             const message = this.mapSupabaseMessageToMessage(payload.new as SupabaseMessage, currentUser);
             callbacks.onNewMessage(message);
@@ -254,7 +254,7 @@ class SupabaseChatService {
           filter: `channel_id=eq.${channelId}`
         },
         async (payload) => {
-          const currentUser = DB.getUser();
+          const currentUser = getUser();
           if (currentUser) {
             const message = this.mapSupabaseMessageToMessage(payload.new as SupabaseMessage, currentUser);
             callbacks.onMessageUpdated(message);
@@ -336,7 +336,7 @@ class SupabaseChatService {
   // === DEFAULT CHANNELS CREATION ===
   
   async createDefaultChannels(): Promise<void> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) return;
 
     const defaultChannels = [
