@@ -49,7 +49,6 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
   return (
     <div className="flex h-screen bg-zenith-bg text-zenith-text font-mono overflow-hidden">
       
-      {/* Sidebar (Desktop) - Enhanced Dynamic Width */}
       <aside className="hidden md:flex flex-col w-16 hover:w-64 transition-all duration-400 cubic-bezier(0.4, 0, 0.2, 1) bg-zenith-surface border-r border-zenith-greenDim z-50 group shadow-[5px_0_30px_rgba(0,0,0,0.5)]">
         <div className="p-5 flex items-center gap-3 overflow-hidden whitespace-nowrap">
           <i className="fas fa-microchip text-2xl text-zenith-green"></i>
@@ -79,16 +78,21 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
         </nav>
 
         <div className="p-4 border-t border-zenith-greenDim text-xs text-center text-zenith-dim whitespace-nowrap overflow-hidden">
-          <span className="group-hover:inline hidden">
-            {user?.role === 'ROOT' ? 'ROOT ACCESS GRANTED' : 'v7.0 TITAN • ONLINE'}
-          </span>
-          <span className="group-hover:hidden">v7.0</span>
+          <button 
+            onClick={() => setIsPlaying(!isPlaying)} 
+            className="w-full text-left p-2 rounded-md hover:bg-zenith-greenDim/20 flex items-center gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <Icon icon={isPlaying ? 'fa-pause-circle' : 'fa-play-circle'} className={`fas ${isPlaying ? 'fa-pause-circle text-zenith-green' : 'fa-play-circle'} text-lg w-6 text-center`} />
+            <span className="text-sm font-semibold">{isPlaying ? 'Pause Radio' : 'Play Radio'}</span>
+          </button>
+          <div className='mt-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
+             {user?.role === 'ROOT' ? 'ROOT ACCESS' : 'v7.0 TITAN'}
+          </div>
+           <div className='mt-2 opacity-100 group-hover:opacity-0 transition-opacity duration-300'>v7.0</div>
         </div>
       </aside>
 
       {/* Main Content Area */}
       <main className="flex-1 flex flex-col relative overflow-hidden bg-[radial-gradient(circle_at_center,_#0a0e14_0%,_#05070a_100%)]">
-        {/* Header */}
         <header className="h-20 border-b border-zenith-greenDim flex items-center justify-between px-6 md:px-8 bg-zenith-bg/80 backdrop-blur-md z-40">
           <div className="flex items-center gap-4">
              <Icon icon={navItems.find(n => n.path === location.pathname)?.icon || 'fa-satellite'} className={`fas ${navItems.find(n => n.path === location.pathname)?.icon || 'fa-satellite'} text-2xl text-zenith-green`} />
@@ -103,10 +107,8 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
           <div className="flex items-center gap-4">
             <ProfileSearch />
             
-            {/* Notification Dropdown */}
             {isAuthenticated && <NotificationDropdown />}
             
-            {/* Support Button */}
             <button
               onClick={() => navigate('/support')}
               className="px-3 py-2 bg-purple-600 text-white font-bold rounded-full text-sm hover:bg-purple-500 hover:shadow-[0_0_15px_rgba(147,51,234,0.8)] transition-all flex items-center gap-2 border border-purple-400"
@@ -115,7 +117,6 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
               <span className="hidden md:inline">SUPPORT</span>
             </button>
             
-            {/* Auth Button or Profile */}
             {!isAuthenticated ? (
               <button
                 onClick={() => navigate('/login')}
@@ -142,28 +143,13 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
           </div>
         </header>
 
-        {/* Scrollable Page Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-8 pb-32 scroll-smooth">
            {children}
         </div>
 
-        {/* Persistent Music Player */}
-        <div className="absolute bottom-20 md:bottom-8 right-4 md:right-8 glass-card p-3 rounded-xl z-50 flex items-center gap-4 w-64 backdrop-blur-md hover:scale-105 transition-transform">
-          <div className="w-10 h-10 bg-zenith-green rounded flex items-center justify-center text-black animate-pulse-fast shadow-[0_0_15px_rgba(0,255,136,0.5)]">
-            <i className="fas fa-music"></i>
-          </div>
-          <div className="flex-1 overflow-hidden">
-             <div className="text-xs text-zenith-green font-bold whitespace-nowrap">Lofi Coding Radio</div>
-             <div className="text-[10px] text-zenith-dim">Zenith Core FM 99.9</div>
-          </div>
-          <button onClick={() => setIsPlaying(!isPlaying)} className="text-zenith-text hover:text-zenith-green text-xl w-8">
-            <i className={`fas ${isPlaying ? 'fa-pause' : 'fa-play'}`}></i>
-          </button>
-          <audio id="bg-music" src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_04_-_Sentinel.mp3" loop></audio>
-        </div>
+        <audio id="bg-music" src="https://files.freemusicarchive.org/storage-freemusicarchive-org/music/ccCommunity/Kai_Engel/Satin/Kai_Engel_-_04_-_Sentinel.mp3" loop></audio>
       </main>
 
-      {/* Mobile Bottom Nav */}
       <nav className="md:hidden h-20 bg-zenith-surface border-t border-zenith-greenDim fixed bottom-0 w-full flex justify-around items-center z-50 pb-2 shadow-[0_-10px_30px_rgba(0,0,0,0.5)]">
         {navItems.map((item) => (
           <Link 
