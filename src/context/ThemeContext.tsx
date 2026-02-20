@@ -3,6 +3,28 @@ import { DB } from '../services/storageService';
 
 // Thèmes avancés avec gradients et animations
 export const THEMES = {
+  LIGHT: {
+    '--z-bg': '#ffffff',
+    '--z-surface': '#f0f2f5',
+    '--z-glass': 'rgba(255, 255, 255, 0.7)',
+    '--z-primary': '#007bff',
+    '--z-primary-dim': 'rgba(0, 123, 255, 0.1)',
+    '--z-text': '#000000',
+    '--z-gradient': 'linear-gradient(135deg, #007bff, #0056b3)',
+    '--z-shadow': '0 0 20px rgba(0, 123, 255, 0.3)',
+    '--animation-speed': '0.3s'
+  },
+  DARK: {
+    '--z-bg': '#121212',
+    '--z-surface': '#1e1e1e',
+    '--z-glass': 'rgba(30, 30, 30, 0.7)',
+    '--z-primary': '#bb86fc',
+    '--z-primary-dim': 'rgba(187, 134, 252, 0.1)',
+    '--z-text': '#ffffff',
+    '--z-gradient': 'linear-gradient(135deg, #bb86fc, #3700b3)',
+    '--z-shadow': '0 0 20px rgba(187, 134, 252, 0.3)',
+    '--animation-speed': '0.3s'
+  },
   ZENITH_DEFAULT: {
     '--z-bg': '#05070a',
     '--z-surface': '#0a0e14',

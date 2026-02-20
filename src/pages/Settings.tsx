@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme, THEMES } from '../context/ThemeContext';
 import { DB } from '../services/storageService';
+import ThemeSwitcher from '../components/ThemeSwitcher';
 
 interface NotificationSettings {
   privateChats: boolean;
@@ -255,6 +256,8 @@ const Settings: React.FC = () => {
                   Theme Engine
                 </h3>
                 
+                <ThemeSwitcher />
+
                 {/* Theme Presets */}
                 <div className="mb-8">
                   <h4 className="text-lg font-bold text-white mb-4">Theme Presets</h4>

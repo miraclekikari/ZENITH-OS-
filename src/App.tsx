@@ -11,7 +11,7 @@ const Community = lazy(() => import('./pages/Community'));
 const Lab = lazy(() => import('./pages/Lab'));
 const Profile = lazy(() => import('./pages/Profile'));
 const UserProfile = lazy(() => import('./pages/UserProfile'));
-const Publish = lazy(() => import('./pages/Publish'));
+const Studio = lazy(() => import('./pages/Studio'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Login = lazy(() => import('./pages/Login'));
 const AdminPanel = lazy(() => import('./pages/AdminPanel'));
@@ -57,7 +57,7 @@ const App: React.FC = () => {
               <Routes>
                 <Route path="/" element={<Community />} />
                 <Route path="/community" element={<Community />} />
-                <Route path="/publish" element={<Publish />} />
+                <Route path="/studio" element={<Studio />} />
                 <Route path="/lab" element={<Lab />} />
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/:username" element={<UserProfile />} />
