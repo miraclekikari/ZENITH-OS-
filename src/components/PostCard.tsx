@@ -35,17 +35,17 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment }) => {
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center gap-4">
             <button onClick={() => onLike(post.id)} className={`transition-transform transform active:scale-75 ${post.isLiked ? 'text-red-500' : 'text-white'}`}>
-                <Icon icon={post.isLiked ? 'fa-heart' : 'fa-heart-o'} className="text-2xl" solid={post.isLiked} />
+                <Icon icon={post.isLiked ? 'heart-solid' : 'heart-regular'} className="text-2xl" />
             </button>
             <button onClick={() => onComment(post.id)} className="text-white">
-                <Icon icon="fa-comment-o" className="text-2xl" />
+                <Icon icon="comment-regular" className="text-2xl" />
             </button>
             <button className="text-white">
-                <Icon icon="fa-paper-plane-o" className="text-2xl" />
+                <Icon icon="paper-plane-regular" className="text-2xl" />
             </button>
         </div>
         <button className="text-white">
-            <Icon icon="fa-bookmark-o" className="text-2xl" />
+            <Icon icon="bookmark-regular" className="text-2xl" />
         </button>
       </div>
 

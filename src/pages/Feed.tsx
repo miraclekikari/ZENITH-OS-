@@ -65,7 +65,7 @@ const Feed: React.FC = () => {
   }, [posts]);
 
   if (isLoading) {
-    return <div className="w-full h-full flex items-center justify-center bg-black"><Icon icon="fa-spinner" className="animate-spin text-4xl text-white"/></div>;
+    return <div className="w-full h-full flex items-center justify-center bg-black"><Icon icon="spinner" spin={true} className="text-4xl text-white"/></div>;
   }
 
   return (
@@ -74,9 +74,15 @@ const Feed: React.FC = () => {
         <header className="hidden md:flex items-center justify-between p-4 border-b border-gray-800">
             <h1 className="font-tech text-2xl text-white tracking-widest">ZENITH FEED</h1>
             <div className="flex items-center gap-4">
-                <Icon icon="fa-plus-square" className="text-2xl cursor-pointer" onClick={() => navigate('/studio')} />
-                <Icon icon="fa-heart" className="text-2xl" />
-                <Icon icon="fa-paper-plane" className="text-2xl" />
+                <button onClick={() => navigate('/studio')} className="text-white">
+                    <Icon icon="plus-square-regular" className="text-2xl" />
+                </button>
+                <button className="text-white">
+                    <Icon icon="heart-regular" className="text-2xl" />
+                </button>
+                <button className="text-white">
+                    <Icon icon="paper-plane-regular" className="text-2xl" />
+                </button>
             </div>
         </header>
 
