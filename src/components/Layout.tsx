@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { DB } from '../services/storageService';
+import { getUser, getPrivacySettings, getClearanceLevel } from '../services/storageService';
 import { UserProfile, PrivacySettings } from '../types';
 import ProfileSearch from './ProfileSearch';
 import Icon from './Icon';
@@ -22,9 +22,9 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
   const [clearanceLevel, setClearanceLevel] = useState(1);
 
   useEffect(() => {
-    setUser(DB.getUser());
-    setPrivacySettings(DB.getPrivacySettings());
-    const clearance = DB.getClearanceLevel();
+    setUser(getUser());
+    setPrivacySettings(getPrivacySettings());
+    const clearance = getClearanceLevel();
     if (clearance) {
         setClearanceLevel(clearance.level);
     }

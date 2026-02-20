@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { DB } from '../services/storageService';
+import { getUser } from '../services/storageService';
 import { UserProfile } from '../types';
 
 const AdminPanel: React.FC = () => {
@@ -8,7 +8,7 @@ const AdminPanel: React.FC = () => {
   const [user, setUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    const u = DB.getUser();
+    const u = getUser();
     if (!u || (u.role !== 'ADMIN' && u.role !== 'ROOT')) {
       alert("UNAUTHORIZED ACCESS ATTEMPT DETECTED.");
       navigate('/');

@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
-import { DB } from './storageService';
+import { getUser } from './storageService';
 
 export type NotificationType = 'like' | 'comment' | 'follow' | 'mention' | 'reply' | 'repost' | 'message';
 
@@ -36,7 +36,7 @@ class NotificationService {
   // ============================================
 
   async fetchNotifications(limit: number = 50): Promise<Notification[]> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) return [];
 
     const { data, error } = await supabase
@@ -55,7 +55,7 @@ class NotificationService {
   }
 
   async fetchUnreadCount(): Promise<number> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) return 0;
 
     const { count, error } = await supabase
@@ -73,7 +73,7 @@ class NotificationService {
   }
 
   async markAsRead(notificationId: string): Promise<boolean> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) return false;
 
     const { error } = await supabase
@@ -91,7 +91,7 @@ class NotificationService {
   }
 
   async markAllAsRead(): Promise<void> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) return;
 
     const { error } = await supabase
@@ -106,7 +106,7 @@ class NotificationService {
   }
 
   async deleteNotification(notificationId: string): Promise<boolean> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) return false;
 
     const { error } = await supabase
@@ -131,7 +131,7 @@ class NotificationService {
     onNewNotification: (notification: Notification) => void,
     onUpdate: () => void
   ): void {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) return;
 
     // Clean up existing subscription
@@ -190,7 +190,7 @@ class NotificationService {
     comment_id?: string;
     preview_text?: string;
   }): Promise<Notification | null> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) return null;
 
     // Get actor profile

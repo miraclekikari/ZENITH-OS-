@@ -30,7 +30,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import { Message, Channel, ChatUser, TypingIndicator, SearchResult } from '../types/chat';
 import SupabaseChatService from '../services/supabaseChatService';
-import { DB } from '../services/storageService';
+import { getUser } from '../services/storageService';
 import EmojiPicker from '../components/EmojiPicker';
 import CallControls from '../components/CallControls';
 import GroupSettings from '../components/GroupSettings';
@@ -141,7 +141,7 @@ const MOCK_CHANNELS: Channel[] = [
 const Chat: React.FC = () => {
   const navigate = useNavigate();
   const chatService = SupabaseChatService;
-  const currentUser = DB.getUser();
+  const currentUser = getUser();
   
   // State
   const [channels, setChannels] = useState<Channel[]>([]);
@@ -613,7 +613,6 @@ const Chat: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
                           const contactId = activeChannel.id.replace('private_', '');
                           handleVoiceCall({ id: contactId });
                         }}
@@ -625,7 +624,6 @@ const Chat: React.FC = () => {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
                           const contactId = activeChannel.id.replace('private_', '');
                           handleVideoCall({ id: contactId });
                         }}

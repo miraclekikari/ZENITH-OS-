@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabaseClient';
 import { Session } from '@supabase/supabase-js';
-import { DB } from './services/storageService';
+import { initUser, logout, isAdmin, getUser } from './services/storageService';
 import { UserProfile } from './types';
 
 import { ThemeProvider } from './context/ThemeContext';
@@ -10,7 +10,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Academy from './pages/Academy';
 import Chat from './pages/Chat';
-import Feed from './pages/Feed'; // <-- Replaced Community with Feed
+import Feed from './pages/Feed';
 import Studio from './pages/Studio';
 import Lab from './pages/Lab';
 import Settings from './pages/Settings';
@@ -29,8 +29,10 @@ function App() {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
       if (session) {
-        const profile = await DB.initUser(session.user);
+        const profile = await initUser(session.user);
         setUser(profile);
+      } else {
+        setUser(getUser());
       }
       setLoading(false);
     };
@@ -40,10 +42,10 @@ function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) {
-        DB.initUser(session.user).then(setUser);
+        initUser(session.user).then(setUser);
       } else {
         setUser(null);
-        DB.logout();
+        logout();
       }
     });
 
@@ -71,7 +73,7 @@ function App() {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/profile/:username" element={<Profile />} />
                 <Route path="/support" element={<Support />} />
-                {(user?.role === 'ADMIN' || user?.role === 'ROOT') && <Route path="/admin" element={<Admin />} />}
+                {isAdmin() && <Route path="/admin" element={<Admin />} />}
                 <Route path="/login" element={<Navigate to="/" />} />
                 <Route path="*" element={<NotFound />} />
               </>

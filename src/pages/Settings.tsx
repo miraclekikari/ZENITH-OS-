@@ -1,7 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme, THEMES } from '../context/ThemeContext';
-import { DB } from '../services/storageService';
+import { 
+  getNotificationSettings, 
+  getPrivacySettings, 
+  getClearanceLevel, 
+  saveNotificationSettings, 
+  savePrivacySettings, 
+  saveClearanceLevel, 
+  logout 
+} from '../services/storageService';
 import ThemeSwitcher from '../components/ThemeSwitcher';
 
 interface NotificationSettings {
@@ -71,13 +79,13 @@ const Settings: React.FC = () => {
   const [isClearanceUpgrading, setIsClearanceUpgrading] = useState(false);
 
   useEffect(() => {
-    const savedNotifications = DB.getNotificationSettings();
+    const savedNotifications = getNotificationSettings();
     if (savedNotifications) setNotificationSettings(savedNotifications);
     
-    const savedPrivacy = DB.getPrivacySettings();
+    const savedPrivacy = getPrivacySettings();
     if (savedPrivacy) setPrivacySettings(savedPrivacy);
     
-    const savedClearance = DB.getClearanceLevel();
+    const savedClearance = getClearanceLevel();
     if (savedClearance) {
       setClearanceLevel(savedClearance.level);
       setCredits(savedClearance.credits);
@@ -86,7 +94,7 @@ const Settings: React.FC = () => {
 
   const handleLogout = () => {
     if(window.confirm("Terminate Session? All unsaved data will be lost.")) {
-      DB.logout();
+      logout();
       window.location.reload();
     }
   };
@@ -94,7 +102,7 @@ const Settings: React.FC = () => {
   const updateNotificationSetting = (key: keyof NotificationSettings, value: boolean) => {
     const newSettings = { ...notificationSettings, [key]: value };
     setNotificationSettings(newSettings);
-    DB.saveNotificationSettings(newSettings);
+    saveNotificationSettings(newSettings);
     
     showNotification(`${key.replace(/([A-Z])/g, ' $1').trim()} ${value ? 'enabled' : 'disabled'}`);
   };
@@ -102,7 +110,7 @@ const Settings: React.FC = () => {
   const updatePrivacySetting = (key: keyof PrivacySettings, value: any) => {
     const newSettings = { ...privacySettings, [key]: value };
     setPrivacySettings(newSettings);
-    DB.savePrivacySettings(newSettings);
+    savePrivacySettings(newSettings);
   };
 
   const clearCache = () => {
@@ -118,7 +126,7 @@ const Settings: React.FC = () => {
     setIsClearanceUpgrading(true);
     setTimeout(() => {
       const newLevel = Math.max(clearanceLevel, level);
-      DB.saveClearanceLevel({ level: newLevel, credits: credits - (level === 5 ? 5 : 15) });
+      saveClearanceLevel({ level: newLevel, credits: credits - (level === 5 ? 5 : 15) });
       setClearanceLevel(newLevel);
       setCredits(prev => prev - (level === 5 ? 5 : 15));
       setIsClearanceUpgrading(false);

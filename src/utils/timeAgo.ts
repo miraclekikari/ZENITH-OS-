@@ -1,13 +1,28 @@
-export const timeAgo = (dateString: string): string => {
-  const date = new Date(dateString);
+export const timeAgo = (timestamp: string): string => {
   const now = new Date();
-  const seconds = Math.round((now.getTime() - date.getTime()) / 1000);
-  const minutes = Math.round(seconds / 60);
-  const hours = Math.round(minutes / 60);
-  const days = Math.round(hours / 24);
+  const past = new Date(timestamp);
+  const diffInSeconds = Math.floor((now.getTime() - past.getTime()) / 1000);
 
-  if (seconds < 60) return `${seconds}s ago`;
-  if (minutes < 60) return `${minutes}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
+  const secondsInMinute = 60;
+  const secondsInHour = secondsInMinute * 60;
+  const secondsInDay = secondsInHour * 24;
+  const secondsInWeek = secondsInDay * 7;
+  const secondsInMonth = secondsInDay * 30;
+  const secondsInYear = secondsInDay * 365;
+
+  if (diffInSeconds < secondsInMinute) {
+    return `${diffInSeconds}s`;
+  } else if (diffInSeconds < secondsInHour) {
+    return `${Math.floor(diffInSeconds / secondsInMinute)}m`;
+  } else if (diffInSeconds < secondsInDay) {
+    return `${Math.floor(diffInSeconds / secondsInHour)}h`;
+  } else if (diffInSeconds < secondsInWeek) {
+    return `${Math.floor(diffInSeconds / secondsInDay)}d`;
+  } else if (diffInSeconds < secondsInMonth) {
+    return `${Math.floor(diffInSeconds / secondsInWeek)}w`;
+  } else if (diffInSeconds < secondsInYear) {
+    return `${Math.floor(diffInSeconds / secondsInMonth)}mo`;
+  } else {
+    return `${Math.floor(diffInSeconds / secondsInYear)}y`;
+  }
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Post, UserProfile, PrivacyStatus } from '../types';
-import { DB } from '../services/storageService';
+import { getUser, saveUser } from '../services/storageService';
 import { SkillMatrix } from '../components/SkillMatrix';
 
 const Profile: React.FC = () => {
@@ -10,7 +10,7 @@ const Profile: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
 
   useEffect(() => {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     setUser(currentUser);
     
     if (currentUser) {
@@ -40,7 +40,7 @@ const Profile: React.FC = () => {
     const newStatus = user.privacy === 'PUBLIC' ? 'ENCRYPTED' : 'PUBLIC';
     const updatedUser = { ...user, privacy: newStatus as PrivacyStatus };
     setUser(updatedUser);
-    DB.saveUser({ privacy: newStatus });
+    saveUser({ privacy: newStatus });
   };
 
   const toggleLike = (id: string) => {

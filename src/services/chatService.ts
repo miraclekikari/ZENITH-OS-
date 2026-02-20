@@ -1,5 +1,5 @@
 import { Message, Channel, ChatUser, TypingIndicator, SearchResult } from '../types/chat';
-import { DB } from './storageService';
+import { getUser, saveData, getData } from './storageService';
 
 class ChatService {
   private static instance: ChatService;
@@ -18,7 +18,7 @@ class ChatService {
   // === CHANNEL MANAGEMENT ===
   
   async createChannel(data: Partial<Channel>): Promise<Channel> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) throw new Error('User not authenticated');
     
     const newChannel: Channel = {
@@ -43,7 +43,7 @@ class ChatService {
   }
 
   async joinChannel(channelId: string): Promise<void> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) throw new Error('User not authenticated');
     
     const channel = this.channels.find(c => c.id === channelId);
@@ -56,7 +56,7 @@ class ChatService {
   }
 
   async leaveChannel(channelId: string): Promise<void> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) throw new Error('User not authenticated');
     
     const channelIndex = this.channels.findIndex(c => c.id === channelId);
@@ -84,7 +84,7 @@ class ChatService {
   // === MESSAGE MANAGEMENT ===
   
   async sendMessage(channelId: string, text: string, replyTo?: string, attachments?: any[]): Promise<Message> {
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     if (!currentUser) throw new Error('User not authenticated');
     
     const message: Message = {
@@ -165,14 +165,14 @@ class ChatService {
     }
     
     const existingReaction = message.reactions.find(r => r.emoji === emoji);
-    const currentUser = DB.getUser();
+    const currentUser = getUser();
     
-    if (existingReaction) {
+    if (existingReaction && currentUser) {
       if (!existingReaction.users.includes(currentUser.id)) {
         existingReaction.count++;
         existingReaction.users.push(currentUser.id);
       }
-    } else {
+    } else if (currentUser) {
       message.reactions.push({
         emoji,
         count: 1,
@@ -225,7 +225,6 @@ class ChatService {
   
   search(query: string): SearchResult[] {
     const results: SearchResult[] = [];
-    const currentUser = DB.getUser();
     
     // Search in channels
     this.channels.forEach(channel => {
@@ -277,15 +276,15 @@ class ChatService {
   // === PERSISTENCE ===
   
   private saveChannels(): void {
-    DB.saveData('zenith_channels', this.channels);
+    saveData('zenith_channels', this.channels);
   }
 
   private saveMessages(): void {
-    DB.saveData('zenith_messages', this.messages);
+    saveData('zenith_messages', this.messages);
   }
 
   private loadChannels(): void {
-    const saved = DB.getData('zenith_channels');
+    const saved = getData('zenith_channels');
     if (saved) {
       this.channels = saved;
     } else {
@@ -295,7 +294,7 @@ class ChatService {
   }
 
   private loadMessages(): void {
-    const saved = DB.getData('zenith_messages');
+    const saved = getData('zenith_messages');
     if (saved) {
       this.messages = saved;
     }

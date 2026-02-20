@@ -2,9 +2,9 @@ import React from 'react';
 
 const Admin: React.FC = () => {
   return (
-    <div className="text-white">
-      <h1 className="text-2xl font-bold">Admin Panel</h1>
-      <p>Welcome to the command center.</p>
+    <div className="p-4 text-white">
+      <h1 className="text-2xl font-bold">Admin Dashboard</h1>
+      <p>Welcome to the admin area.</p>
     </div>
   );
 };

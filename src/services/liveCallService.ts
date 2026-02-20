@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabaseClient';
+import { getUser } from './storageService';
 
 export interface LiveSession {
   id: string;
@@ -59,8 +60,8 @@ class LiveCallService {
 
   async startLiveSession(channelId: string, title: string): Promise<string | null> {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
-      if (!currentUser.id) {
+      const currentUser = getUser();
+      if (!currentUser || !currentUser.id) {
         throw new Error('User not authenticated');
       }
 
@@ -125,8 +126,8 @@ class LiveCallService {
 
   async initiateCall(receiverId: string): Promise<string | null> {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
-      if (!currentUser.id) {
+      const currentUser = getUser();
+      if (!currentUser || !currentUser.id) {
         throw new Error('User not authenticated');
       }
 
@@ -170,8 +171,6 @@ class LiveCallService {
   }
 
   private async listenForCallAnswer(callId: string) {
-    const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
-    
     // Subscribe to call updates
     const subscription = supabase
       .channel(`call_${callId}`)
@@ -299,8 +298,8 @@ class LiveCallService {
 
   async getActiveCalls(): Promise<ActiveCall[]> {
     try {
-      const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
-      if (!currentUser.id) return [];
+      const currentUser = getUser();
+      if (!currentUser || !currentUser.id) return [];
 
       const { data, error } = await supabase
         .from('user_active_calls')
@@ -317,8 +316,8 @@ class LiveCallService {
   }
 
   subscribeToCalls(callback: (call: ActiveCall) => void) {
-    const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
-    if (!currentUser.id) return null;
+    const currentUser = getUser();
+    if (!currentUser || !currentUser.id) return null;
 
     return supabase
       .channel(`user_calls_${currentUser.id}`)

@@ -5,7 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeart, faCheck, faTrash, faComment, faUserPlus, faAt, faRepeat, faEnvelope, faCheckDouble } from '@fortawesome/free-solid-svg-icons';
 import notificationService, { NotificationType } from '../services/notificationService';
 import type { Notification } from '../services/notificationService';
-import { DB } from '../services/storageService';
+import { getUser } from '../services/storageService';
 import useNotificationSound from '../hooks/useNotificationSound';
 
 interface NotificationDropdownProps {
@@ -19,7 +19,7 @@ const NotificationDropdown: React.FC<NotificationDropdownProps> = ({ className }
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const currentUser = DB.getUser();
+  const currentUser = getUser();
 
   const { playSound } = useNotificationSound({ volume: 0.4, enabled: true });
 
