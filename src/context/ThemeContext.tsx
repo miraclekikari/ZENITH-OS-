@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { DB } from '../services/storageService';
+import { getTheme, saveTheme, getThemeSettings, saveThemeSettings } from '../services/storageService';
 
 // Thèmes avancés avec gradients et animations
 export const THEMES = {
@@ -143,11 +143,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [customTheme, setCustomTheme] = useState({});
 
   useEffect(() => {
-    const saved = DB.getTheme();
+    const saved = getTheme();
     if (saved) {
       setCurrentTheme(saved);
     }
-    const savedSettings = DB.getThemeSettings();
+    const savedSettings = getThemeSettings();
     if (savedSettings) {
       setThemeSettings(savedSettings);
     }
@@ -211,8 +211,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       root.style.setProperty('--theme-transition', 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)');
     }
     
-    DB.saveTheme(theme);
-    DB.saveThemeSettings(themeSettings);
+    saveTheme(theme);
+    saveThemeSettings(themeSettings);
   }, [customTheme, themeSettings.animations, currentThemeName]);
 
   const changeTheme = useCallback((themeName: keyof typeof THEMES) => {
