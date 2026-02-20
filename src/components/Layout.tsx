@@ -27,7 +27,7 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
     { path: '/', icon: 'fa-graduation-cap', label: 'Academy' },
     { path: '/chat', icon: 'fa-comment', label: 'Chat' },
     { path: '/community', icon: 'fa-globe-americas', label: 'Network' },
-    { path: '/publish', icon: 'fa-plus-square', label: 'Publish' },
+    { path: '/studio', icon: 'fa-plus-square', label: 'Studio' },
     { path: '/lab', icon: 'fa-flask', label: 'Labo' },
     { path: '/settings', icon: 'fa-sliders-h', label: 'System' },
   ];
