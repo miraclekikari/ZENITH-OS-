@@ -1,97 +1,70 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Post } from '../types';
-import SafeImage from './SafeImage';
+import { timeAgo } from '../utils/timeAgo';
 import Icon from './Icon';
 
-interface PostProps {
+interface PostCardProps {
   post: Post;
-  onLike?: () => void;
-  onComment?: () => void;
+  onLike: (id: string) => void;
+  onComment: (id: string) => void;
 }
 
-const PostCard: React.FC<PostProps> = ({ post, onLike, onComment }) => {
-  const [showHeart, setShowHeart] = useState(false);
-  const navigate = useNavigate();
-
-  const handleProfileClick = () => {
-    if (post.username) navigate(`/profile/${post.username}`);
-  };
-
-  const handleDoubleTap = (e: React.MouseEvent) => {
-    if (e.detail === 2) {
-      if (!post.isLiked) onLike?.(); // Like only if not already liked
-      setShowHeart(true);
-      if (navigator.vibrate) navigator.vibrate(50);
-      setTimeout(() => setShowHeart(false), 1000);
-    }
-  };
-
-  const handleShare = async () => {
-    const shareData = { url: `${window.location.origin}/post/${post.id}` };
-    if (navigator.share) {
-      await navigator.share(shareData).catch(() => {});
-    } else {
-      await navigator.clipboard.writeText(shareData.url);
-      alert('Link copied to clipboard!');
-    }
-  };
+const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
 
   return (
-    <div className="relative w-full max-w-md mx-auto snap-start animate-fade-in" style={{ height: 'calc(100vh - 120px)' }}>
-      {/* Media container with double-tap like */}
-      <div className="absolute inset-0 bg-black rounded-xl overflow-hidden cursor-pointer" onClick={handleDoubleTap}>
-        <SafeImage 
-          src={post.image || ''} 
-          alt="Post content" 
-          fallbackSeed={post.id}
-          className="w-full h-full object-cover"
-        />
-        {showHeart && (
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <Icon icon="fa-heart" className="fas fa-heart text-white/90 text-8xl animate-ping opacity-75" />
-            </div>
-        )}
-      </div>
-
-      {/* Vertical Action Bar (TikTok Style) */}
-      <div className="absolute right-0 bottom-24 md:bottom-16 flex flex-col items-center gap-5 p-4 z-10">
-        <ActionButton icon="fa-heart" count={post.likes} isActivated={post.isLiked} onClick={onLike} />
-        <ActionButton icon="fa-comment-dots" count={post.comments} onClick={onComment} />
-        <ActionButton icon="fa-share" onClick={handleShare} />
-      </div>
-
-      {/* Content Overlay */}
-      <div className="absolute bottom-0 left-0 right-0 p-5 pt-20 bg-gradient-to-t from-black/80 to-transparent z-10 text-white">
-        <div className="flex items-center gap-3 mb-2">
-            <div onClick={handleProfileClick} className="w-10 h-10 rounded-full cursor-pointer flex-shrink-0">
-                <SafeImage src={post.avatar} alt={post.author} fallbackSeed={post.username} className="w-full h-full rounded-full" />
-            </div>
-            <div onClick={handleProfileClick} className="font-bold text-sm cursor-pointer hover:underline">
-                @{post.username || post.author}
-            </div>
+    <div className="bg-black md:bg-zenith-surface md:rounded-lg border-b md:border border-gray-800 mb-4">
+      {/* Post Header */}
+      <div className="flex items-center p-3">
+        <img src={post.avatar} alt={post.author} className="w-10 h-10 rounded-full object-cover" />
+        <div className="ml-3">
+            <span className="font-bold text-white">{post.username}</span>
+            {post.isVerified && <i className="fas fa-check-circle text-blue-500 ml-1"></i>}
         </div>
-        <p className="text-sm line-clamp-3">{post.content}</p>
+        <button className="ml-auto text-white"><i className="fas fa-ellipsis-h"></i></button>
+      </div>
+
+      {/* Post Image */}
+      {post.image && (
+        <div className="w-full bg-black flex items-center justify-center">
+           <img src={post.image} alt="Post content" className="w-full max-h-[70vh] object-contain" />
+        </div>
+      )}
+
+      {/* Post Actions */}
+      <div className="flex items-center justify-between p-3">
+        <div className="flex items-center gap-4">
+            <button onClick={() => onLike(post.id)} className={`transition-transform transform active:scale-75 ${post.isLiked ? 'text-red-500' : 'text-white'}`}>
+                <Icon icon={post.isLiked ? 'fa-heart' : 'fa-heart-o'} className="text-2xl" solid={post.isLiked} />
+            </button>
+            <button onClick={() => onComment(post.id)} className="text-white">
+                <Icon icon="fa-comment-o" className="text-2xl" />
+            </button>
+            <button className="text-white">
+                <Icon icon="fa-paper-plane-o" className="text-2xl" />
+            </button>
+        </div>
+        <button className="text-white">
+            <Icon icon="fa-bookmark-o" className="text-2xl" />
+        </button>
+      </div>
+
+      {/* Post Info */}
+      <div className="px-3 pb-3">
+        <p className="font-bold text-white">{post.likes} likes</p>
+        <p className={`text-white mt-1 ${isExpanded ? '' : 'truncate'}`}>
+            <span className="font-bold">{post.username}</span> {post.content}
+        </p>
+        {post.content.length > 100 && (
+            <button onClick={() => setIsExpanded(!isExpanded)} className="text-gray-400 text-sm mt-1">
+                {isExpanded ? 'moins' : 'plus'}
+            </button>
+        )}
+        <p onClick={() => onComment(post.id)} className="text-gray-400 text-sm mt-2 cursor-pointer">Voir les {post.comments} commentaires</p>
+        <p className="text-gray-500 text-xs mt-2 uppercase">{timeAgo(post.timestamp)}</p>
       </div>
     </div>
   );
 };
-
-// Helper component for action buttons
-const ActionButton = ({ icon, count, isActivated, onClick }: {
-  icon: string; 
-  count?: number; 
-  isActivated?: boolean;
-  onClick?: () => void;
-}) => (
-    <div className="flex flex-col items-center gap-1">
-        <button 
-            onClick={onClick} 
-            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all text-2xl active:scale-110 ${isActivated ? 'bg-red-500 text-white' : 'bg-black/50 text-white/90 backdrop-blur-sm'}`}>
-            <Icon icon={isActivated ? `fas ${icon}` : `far ${icon}`} />
-        </button>
-        {count !== undefined && <span className="text-xs text-white/90 font-bold">{count}</span>}
-    </div>
-);
 
 export default PostCard;

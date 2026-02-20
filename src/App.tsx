@@ -1,81 +1,91 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Layout from './components/Layout';
-import Intro from './components/Intro';
-import { ThemeProvider } from './context/ThemeContext';
+import { supabase } from './lib/supabaseClient';
+import { Session } from '@supabase/supabase-js';
 import { DB } from './services/storageService';
+import { UserProfile } from './types';
 
-// Lazy loading des composants lourds
-const Chat = lazy(() => import('./pages/Chat'));
-const Community = lazy(() => import('./pages/Community'));
-const Lab = lazy(() => import('./pages/Lab'));
-const Profile = lazy(() => import('./pages/Profile'));
-const UserProfile = lazy(() => import('./pages/UserProfile'));
-const Studio = lazy(() => import('./pages/Studio'));
-const Settings = lazy(() => import('./pages/Settings'));
-const Login = lazy(() => import('./pages/Login'));
-const AdminPanel = lazy(() => import('./pages/AdminPanel'));
-const Support = lazy(() => import('./pages/Support'));
-const SchemaDiagnostic = lazy(() => import('./components/SchemaDiagnostic'));
+import { ThemeProvider } from './context/ThemeContext';
+import Layout from './components/Layout';
+import Login from './pages/Login';
+import Academy from './pages/Academy';
+import Chat from './pages/Chat';
+import Feed from './pages/Feed'; // <-- Replaced Community with Feed
+import Studio from './pages/Studio';
+import Lab from './pages/Lab';
+import Settings from './pages/Settings';
+import Admin from './pages/Admin';
+import Profile from './pages/Profile';
+import Support from './pages/Support';
+import NotFound from './pages/NotFound';
 
-// Composant de chargement
-const LoadingSpinner = () => (
-  <div className="flex items-center justify-center min-h-screen bg-zenith-bg">
-    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zenith-green"></div>
-  </div>
-);
-
-const App: React.FC = () => {
-  const [showIntro, setShowIntro] = useState(true);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+function App() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const user = DB.getUser();
-    if (user) {
-      // Hotfix pour effacer les données utilisateur invalides des versions précédentes
-      if (user.id === 'u1') {
-        DB.logout();
-        setIsAuthenticated(false);
-      } else {
-        setIsAuthenticated(true);
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      setSession(session);
+      if (session) {
+        const profile = await DB.initUser(session.user);
+        setUser(profile);
       }
-    }
+      setLoading(false);
+    };
+
+    getSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      if (session) {
+        DB.initUser(session.user).then(setUser);
+      } else {
+        setUser(null);
+        DB.logout();
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-  };
+  if (loading) {
+    return <div className="w-full h-screen flex items-center justify-center bg-black"></div>;
+  }
 
   return (
-    <ThemeProvider>
-      {showIntro ? (
-        <Intro onComplete={() => setShowIntro(false)} />
-      ) : (
-        <Router basename={import.meta.env.BASE_URL}>
-          <Layout isAuthenticated={isAuthenticated} onLogin={handleLogin}>
-            <Suspense fallback={<LoadingSpinner />}>
-              <Routes>
-                <Route path="/" element={<Community />} />
-                <Route path="/community" element={<Community />} />
+    <Router>
+      <ThemeProvider>
+        <Layout isAuthenticated={!!session} >
+          <Routes>
+            {session ? (
+              <>
+                <Route path="/" element={<Academy />} />
+                <Route path="/chat" element={<Chat />} />
+                <Route path="/chat/:id" element={<Chat />} />
+                <Route path="/community" element={<Feed />} />
                 <Route path="/studio" element={<Studio />} />
                 <Route path="/lab" element={<Lab />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile/:username" element={<UserProfile />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/academy" element={<Navigate to="/chat" replace />} />
                 <Route path="/settings" element={<Settings />} />
-                <Route path="/admin" element={<AdminPanel />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/profile/:username" element={<Profile />} />
                 <Route path="/support" element={<Support />} />
-                <Route path="/diagnostic" element={<SchemaDiagnostic />} />
-                <Route path="/login" element={<Login onLogin={handleLogin} />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </Suspense>
-          </Layout>
-        </Router>
-      )}
-    </ThemeProvider>
+                {(user?.role === 'ADMIN' || user?.role === 'ROOT') && <Route path="/admin" element={<Admin />} />}
+                <Route path="/login" element={<Navigate to="/" />} />
+                <Route path="*" element={<NotFound />} />
+              </>
+            ) : (
+              <>
+                <Route path="/login" element={<Login />} />
+                <Route path="*" element={<Navigate to="/login" />} />
+              </>
+            )}
+          </Routes>
+        </Layout>
+      </ThemeProvider>
+    </Router>
   );
-};
+}
 
 export default App;
