@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { usePermissions } from '../hooks/usePermissions';
@@ -6,15 +5,12 @@ import Icon from '../components/Icon';
 
 const Studio: React.FC = () => {
   const { t } = useTranslation();
-  const { permissions, requestPermissions, checkPermissions } = usePermissions(['camera', 'microphone']);
+  const { permissionState: cameraPermission, requestPermission: requestCamera } = usePermissions('camera');
+  const { permissionState: microphonePermission, requestPermission: requestMicrophone } = usePermissions('microphone');
   const [stream, setStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [flashOn, setFlashOn] = useState(false);
-
-  useEffect(() => {
-    checkPermissions();
-  }, []);
 
   const startCamera = async (mode: 'user' | 'environment') => {
     try {
@@ -31,13 +27,11 @@ const Studio: React.FC = () => {
       }
     } catch (error) {
       console.error("Error starting camera:", error);
-      // Fallback to asking for permissions again if it fails
-      await requestPermissions();
     }
   };
 
   useEffect(() => {
-    if (permissions.camera === 'granted' && permissions.microphone === 'granted') {
+    if (cameraPermission === 'granted' && microphonePermission === 'granted') {
       startCamera(facingMode);
     }
     
@@ -46,8 +40,12 @@ const Studio: React.FC = () => {
         stream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [permissions, facingMode]);
+  }, [cameraPermission, microphonePermission, facingMode]);
 
+  const handlePermissions = async () => {
+      if (cameraPermission !== 'granted') await requestCamera();
+      if (microphonePermission !== 'granted') await requestMicrophone();
+  }
 
   const handleFlipCamera = () => {
     setFacingMode(prevMode => (prevMode === 'user' ? 'environment' : 'user'));
@@ -68,7 +66,7 @@ const Studio: React.FC = () => {
   }
 
   // If permissions are not determined yet
-  if (permissions.camera === 'prompt' || permissions.microphone === 'prompt') {
+  if (cameraPermission === 'prompt' || microphonePermission === 'prompt') {
     return (
       <div className="flex flex-col items-center justify-center h-full bg-black text-white p-4">
         <Icon icon="fa-camera-retro" className="text-6xl text-zenith-primary mb-6" />
@@ -76,9 +74,7 @@ const Studio: React.FC = () => {
         <p className="text-center text-zenith-dim mb-8 max-w-sm">{t('studio.grantAccessHint')}</p>
         <div className="flex gap-4">
             <button
-                onClick={async () => {
-                    await requestPermissions();
-                }}
+                onClick={handlePermissions}
                 className="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full transition-transform transform hover:scale-105"
             >
                 <i className="fas fa-check mr-2"></i>
@@ -90,7 +86,7 @@ const Studio: React.FC = () => {
   }
 
   // If permissions are denied
-  if (permissions.camera === 'denied' || permissions.microphone === 'denied') {
+  if (cameraPermission === 'denied' || microphonePermission === 'denied') {
     return (
         <div className="flex flex-col items-center justify-center h-full bg-black text-white p-4">
             <Icon icon="fa-exclamation-triangle" className="text-6xl text-red-500 mb-6" />

@@ -18,6 +18,15 @@ export interface Profile {
   updated_at: string;
 }
 
+export interface PrivacySettings {
+  phoneNumber: 'everyone' | 'contacts' | 'nobody';
+  lastSeen: 'everyone' | 'contacts' | 'nobody';
+  profilePhoto: 'everyone' | 'contacts' | 'nobody';
+  forwardedMessages: 'everyone' | 'contacts' | 'nobody';
+  readReceipts: boolean;
+  typingIndicators: boolean;
+}
+
 // Interfaces pour les tables Supabase avec author_id explicite en string
 export interface SupabasePost {
   id: string;

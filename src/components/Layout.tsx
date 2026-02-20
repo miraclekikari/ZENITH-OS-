@@ -55,7 +55,8 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
   const showStatus = () => {
     if (!privacySettings || !user) return true; 
     if (privacySettings.lastSeen === 'nobody') return false;
-    if (privacySettings.lastSeen === 'contacts' && user.privacy !== 'ENCRYPTED') return true;
+    // This logic is a placeholder, you might want to fetch a contact list
+    if (privacySettings.lastSeen === 'contacts') return true; 
     if (privacySettings.lastSeen === 'everyone') return true;
     return false;
   }
