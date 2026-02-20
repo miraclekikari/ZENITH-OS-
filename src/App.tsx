@@ -30,10 +30,15 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if user is already logged in via our simulated DB
     const user = DB.getUser();
-    if(user) {
-      setIsAuthenticated(true);
+    if (user) {
+      // Hotfix pour effacer les données utilisateur invalides des versions précédentes
+      if (user.id === 'u1') {
+        DB.logout();
+        setIsAuthenticated(false);
+      } else {
+        setIsAuthenticated(true);
+      }
     }
   }, []);
 
