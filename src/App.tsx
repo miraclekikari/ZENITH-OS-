@@ -1,5 +1,5 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
 import Intro from './components/Intro';
 import { ThemeProvider } from './context/ThemeContext';
@@ -46,7 +46,7 @@ const App: React.FC = () => {
       {showIntro ? (
         <Intro onComplete={() => setShowIntro(false)} />
       ) : (
-        <Router>
+        <Router basename={import.meta.env.BASE_URL}>
           <Layout isAuthenticated={isAuthenticated} onLogin={handleLogin}>
             <Suspense fallback={<LoadingSpinner />}>
               <Routes>
