@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme, THEMES } from '../context/ThemeContext';
 import { DB } from '../services/storageService';
 import ThemeSwitcher from '../components/ThemeSwitcher';
@@ -24,6 +25,7 @@ interface PrivacySettings {
 }
 
 const Settings: React.FC = () => {
+  const { i18n } = useTranslation();
   const { 
     currentTheme, 
     changeTheme, 
@@ -68,7 +70,6 @@ const Settings: React.FC = () => {
   const [credits, setCredits] = useState(50);
   const [isClearanceUpgrading, setIsClearanceUpgrading] = useState(false);
 
-  // Charger les préférences sauvegardées
   useEffect(() => {
     const savedNotifications = DB.getNotificationSettings();
     if (savedNotifications) setNotificationSettings(savedNotifications);
@@ -95,10 +96,7 @@ const Settings: React.FC = () => {
     setNotificationSettings(newSettings);
     DB.saveNotificationSettings(newSettings);
     
-    // Feedback visuel
-    if (value) {
-      showNotification(`${key.replace(/([A-Z])/g, ' $1').trim()} enabled`);
-    }
+    showNotification(`${key.replace(/([A-Z])/g, ' $1').trim()} ${value ? 'enabled' : 'disabled'}`);
   };
 
   const updatePrivacySetting = (key: keyof PrivacySettings, value: any) => {
@@ -110,7 +108,7 @@ const Settings: React.FC = () => {
   const clearCache = () => {
     setIsClearanceUpgrading(true);
     setTimeout(() => {
-      setStorageUsage(prev => ({ ...prev, cache: 0 }));
+      setStorageUsage(prev => ({ ...prev, cache: 0, total: prev.media + prev.documents }));
       setIsClearanceUpgrading(false);
       showNotification('Cache cleared successfully');
     }, 2000);
@@ -119,7 +117,9 @@ const Settings: React.FC = () => {
   const upgradeClearance = (level: number) => {
     setIsClearanceUpgrading(true);
     setTimeout(() => {
-      setClearanceLevel(level);
+      const newLevel = Math.max(clearanceLevel, level);
+      DB.saveClearanceLevel({ level: newLevel, credits: credits - (level === 5 ? 5 : 15) });
+      setClearanceLevel(newLevel);
       setCredits(prev => prev - (level === 5 ? 5 : 15));
       setIsClearanceUpgrading(false);
       showNotification(`Upgraded to Level ${level} Clearance!`);
@@ -127,7 +127,6 @@ const Settings: React.FC = () => {
   };
 
   const showNotification = (message: string) => {
-    // Créer une notification temporaire
     const notification = document.createElement('div');
     notification.className = 'fixed top-4 right-4 bg-zenith-green text-black px-6 py-3 rounded-lg font-bold z-50 animate-slide-in';
     notification.textContent = message;
@@ -147,7 +146,9 @@ const Settings: React.FC = () => {
       NEON_PURPLE: 'fa-magic',
       MATRIX_GREEN: 'fa-code',
       SOLAR_FLARE: 'fa-sun',
-      ARCTIC_FROST: 'fa-snowflake'
+      ARCTIC_FROST: 'fa-snowflake',
+      LIGHT: 'fa-sun',
+      DARK: 'fa-moon'
     };
     return icons[themeName] || 'fa-palette';
   };
@@ -163,13 +164,12 @@ const Settings: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         
-        {/* Settings Sidebar */}
         <div className="lg:col-span-1 space-y-2">
           {[
             { id: 'general', icon: 'fa-sliders-h', label: 'General', badge: null },
             { id: 'theme', icon: 'fa-palette', label: 'Appearance', badge: 'NEW' },
             { id: 'privacy', icon: 'fa-user-shield', label: 'Privacy', badge: null },
-            { id: 'storage', icon: 'fa-database', label: 'Storage', badge: '72%' },
+            { id: 'storage', icon: 'fa-database', label: 'Storage', badge: `${Math.round((storageUsage.total / storageUsage.max) * 100)}%` },
             { id: 'clearance', icon: 'fa-id-card', label: 'Clearance', badge: 'LVL ' + clearanceLevel, highlight: true }
           ].map((tab) => (
              <button 
@@ -202,7 +202,6 @@ const Settings: React.FC = () => {
           </button>
         </div>
 
-        {/* Content Area */}
         <div className="lg:col-span-4">
           
           {activeTab === 'general' && (
@@ -216,12 +215,19 @@ const Settings: React.FC = () => {
                 <div className="space-y-6">
                   <div>
                     <h4 className="text-lg font-bold text-white mb-4">Language & Region</h4>
-                    <div className="bg-black/30 p-4 rounded-xl border border-zenith-greenDim flex items-center justify-between cursor-pointer hover:border-zenith-green transition-all group">
+                    <div className="bg-black/30 p-4 rounded-xl border border-zenith-greenDim flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <i className="fas fa-globe text-zenith-green group-hover:animate-bounce"></i>
-                        <span>English (System Default)</span>
+                        <i className="fas fa-globe text-zenith-green"></i>
+                        <span>Select Language</span>
                       </div>
-                      <i className="fas fa-chevron-down text-zenith-dim group-hover:translate-y-1 transition-transform"></i>
+                      <select
+                        value={i18n.language}
+                        onChange={(e) => i18n.changeLanguage(e.target.value)}
+                        className="bg-black/50 border border-zenith-greenDim rounded-lg px-3 py-1 text-white focus:border-zenith-green focus:outline-none"
+                      >
+                        <option value="en">English</option>
+                        <option value="fr">Français</option>
+                      </select>
                     </div>
                   </div>
                   
@@ -258,7 +264,6 @@ const Settings: React.FC = () => {
                 
                 <ThemeSwitcher />
 
-                {/* Theme Presets */}
                 <div className="mb-8">
                   <h4 className="text-lg font-bold text-white mb-4">Theme Presets</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -291,14 +296,13 @@ const Settings: React.FC = () => {
                             )}
                           </div>
                           <i className={`fas ${getThemeIcon(themeKey)} text-zenith-green group-hover:animate-spin`}></i>
-                          <span className="text-xs font-bold text-zenith-dim">{themeKey.replace('_', ' ')}</span>
+                          <span className="text-xs font-bold text-zenith-dim">{themeKey.replace('_ ', ' ')}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                {/* Theme Controls */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="glass-card p-4 rounded-xl">
                     <h4 className="text-white font-bold mb-4">Theme Settings</h4>
@@ -355,7 +359,6 @@ const Settings: React.FC = () => {
                 </div>
               </div>
 
-              {/* Custom Color Picker */}
               <div className="glass-card p-6 rounded-2xl">
                 <h4 className="text-lg font-bold text-white mb-4">Custom Color Engine</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -388,7 +391,6 @@ const Settings: React.FC = () => {
                 </h3>
                 
                 <div className="space-y-6">
-                  {/* Security Features */}
                   <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 p-6 rounded-xl border border-blue-500/30">
                     <div className="flex items-center gap-4 mb-4">
                       <div className="w-14 h-14 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-2xl animate-pulse">
@@ -423,7 +425,6 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Privacy Settings */}
                   <div>
                     <h4 className="text-zenith-green text-sm font-bold uppercase tracking-wider mb-4">Privacy Controls</h4>
                     <div className="space-y-3">
@@ -453,7 +454,6 @@ const Settings: React.FC = () => {
                     </div>
                   </div>
                   
-                  {/* Additional Privacy Options */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <label className="flex items-center justify-between p-4 bg-black/20 rounded-xl cursor-pointer hover:bg-black/30 transition-all">
                       <span className="text-sm text-white font-bold">Read Receipts</span>
@@ -475,7 +475,6 @@ const Settings: React.FC = () => {
                     </label>
                   </div>
                   
-                  {/* Auto-Delete Warning */}
                   <div className="p-4 bg-red-900/10 border border-red-500/30 rounded-xl flex items-center justify-between group hover:bg-red-900/20 transition-all">
                     <div className="flex items-center gap-3 text-red-400">
                       <i className="fas fa-clock group-hover:animate-spin"></i>
@@ -584,14 +583,13 @@ const Settings: React.FC = () => {
 
           {activeTab === 'clearance' && (
             <div className="space-y-6 animate-fade-in">
-              {/* Current Status */}
               <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 p-8 rounded-2xl border border-yellow-500 flex items-center justify-between group hover:shadow-lg hover:shadow-yellow-500/20 transition-all">
                 <div>
                   <h3 className="text-3xl font-tech text-white mb-2">CLEARANCE LEVEL {clearanceLevel}</h3>
                   <p className="text-yellow-200 text-sm mb-4">
                     {clearanceLevel === 1 ? 'Standard Access. Upgrade for full Zenith capabilities.' :
-                     clearanceLevel === 5 ? 'Advanced Access. Premium features unlocked.' :
-                     'Elite Access. Full system control.'}
+                     clearanceLevel >= 10 ? 'Elite Access. Full system control.' :
+                     'Advanced Access. Premium features unlocked.'}
                   </p>
                   <div className="flex gap-2">
                     {[...Array(clearanceLevel)].map((_, i) => (
@@ -613,9 +611,7 @@ const Settings: React.FC = () => {
                 </div>
               </div>
 
-              {/* Pricing Tiers */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Level 5 */}
                 <div className={`glass-card p-6 rounded-2xl relative overflow-hidden group transition-all ${
                   clearanceLevel >= 5 ? 'border-zenith-green shadow-lg shadow-zenith-green/50' : 'border-zenith-greenDim hover:border-zenith-green'
                 }`}>
@@ -667,7 +663,6 @@ const Settings: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Level 10 */}
                 <div className={`glass-card p-6 rounded-2xl relative overflow-hidden group transition-all ${
                   clearanceLevel >= 10 ? 'border-purple-500 shadow-lg shadow-purple-500/50' : 'border-purple-500/30 hover:border-purple-500'
                 }`}>
@@ -718,7 +713,6 @@ const Settings: React.FC = () => {
                 </div>
               </div>
 
-              {/* Marketplace Teaser */}
               <div className="glass-card p-6 rounded-2xl flex flex-col md:flex-row items-center gap-6 group hover:shadow-lg hover:shadow-blue-500/20 transition-all">
                 <div className="w-16 h-16 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center text-3xl group-hover:animate-spin">
                   <i className="fas fa-store"></i>
@@ -747,7 +741,6 @@ const Settings: React.FC = () => {
                 </button>
               </div>
 
-              {/* Benefits Overview */}
               <div className="glass-card p-6 rounded-2xl">
                 <h4 className="text-lg font-bold text-white mb-4">Clearance Benefits Overview</h4>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

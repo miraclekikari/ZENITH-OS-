@@ -142,7 +142,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [customTheme, setCustomTheme] = useState({});
 
-  // Charger les préférences sauvegardées
   useEffect(() => {
     const saved = DB.getTheme();
     if (saved) {
@@ -154,7 +153,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     }
   }, []);
 
-  // Appliquer le thème avec animation fluide
   useEffect(() => {
     if (!themeSettings.animations) {
       applyTheme(currentTheme);
@@ -170,7 +168,6 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     return () => clearTimeout(timer);
   }, [currentTheme, themeSettings.animations]);
 
-  // Auto-switch time-based
   useEffect(() => {
     if (!themeSettings.timeBased) return;
 
@@ -191,9 +188,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       setCurrentTheme(targetTheme);
     };
     
-    // Vérifier immédiatement, puis chaque minute
     checkTimeBasedTheme();
-    const interval = setInterval(checkTimeBasedTheme, 60000); // Chaque minute
+    const interval = setInterval(checkTimeBasedTheme, 60000); 
     
     return () => {
       clearInterval(interval);
@@ -204,21 +200,17 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const root = document.documentElement;
     const finalTheme = { ...theme, ...customTheme };
     
-    // Appliquer toutes les variables CSS au niveau racine
     Object.entries(finalTheme).forEach(([key, value]) => {
       root.style.setProperty(key, value as string);
     });
     
-    // Appliquer le thème au body pour une couverture complète
     root.className = `theme-${currentThemeName}`;
     document.body.className = `theme-${currentThemeName} ${themeSettings.animations ? 'animations-enabled' : ''}`;
     
-    // Animation de transition
     if (themeSettings.animations) {
       root.style.setProperty('--theme-transition', 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)');
     }
     
-    // Sauvegarder
     DB.saveTheme(theme);
     DB.saveThemeSettings(themeSettings);
   }, [customTheme, themeSettings.animations, currentThemeName]);
@@ -247,6 +239,16 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const randomIndex = Math.floor(Math.random() * themes.length);
     changeTheme(themes[randomIndex]);
   }, [changeTheme]);
+
+  useEffect(() => {
+    if (themeSettings.autoSwitch) {
+      const interval = setInterval(() => {
+        randomTheme();
+      }, 5000); // Change theme every 5 seconds
+
+      return () => clearInterval(interval);
+    }
+  }, [themeSettings.autoSwitch, randomTheme]);
 
   return (
     <ThemeContext.Provider value={{ 

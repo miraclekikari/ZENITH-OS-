@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { DB } from '../services/storageService';
-import { UserProfile } from '../types';
+import { UserProfile, PrivacySettings } from '../types';
 import ProfileSearch from './ProfileSearch';
 import Icon from './Icon';
 import NotificationDropdown from './NotificationDropdown';
@@ -18,10 +18,17 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
   const [user, setUser] = useState<UserProfile | null>(null);
+  const [privacySettings, setPrivacySettings] = useState<PrivacySettings | null>(null);
+  const [clearanceLevel, setClearanceLevel] = useState(1);
 
   useEffect(() => {
     setUser(DB.getUser());
-  }, [location.pathname]); // Refresh user on nav change
+    setPrivacySettings(DB.getPrivacySettings());
+    const clearance = DB.getClearanceLevel();
+    if (clearance) {
+        setClearanceLevel(clearance.level);
+    }
+  }, [location.pathname]); 
 
   const navItems = [
     { path: '/', icon: 'fa-graduation-cap', label: 'Academy' },
@@ -36,7 +43,6 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
     navItems.push({ path: '/admin', icon: 'fa-shield-alt', label: 'Command' });
   }
 
-  // Simulated Music Player Logic
   useEffect(() => {
     const audio = document.getElementById('bg-music') as HTMLAudioElement;
     if (audio) {
@@ -45,6 +51,20 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
       else audio.pause();
     }
   }, [isPlaying, volume]);
+
+  const showStatus = () => {
+    if (!privacySettings || !user) return true; 
+    if (privacySettings.lastSeen === 'nobody') return false;
+    if (privacySettings.lastSeen === 'contacts' && user.privacy !== 'ENCRYPTED') return true;
+    if (privacySettings.lastSeen === 'everyone') return true;
+    return false;
+  }
+
+  const getVerificationBadge = () => {
+      if (clearanceLevel >= 10) return <i className="fas fa-check-circle text-yellow-400 ml-2"></i>;
+      if (clearanceLevel >= 5) return <i className="fas fa-check-circle text-blue-400 ml-2"></i>;
+      return null;
+  }
 
   return (
     <div className="flex h-screen bg-zenith-bg text-zenith-text font-mono overflow-hidden">
@@ -91,7 +111,6 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 flex flex-col relative overflow-hidden bg-[radial-gradient(circle_at_center,_#0a0e14_0%,_#05070a_100%)]">
         <header className="h-20 border-b border-zenith-greenDim flex items-center justify-between px-6 md:px-8 bg-zenith-bg/80 backdrop-blur-md z-40">
           <div className="flex items-center gap-4">
@@ -132,10 +151,13 @@ const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false, onLo
               >
                  <div className="w-10 h-10 rounded-full border border-zenith-greenDim p-0.5 group-hover:border-zenith-green transition-colors relative">
                     <img src={user?.avatar || "https://picsum.photos/seed/avatar/200/200"} className="w-full h-full rounded-full object-cover" alt="User" />
-                    <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-zenith-surface ${user?.privacy === 'ENCRYPTED' ? 'bg-red-500' : 'bg-green-500'}`}></div>
+                    {showStatus() && <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-zenith-surface ${user?.privacy === 'ENCRYPTED' ? 'bg-red-500' : 'bg-green-500'}`}></div>}
                  </div>
                  <div className="hidden md:block text-right">
-                   <div className="text-xs font-bold text-white">{user?.username}</div>
+                    <div className="text-xs font-bold text-white flex items-center">
+                        {user?.username}
+                        {getVerificationBadge()}
+                    </div>
                    <div className="text-[10px] text-zenith-dim uppercase">{user?.role}</div>
                  </div>
               </div>
