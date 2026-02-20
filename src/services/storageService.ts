@@ -1,8 +1,9 @@
 // Zenith Infinite Database (Simulated via LocalStorage)
 import { UserProfile } from '../types';
+import { DEFAULT_USER_ID } from '../lib/constants';
 
 const MOCK_USER: UserProfile = {
-  id: 'u1',
+  id: DEFAULT_USER_ID,
   username: 'Commander',
   handle: '@zenith_pilot',
   avatar: 'https://picsum.photos/seed/avatar/200/200',
