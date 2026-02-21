@@ -1,30 +1,22 @@
 import React from 'react';
-import Sidebar from './Sidebar'; // Import the new Sidebar
+import { Outlet } from 'react-router-dom';
+import Sidebar from './Sidebar';
+import TopNavBar from './TopNavBar'; // Import TopNavBar
+import BottomNavBar from './BottomNavBar'; // Import BottomNavBar
 
-interface LayoutProps {
-  children: React.ReactNode;
-  isAuthenticated?: boolean;
-}
-
-const Layout: React.FC<LayoutProps> = ({ children, isAuthenticated = false }) => {
+const Layout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-black text-white font-mono">
-      {/* Always render the Sidebar */}
-      {isAuthenticated && <Sidebar />}
+    <div className="w-full min-h-screen bg-zenith-bg font-sans text-white">
+      {/* Mobile Navigation */}
+      <TopNavBar />
+      <BottomNavBar />
 
-      {/* Header with glassmorphism */}
-      <header className="fixed top-0 left-0 right-0 h-16 bg-black/10 backdrop-blur-md z-[50] pl-20 pr-6 flex items-center justify-between">
-        <div>
-            {/* Optional: Add header content, e.g., Search Bar */}
-        </div>
-        <div>
-            {/* Optional: User Profile icon, notifications */}
-        </div>
-      </header>
+      {/* Desktop Sidebar */}
+      <Sidebar />
 
-      {/* Main content with padding to offset the sidebar */}
-      <main className="pl-16 pt-16">
-        {children}
+      {/* Main Content */}
+      <main className="w-full h-full pt-16 pb-16 md:pt-0 md:pb-0 md:pl-16 group-hover:md:pl-60 transition-all duration-300 ease-in-out">
+        <Outlet />
       </main>
     </div>
   );

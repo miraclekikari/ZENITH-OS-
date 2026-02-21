@@ -24,7 +24,7 @@ const Sidebar: React.FC = () => {
   ];
 
   return (
-    <aside className="group fixed top-0 left-0 h-screen flex flex-col justify-between bg-black/10 backdrop-blur-md text-white w-16 hover:w-60 transition-all duration-300 ease-in-out z-[100]">
+    <aside className="hidden md:flex group fixed top-0 left-0 h-screen flex-col justify-between bg-black/10 backdrop-blur-md text-white w-16 hover:w-60 transition-all duration-300 ease-in-out z-[100]">
       <div>
         <div className="flex items-center justify-center mt-6 mb-8">
           {/* Logo Placeholder */}
