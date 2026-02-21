@@ -15,7 +15,7 @@ import Studio from './pages/Studio';
 import Lab from './pages/Lab';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
-import Profile from './pages/Profile';
+import ProfilePage from './pages/ProfilePage';
 import Support from './pages/Support';
 import NotFound from './pages/NotFound';
 
@@ -63,7 +63,7 @@ function App() {
   return (
     <Router>
       <ThemeProvider>
-        <Layout isAuthenticated={!!session} >
+        <Layout>
           <Routes>
             {/* Public routes */}
             <Route path="/live/:id" element={<Chat />} />
@@ -77,8 +77,8 @@ function App() {
             <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
             <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-            <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/:username" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
             {isAdmin() && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
             

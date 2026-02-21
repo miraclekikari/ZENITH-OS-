@@ -42,8 +42,7 @@ const Feed: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    const user = getUser();
-    setCurrentUser(user as UserProfile | null);
+    setCurrentUser(getUser());
   }, []);
 
   const refreshFeed = useCallback(async () => {
@@ -98,7 +97,7 @@ const Feed: React.FC = () => {
             {currentUser && (
                 <div className="hidden md:flex items-center justify-between p-4 my-4 max-w-lg mx-auto">
                     <div className="flex items-center">
-                        <img src={currentUser.avatar_url || 'https://picsum.photos/seed/profile/200/200'} alt="Your Profile" className="w-16 h-16 rounded-full object-cover border-2 border-cyan-400" />
+                        <img src={currentUser.avatar || 'https://picsum.photos/seed/profile/200/200'} alt="Your Profile" className="w-16 h-16 rounded-full object-cover border-2 border-cyan-400" />
                         <div className="ml-4">
                             <p className="font-bold text-lg">{currentUser.username}</p>
                             <p className="text-sm text-gray-400">Welcome back!</p>

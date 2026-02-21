@@ -10,7 +10,6 @@ const AdminPanel: React.FC = () => {
   useEffect(() => {
     const u = getUser();
     if (!u || (u.role !== 'ADMIN' && u.role !== 'ROOT')) {
-      alert("UNAUTHORIZED ACCESS ATTEMPT DETECTED.");
       navigate('/');
     }
     setUser(u);

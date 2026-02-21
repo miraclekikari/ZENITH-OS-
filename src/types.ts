@@ -1,3 +1,4 @@
+// V2
 export type UserRole = 'USER' | 'ADMIN' | 'ROOT';
 export type PrivacyStatus = 'PUBLIC' | 'PRIVATE' | 'ENCRYPTED';
 export type SubscriptionTier = 'LEVEL_1' | 'LEVEL_5' | 'LEVEL_10';
@@ -111,6 +112,7 @@ export interface UserProfile {
   username: string;
   handle: string;
   avatar: string;
+  avatar_url?: string;
   banner: string;
   bio: string;
   followers: number;

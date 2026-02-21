@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabaseClient';
 import { Message, Channel, ChatUser, TypingIndicator } from '../types/chat';
+import { UserProfile } from '../types';
 import { getUser } from './storageService';
 
 export interface SupabaseChannel {
@@ -315,18 +316,18 @@ class SupabaseChatService {
     };
   }
 
-  private mapSupabaseMessageToMessage(supabaseMessage: SupabaseMessage, currentUser: any): Message {
+  private mapSupabaseMessageToMessage(supabaseMessage: SupabaseMessage, currentUser: UserProfile | null): Message {
     return {
       id: supabaseMessage.id,
       channelId: supabaseMessage.channel_id,
       senderId: supabaseMessage.sender_id,
-      senderName: currentUser.username, // Will be updated with actual sender data
-      senderAvatar: currentUser.avatar,
+      senderName: currentUser?.username || 'Unknown User',
+      senderAvatar: currentUser?.avatar || 'https://picsum.photos/seed/default/200/200',
       text: supabaseMessage.text,
       timestamp: supabaseMessage.created_at,
       isEdited: supabaseMessage.is_edited,
       isDeleted: supabaseMessage.is_deleted,
-      isOwn: supabaseMessage.sender_id === currentUser.id,
+      isOwn: supabaseMessage.sender_id === currentUser?.id,
       replyTo: supabaseMessage.reply_to,
       reactions: [],
       attachments: [],
