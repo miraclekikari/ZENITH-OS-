@@ -29,7 +29,7 @@ const CommunityPage: React.FC = () => {
         .eq('status', 'streaming');
       
       if (error) {
-        console.error('Error fetching streaming profiles:', error);
+        console.error("Error fetching streaming profiles:", error);
       } else {
         setStreamingProfiles(data);
       }
@@ -51,14 +51,14 @@ const CommunityPage: React.FC = () => {
         .upload(fileName, file);
 
       if (error) {
-        alert('Erreur lors de l'upload : ' + error.message);
+        alert("Erreur lors de l'upload : " + error.message);
       } else {
-        alert('Vidéo uploadée avec succès !');
+        alert("Vidéo uploadée avec succès !");
         // Here you might want to create a new post entry in the 'posts' table
       }
     };
     input.click();
-  }
+  };
 
   return (
     <div className="h-full w-full flex bg-black text-white">

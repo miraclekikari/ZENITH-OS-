@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Post } from '../types';
@@ -20,8 +19,10 @@ const Short: React.FC<ShortProps> = ({ post, onComment, isIntersecting }) => {
     if (isIntersecting) {
       videoRef.current?.play();
     } else {
-      videoRef.current?.pause();
-      videoRef.current?.currentTime = 0;
+      if (videoRef.current) { // Check if ref exists before assignment
+        videoRef.current.pause();
+        videoRef.current.currentTime = 0;
+      }
     }
   }, [isIntersecting]);
 
