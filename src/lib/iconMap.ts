@@ -6,13 +6,14 @@ import {
   faUnlink, faCheckCircle, faTimesCircle, faSyncAlt, faStethoscope,
   faRedo, faSpinner, faTimes, faLink, faShare, faMicrochip, faRetweet, 
   faBookmark, faCameraRetro, faExclamationTriangle, faBolt, faImages,
-  faMagic, faSmile, faFont
+  faMagic, faSmile, faFont, faCamera, faPlus
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
   faHeart as faHeartRegular,
   faPlusSquare as faPlusSquareRegular,
-  faPaperPlane as faPaperPlaneRegular
+  faPaperPlane as faPaperPlaneRegular,
+  faCommentDots as faCommentDotsRegular
 } from '@fortawesome/free-regular-svg-icons';
 
 export const iconMap = {
@@ -24,6 +25,7 @@ export const iconMap = {
   'check': faCheck,
   'store': faStore,
   'heart': faHeartSolid,
+  'heart-solid': faHeartSolid, // Added alias
   'comment': faComment,
   'satellite': faSatellite,
   'paper-plane': faPaperPlaneSolid,
@@ -53,6 +55,8 @@ export const iconMap = {
   'retweet': faRetweet,
   'bookmark': faBookmark,
   'camera-retro': faCameraRetro,
+  'camera': faCamera, // Added icon
+  'plus': faPlus, // Added icon
   'exclamation-triangle': faExclamationTriangle,
   'bolt': faBolt,
   'images': faImages,
@@ -64,4 +68,5 @@ export const iconMap = {
   'heart-regular': faHeartRegular,
   'plus-square-regular': faPlusSquareRegular,
   'paper-plane-regular': faPaperPlaneRegular,
+  'comment-dots-regular': faCommentDotsRegular, // Added icon
 };

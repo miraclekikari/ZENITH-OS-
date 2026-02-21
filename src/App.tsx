@@ -10,7 +10,7 @@ import Layout from './components/Layout';
 import Login from './pages/Login';
 import Academy from './pages/Academy';
 import Chat from './pages/Chat';
-import Feed from './pages/Feed';
+import CommunityPage from './pages/Community'; // Import the new community page
 import Studio from './pages/Studio';
 import Lab from './pages/Lab';
 import Settings from './pages/Settings';
@@ -73,7 +73,7 @@ function App() {
             <Route path="/" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-            <Route path="/community" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
+            <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} /> {/* <-- Updated Route */}
             <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
             <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
