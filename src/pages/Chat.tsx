@@ -40,7 +40,7 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
 
     fetchMessages();
 
-    const subscription = chatService.subscribeToChannel(liveId, {
+    chatService.subscribeToChannel(liveId, {
       onNewMessage: (message) => {
         setMessages(prev => [...prev, message]);
       },
@@ -51,9 +51,7 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
     });
 
     return () => {
-      if (subscription) {
-        chatService.unsubscribeFromChannel(liveId);
-      }
+      chatService.unsubscribeFromChannel(liveId);
     };
   }, [liveId]);
 
