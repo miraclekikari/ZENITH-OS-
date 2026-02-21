@@ -17,8 +17,8 @@ export interface Profile {
 }
 
 export interface Post {
-  id: string;
-  user_id: string;
+  id: number; // Corrected from string to number
+  user_id: string; // Kept as string (UUID)
   image_url: string;
   caption: string;
   likes_count: number;

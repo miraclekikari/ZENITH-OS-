@@ -1,82 +1,119 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import { Post } from '../types';
-import { getPosts, togglePostLike } from '../lib/supabaseService';
-import PostCard from '../components/PostCard';
-import CommentsDrawer from '../components/CommentsDrawer';
-import { mapSupabaseRowToPost } from '../utils/mapSupabaseRowToPost';
-import Icon from '../components/Icon';
+import React, { useState, useEffect, useRef } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import VideoShort from '../components/shorts/VideoShort';
+import { Post } from '../types/profile';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faUpload } from '@fortawesome/free-solid-svg-icons';
 
-const Community: React.FC = () => {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [commentPostId, setCommentPostId] = useState<string | null>(null);
-
-  const refreshFeed = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const { data: postsData, error: postsError } = await getPosts();
-      if (postsError) {
-        console.error('Feed Error:', postsError.message);
-        setPosts([]);
-        return;
-      }
-      const mappedPosts = (postsData || []).map(p => mapSupabaseRowToPost(p, {}, {}, new Set()));
-      setPosts(mappedPosts);
-    } catch (err) {
-      console.error(err);
-      setPosts([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+const CommunityPage: React.FC = () => {
+  const [shorts, setShorts] = useState<Post[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    refreshFeed();
-  }, [refreshFeed]);
-
-  const toggleLike = useCallback(async (id: string) => {
-    const post = posts.find(p => p.id === id);
-    if (!post) return;
-    setPosts(currentPosts => currentPosts.map(p => p.id === id ? { ...p, isLiked: !p.isLiked, likes: p.isLiked ? p.likes - 1 : p.likes + 1 } : p));
-    await togglePostLike(id, post.isLiked);
-  }, [posts]);
-
-  const handleComment = useCallback((id: string) => {
-    setCommentPostId(id);
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUserId(user?.id || null);
+    };
+    getUser();
+    fetchShorts();
   }, []);
 
-  if (isLoading) {
-    return (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-zenith-bg text-zenith-green font-mono">
-            <div className="w-12 h-12 border-4 border-zenith-green border-t-transparent rounded-full animate-spin mb-4"></div>
-            <p>{t('loadingTransmissions')}</p>
-        </div>
-    );
+  const fetchShorts = async () => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*, profiles (id, username, avatar_url, status)') // Fetch author info
+        .eq('type', 'video')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setShorts(data || []);
+    } catch (error) {
+      console.error('Error fetching shorts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !userId) return;
+
+    setUploading(true);
+    try {
+      const fileName = `${userId}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage
+        .from('shorts-videos')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('shorts-videos')
+        .getPublicUrl(fileName);
+
+      const { error: dbError } = await supabase.from('posts').insert({
+        user_id: userId,
+        type: 'video',
+        image_url: publicUrlData.publicUrl, // Store video url in image_url
+        caption: 'Nouveau Short! 🎉',
+      });
+
+      if (dbError) throw dbError;
+
+      // Refresh shorts list
+      fetchShorts();
+    } catch (error) {
+      console.error('Error uploading short:', error);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-screen bg-black text-white">Chargement...</div>;
   }
 
   return (
-    <div className="w-full h-full bg-zenith-bg relative">
-      <div className="w-full h-full overflow-y-auto snap-y snap-mandatory scrollbar-hide">
-        {posts.map(post => (
-          <PostCard key={post.id} post={post} onLike={() => toggleLike(post.id)} onComment={() => handleComment(post.id)} />
+    <div className="h-screen bg-black flex justify-center items-center">
+       <div className="w-full max-w-md h-full overflow-y-scroll snap-y snap-mandatory scroll-smooth relative">
+        {shorts.map((short) => (
+          <div key={short.id} className="h-full w-full snap-start flex items-center justify-center">
+            <VideoShort post={short} />
+          </div>
         ))}
+         {shorts.length === 0 && (
+          <div className="h-full w-full snap-start flex items-center justify-center text-white text-center">
+            <p>Aucun short pour le moment. <br/> Soyez le premier à en publier un !</p>
+          </div>
+        )}
       </div>
+      
+      <input 
+        type="file" 
+        accept="video/mp4,video/quicktime" 
+        ref={fileInputRef} 
+        className="hidden" 
+        onChange={handleFileChange} 
+      />
 
-      <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-black/70 to-transparent flex items-center justify-center pointer-events-none z-10">
-          <h1 className="font-tech text-xl text-white tracking-widest">{t('neuralFeed')}</h1>
-      </div>
-
-      <button onClick={() => navigate('/publish')} className="absolute bottom-24 md:bottom-6 right-6 w-14 h-14 bg-zenith-green text-black rounded-full shadow-[0_0_20px_var(--z-primary)] flex items-center justify-center text-2xl hover:scale-110 active:scale-95 transition-transform z-20">
-        <Icon icon="fas fa-plus" />
-      </button>
-
-      <CommentsDrawer postId={commentPostId ?? ''} isOpen={!!commentPostId} onClose={() => setCommentPostId(null)} onCommentAdded={refreshFeed} />
+       <button 
+        onClick={handleUploadClick} 
+        disabled={uploading}
+        className="absolute bottom-20 right-5 bg-white text-black font-bold py-3 px-6 rounded-full shadow-lg hover:bg-gray-200 transition-all z-10 disabled:bg-gray-400"
+       >
+        {uploading ? 'Envoi en cours...' : <><FontAwesomeIcon icon={faUpload} className="mr-2" /> Publier</>}
+       </button>
     </div>
   );
 };
 
-export default Community;
+export default CommunityPage;
