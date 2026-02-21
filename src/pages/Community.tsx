@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { Profile } from '../types';
@@ -39,7 +38,6 @@ const CommunityPage: React.FC = () => {
   }, []);
 
   const handleUploadClick = () => {
-    // Create a hidden file input and click it
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'video/mp4';
@@ -72,8 +70,8 @@ const CommunityPage: React.FC = () => {
          </button>
       </div>
 
-      {/* Sidebar for Live Streams */}
-      <aside className="hidden md:block w-80 h-full bg-zenith-surface p-4 border-l border-gray-800">
+      {/* Sidebar for Live Streams with blur effect */}
+      <aside className="hidden md:block w-80 h-full bg-black/30 backdrop-blur-md p-4 border-l border-gray-800">
         <h2 className="font-bold text-xl mb-4">En Direct</h2>
         <div>
           {streamingProfiles.length > 0 ? (
