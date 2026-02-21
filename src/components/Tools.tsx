@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { askZenithAI } from '../services/geminiService';
+import geminiService from '../services/geminiService';
 
 /* --- EXISTING TOOLS --- */
 
@@ -79,7 +79,7 @@ export const AIChat: React.FC = () => {
     setHistory(prev => [...prev, {role: 'user', text: userMsg}]);
     setQuery('');
     setLoading(true);
-    const response = await askZenithAI(userMsg);
+    const response = await geminiService.askZenithAI(userMsg);
     setHistory(prev => [...prev, {role: 'ai', text: response}]);
     setLoading(false);
   };
