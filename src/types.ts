@@ -76,7 +76,7 @@ export interface Community {
 }
 
 export interface Post {
-  id: number; // Corrected from string to number
+  id: string; // Reverted back to string
   author: string;
   username: string;
   avatar: string;

@@ -6,8 +6,7 @@ export interface Profile {
   bio: string;
   created_at: string;
   updated_at: string;
-  status?: 'online' | 'offline' | 'streaming'; // Added for LIVE indicator
-  // Instagram-style fields
+  status?: 'online' | 'offline' | 'streaming';
   banner_url?: string;
   website?: string;
   location?: string;
@@ -18,8 +17,8 @@ export interface Profile {
 }
 
 export interface Post {
-  id: number; // Corrected from string to number
-  user_id: string; // Kept as string (UUID)
+  id: string; // Reverted back to string
+  user_id: string;
   image_url: string;
   caption: string;
   likes_count: number;
