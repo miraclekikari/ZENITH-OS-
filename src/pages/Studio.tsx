@@ -163,25 +163,22 @@ const Studio: React.FC = () => {
     if (!fabricCanvasRef.current) return;
     const canvas = fabricCanvasRef.current;
     try {
-        fabric.Image.fromURL(url, (stickerImg) => {
-            if (stickerImg) {
-                stickerImg.scale(0.5);
-                stickerImg.set({
-                    left: canvas.width! / 2,
-                    top: canvas.height! / 2,
-                    originX: 'center',
-                    originY: 'center',
-                });
-                canvas.add(stickerImg);
-                canvas.setActiveObject(stickerImg);
-                canvas.renderAll();
-            }
-        });
+      const stickerImg = await fabric.Image.fromURL(url);
+      stickerImg.scale(0.5);
+      stickerImg.set({
+          left: canvas.width! / 2,
+          top: canvas.height! / 2,
+          originX: 'center',
+          originY: 'center',
+      });
+      canvas.add(stickerImg);
+      canvas.setActiveObject(stickerImg);
+      canvas.renderAll();
     } catch (error) {
         console.error("Error loading sticker:", error);
     }
     setShowStickerPanel(false);
-};
+  };
 
 
   useEffect(() => {
@@ -200,14 +197,11 @@ const Studio: React.FC = () => {
 
         if (mediaType === 'photo') {
             try {
-                fabric.Image.fromURL(capturedMedia, (img) => {
-                    if (img) {
-                        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
-                            scaleX: canvas.width! / (img.width || 1),
-                            scaleY: canvas.height! / (img.height || 1),
-                        });
-                    }
-                });
+                const img = await fabric.Image.fromURL(capturedMedia);
+                img.scaleX = canvas.width! / (img.width || 1);
+                img.scaleY = canvas.height! / (img.height || 1);
+                canvas.backgroundImage = img;
+                canvas.renderAll();
             } catch (error) {
                 console.error("Error loading background image:", error);
             }
