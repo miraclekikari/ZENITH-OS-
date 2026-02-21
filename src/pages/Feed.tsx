@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Post, Story, Profile } from '../types'; // Correctly import Profile
+import { Post, Story, UserProfile } from '../types';
 import { getPosts, togglePostLike } from '../lib/supabaseService';
 import { getUser } from '../services/storageService';
 import PostCard from '../components/PostCard';
@@ -39,11 +39,11 @@ const Feed: React.FC = () => {
   const [stories, setStories] = useState<Story[]>(mockStories);
   const [isLoading, setIsLoading] = useState(true);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
-  const [currentUser, setCurrentUser] = useState<Profile | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const user = getUser();
-    setCurrentUser(user as Profile | null);
+    setCurrentUser(user as UserProfile | null);
   }, []);
 
   const refreshFeed = useCallback(async () => {
