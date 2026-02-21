@@ -31,6 +31,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
   const [channelName, setChannelName] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,11 +56,23 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
       setLoading(true);
       setError(null);
       try {
+        // Fetch channel name
         const { data: channelData, error: channelError } = await supabase.from('channels').select('name').eq('id', channelId).single();
         if (channelError) throw channelError;
         setChannelName(channelData.name);
 
-        const { data: messagesData, error: messagesError } = await supabase.from('messages').select('*, profiles(*)').eq('channel_id', channelId).order('created_at', { ascending: true });
+        // Base query for messages
+        let query = supabase.from('messages').select('*, profiles(*)').eq('channel_id', channelId);
+
+        // Apply search filter if searchQuery exists
+        if (searchQuery.trim() !== '') {
+            // For simplicity, we'll use `ilike` for partial matching. 
+            // A more advanced implementation would use .textSearch()
+            query = query.ilike('content', `%${searchQuery.trim()}%`);
+        }
+
+        const { data: messagesData, error: messagesError } = await query.order('created_at', { ascending: true });
+
         if (messagesError) throw messagesError;
         setMessages(messagesData as Message[]);
       } catch (err: any) {
@@ -71,7 +84,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
     };
 
     fetchData();
-  }, [channelId]);
+  }, [channelId, searchQuery]); // Re-run effect if channelId or searchQuery changes
 
   useEffect(() => {
     if (!channelId) return;
@@ -82,16 +95,19 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` },
         async (payload) => {
-          const newMessagePayload = payload.new as Omit<Message, 'profiles'>;
-          const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', newMessagePayload.author_id).single();
+            // Ignore new messages if a search is active to avoid confusion
+            if (searchQuery.trim() === '') {
+                const newMessagePayload = payload.new as Omit<Message, 'profiles'>;
+                const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', newMessagePayload.author_id).single();
 
-          if (profileError) {
-            console.error('Error fetching profile for new message:', profileError);
-            setMessages(currentMessages => [...currentMessages, { ...newMessagePayload, profiles: null }]);
-          } else {
-            const fullMessage: Message = { ...newMessagePayload, profiles: profileData as Profile };
-            setMessages(currentMessages => [...currentMessages, fullMessage]);
-          }
+                if (profileError) {
+                    console.error('Error fetching profile for new message:', profileError);
+                    setMessages(currentMessages => [...currentMessages, { ...newMessagePayload, profiles: null }]);
+                } else {
+                    const fullMessage: Message = { ...newMessagePayload, profiles: profileData as Profile };
+                    setMessages(currentMessages => [...currentMessages, fullMessage]);
+                }
+            }
         }
       )
       .subscribe();
@@ -99,7 +115,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
     return () => {
       supabase.removeChannel(channelSubscription);
     };
-  }, [channelId]);
+  }, [channelId, searchQuery]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -183,14 +199,38 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
       });
   };
 
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // The search is already triggered by the useEffect listening on searchQuery
+    // This function is here to prevent form submission from reloading the page
+  };
+
   return (
     <div className="flex-1 bg-[#36393f] flex flex-col" aria-label="Chat area">
-      <header className="h-[48px] px-4 font-bold text-lg flex items-center border-b-2 border-black/20 shadow-sm text-white flex-shrink-0">
-        <button onClick={onMenuClick} className="md:hidden mr-2 text-gray-300 hover:text-white">
-            <Icon icon="menu" className="w-6 h-6" />
-        </button>
-        <Icon icon="hashtag" className="w-6 h-6 mr-2 text-gray-400" />
-        <span>{channelName}</span>
+      <header className="h-[48px] px-4 flex items-center justify-between border-b-2 border-black/20 shadow-sm text-white flex-shrink-0">
+        <div className="flex items-center">
+            <button onClick={onMenuClick} className="md:hidden mr-2 text-gray-300 hover:text-white">
+                <Icon icon="menu" className="w-6 h-6" />
+            </button>
+            <div className="flex items-center font-bold text-lg">
+                <Icon icon="hashtag" className="w-6 h-6 mr-2 text-gray-400" />
+                <span>{channelName}</span>
+            </div>
+        </div>
+        <div className="relative">
+            <form onSubmit={handleSearchSubmit}>
+                <input 
+                    type="text" 
+                    placeholder="Rechercher..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-48 bg-[#202225] text-sm rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 focus:w-64"
+                />
+                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Icon icon="search" className="w-4 h-4"/>
+                </div>
+            </form>
+        </div>
       </header>
 
       <main ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1">
