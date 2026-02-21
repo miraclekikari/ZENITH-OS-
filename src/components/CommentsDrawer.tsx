@@ -67,7 +67,7 @@ const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ postId, isOpen, onClose
       if (data) {
         await fetchComments();
         setNewComment('');
-        await supabase.rpc('increment_post_comments', { post_id_arg: postId }).catch(() => {});
+        try { await supabase.rpc('increment_post_comments', { post_id_arg: postId }); } catch { /* ignore */ }
         onCommentAdded?.();
       }
     } catch (err) {
