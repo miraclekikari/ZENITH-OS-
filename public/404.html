@@ -1,0 +1,12 @@
+<html>
+  <head>
+    <script>
+      const path = sessionStorage.getItem('zenith_spa_path');
+      if (path) {
+        sessionStorage.removeItem('zenith_spa_path');
+        window.location.replace(window.location.origin + '/?path=' + path);
+      }
+    </script>
+  </head>
+  <body></body>
+</html>
