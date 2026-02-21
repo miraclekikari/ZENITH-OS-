@@ -59,27 +59,45 @@ const CommunityPage: React.FC = () => {
   };
 
   return (
-    // The main container must be relative to position children on top of it.
-    <div className="h-full w-full relative bg-black">
-      {/* The ShortsFeed takes up 100% of the space, as intended. */}
-      <ShortsFeed />
-
-      {/* The upload button is positioned absolutely on top. */}
-      <button onClick={handleUploadClick} className="absolute top-4 right-4 z-20 bg-black/50 p-2 rounded-full">
-          <Icon icon="camera" className="text-2xl text-white"/>
-      </button>
-
-      {/* The sidebar is also positioned absolutely, overlaying the feed. */}
-      <aside className="absolute top-0 right-0 h-full hidden md:block w-80 bg-black/30 backdrop-blur-md p-4 z-10 border-l border-gray-800/50">
-        <h2 className="font-bold text-xl mb-4 text-white">En Direct</h2>
-        <div>
-          {streamingProfiles.length > 0 ? (
-            streamingProfiles.map(profile => <LiveUser key={profile.id} profile={profile} />)
-          ) : (
-            <p className="text-gray-400">Personne n'est en direct pour le moment.</p>
-          )}
+    <div className="h-full w-full flex justify-center items-start p-4 md:p-8">
+      {/* Centered Content Area */}
+      <div className="w-full max-w-md">
+        {/* Stories Section - Placeholder */}
+        <div className="mb-8">
+            <h2 className="text-lg font-bold text-white mb-4">Stories</h2>
+            <div className="flex space-x-4">
+                {/* Example Story */}
+                <div className="flex flex-col items-center space-y-1">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-r from-yellow-400 via-red-500 to-pink-500 p-0.5">
+                        <img className="w-full h-full rounded-full bg-black p-0.5" src="https://api.dicebear.com/7.x/bottts/svg?seed=profil" alt="story"/>
+                    </div>
+                    <span className="text-xs text-white">profil</span>
+                </div>
+            </div>
         </div>
-      </aside>
+
+        {/* Main Feed using ShortsFeed component */}
+        <div className="h-[70vh] w-full relative rounded-lg overflow-hidden">
+          <ShortsFeed />
+          <button onClick={handleUploadClick} className="absolute top-4 right-4 z-20 bg-black/50 p-2 rounded-full">
+              <Icon icon="camera" className="text-2xl text-white"/>
+          </button>
+        </div>
+      </div>
+
+      {/* Right Sidebar for Live Streams & Suggestions - Appears next to the content on larger screens */}
+      <div className="hidden lg:block w-80 ml-8">
+        <div className="bg-black/30 backdrop-blur-md p-4 rounded-lg border border-gray-800">
+            <h2 className="font-bold text-xl mb-4 text-white">En Direct</h2>
+            <div>
+              {streamingProfiles.length > 0 ? (
+                streamingProfiles.map(profile => <LiveUser key={profile.id} profile={profile} />)
+              ) : (
+                <p className="text-gray-400">Personne n'est en direct pour le moment.</p>
+              )}
+            </div>
+        </div>
+      </div>
     </div>
   );
 };
