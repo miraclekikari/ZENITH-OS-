@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faPaperPlane, 
@@ -44,11 +44,16 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
       onNewMessage: (message) => {
         setMessages(prev => [...prev, message]);
       },
-      // ... other listeners
+      onMessageUpdated: () => {},
+      onMessageDeleted: () => {},
+      onUserJoined: () => {},
+      onUserLeft: () => {},
     });
 
     return () => {
-      chatService.unsubscribeFromChannel(liveId);
+      if (subscription) {
+        chatService.unsubscribeFromChannel(liveId);
+      }
     };
   }, [liveId]);
 
@@ -74,15 +79,13 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
     }
   };
 
-  // Render full-screen live experience
   if (isLive) {
     return (
       <div className="fixed inset-0 bg-black text-white flex flex-col">
-        {/* Video Background (placeholder) */}
         <div className="absolute inset-0 z-0">
           <video 
             className="w-full h-full object-cover" 
-            src={`https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4`} // Replace with actual live stream URL
+            src={`https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4`} 
             autoPlay 
             loop 
             muted 
@@ -90,7 +93,6 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
           <div className="absolute inset-0 bg-black/30"></div>
         </div>
 
-        {/* Header */}
         <div className="relative z-10 p-4 flex justify-between items-center">
           <div className="flex items-center gap-3">
             <img src="https://picsum.photos/seed/live/100/100" alt="Streamer" className="w-10 h-10 rounded-full border-2 border-red-500" />
@@ -104,7 +106,6 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
           </button>
         </div>
 
-        {/* Floating Chat */}
         <div className="absolute bottom-20 left-4 right-4 z-10 max-h-60 overflow-y-auto space-y-2 no-scrollbar">
           {messages.map((message) => (
             <div key={message.id} className="flex items-start gap-2 text-shadow-md">
@@ -118,7 +119,6 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
            <div ref={messagesEndRef} />
         </div>
 
-        {/* Input & Actions */}
         <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center gap-3">
           <div className="flex-1 relative">
             <input
@@ -139,7 +139,6 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
           </button>
         </div>
         
-        {/* Interaction Buttons (TikTok style) */}
         <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-6">
             <button className="flex flex-col items-center gap-1 text-white">
                 <FontAwesomeIcon icon={faHeart} className="text-4xl drop-shadow-lg"/>
@@ -158,12 +157,10 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
     );
   }
 
-  // ... Render standard chat UI ...
   return (
     <div className="flex h-screen bg-zenith-bg text-zenith-text">
-        {/* Standard Chat UI, you can keep your existing UI here */}
         <div className="flex-1 flex items-center justify-center">
-            <h1 className="text-2xl">Select a live stream to join.</h1>
+            <h1 className="text-2xl">Select a channel to get started.</h1>
         </div>
     </div>
   );
