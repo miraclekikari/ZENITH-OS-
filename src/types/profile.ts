@@ -6,6 +6,7 @@ export interface Profile {
   bio: string;
   created_at: string;
   updated_at: string;
+  status?: 'online' | 'offline' | 'streaming'; // Added for LIVE indicator
   // Instagram-style fields
   banner_url?: string;
   website?: string;
@@ -25,4 +26,5 @@ export interface Post {
   comments_count: number;
   created_at: string;
   is_liked?: boolean;
+  type?: 'image' | 'video';
 }
