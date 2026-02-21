@@ -8,34 +8,34 @@
 /* Variables CSS personnalisées - Thème par défaut */
 :root {
   /* Couleurs principales */
-  --z-primary: #00ff88;
-  --z-secondary: #ff3333;
-  --z-background: #050505;
-  --z-surface: #0a0e14;
-  --z-surface-light: rgba(13, 17, 23, 0.7);
-  --z-border: rgba(0, 255, 136, 0.3);
-  --z-green: #00ff88;
-  --z-green-dim: rgba(0, 255, 136, 0.3);
+  --z-primary: #10b981;
+  --z-secondary: #06b6d4;
+  --z-background: #0a0a0a;
+  --z-surface: #111111;
+  --z-surface-light: rgba(17, 17, 17, 0.8);
+  --z-border: rgba(255, 255, 255, 0.06);
+  --z-green: #10b981;
+  --z-green-dim: rgba(16, 185, 129, 0.15);
   --z-dim: #666666;
-  --z-text: #e6edf3;
+  --z-text: #ffffff;
   
-  /* Variables du système de thème */
-  --z-bg: #05070a;
-  --z-glass: rgba(13, 17, 23, 0.7);
-  --z-primary-dim: rgba(0, 255, 136, 0.15);
-  --z-gradient: linear-gradient(135deg, #00ff88, #00ccff);
-  --z-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+  /* Variables du systeme de theme */
+  --z-bg: #0a0a0a;
+  --z-glass: rgba(17, 17, 17, 0.8);
+  --z-primary-dim: rgba(16, 185, 129, 0.15);
+  --z-gradient: linear-gradient(135deg, #10b981, #06b6d4);
+  --z-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
   --animation-speed: 0.3s;
   
-  /* Application automatique du thème */
+  /* Application automatique du theme */
   background-color: var(--z-bg);
   color: var(--z-text);
 }
 
 /* CORRECTION RESPONSIVE : On force le respect de la largeur écran */
 html, body {
-  background-color: #050505 !important;
-  color: #00ffcc !important;
+  background-color: #0a0a0a !important;
+  color: #ffffff !important;
   margin: 0;
   padding: 0;
   width: 100%;
@@ -107,11 +107,11 @@ html, body {
 
 /* CORRECTION : On s'assure que les cartes ne cassent pas le layout sur petit écran */
 .glass-card {
-  background: rgba(5, 5, 5, 0.8);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 255, 204, 0.3);
-  border-radius: 0.5rem;
+  background: rgba(17, 17, 17, 0.8);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 0.75rem;
   max-width: 100%; /* Important pour mobile */
   word-wrap: break-word; /* Évite que le texte ne pousse les murs */
   overflow-wrap: break-word;
@@ -122,7 +122,7 @@ html, body {
 
 .glass-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 12px rgba(0, 255, 204, 0.2);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
 }
 
 /* Optimisations pour les images */
@@ -444,24 +444,24 @@ video, iframe {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(5, 5, 5, 0.5);
+  background: transparent;
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--z-green);
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 3px;
   transition: background 0.3s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--z-primary);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 /* Scrollbar pour Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--z-green) rgba(5, 5, 5, 0.5);
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
 /* Optimisations de performance */

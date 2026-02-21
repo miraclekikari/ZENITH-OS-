@@ -1,30 +1,19 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faFlask, faCog, faQuestionCircle } from '@fortawesome/free-solid-svg-icons';
+import { Bell, Search } from 'lucide-react';
 
 const TopNavBar: React.FC = () => {
-  const navLinks = [
-    { to: "/profile", icon: faUser, text: "Profile" },
-    { to: "/lab", icon: faFlask, text: "Lab" },
-    { to: "/settings", icon: faCog, text: "Settings" },
-    { to: "/support", icon: faQuestionCircle, text: "Support" },
-  ];
-
   return (
-    <header className="md:hidden fixed top-0 left-0 right-0 h-16 bg-black/50 backdrop-blur-lg border-b border-white/10 z-50">
-      <div className="flex justify-around items-center h-full px-4">
-        {navLinks.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `flex items-center justify-center w-full h-full ${isActive ? 'text-cyan-400' : 'text-white/70'}`
-            }
-          >
-            <FontAwesomeIcon icon={link.icon} className="w-6 h-6" />
-          </NavLink>
-        ))}
+    <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/[0.06] z-50 flex items-center justify-between px-4">
+      <h1 className="font-tech text-base font-bold tracking-[0.2em] text-white">ZENITH</h1>
+      <div className="flex items-center gap-3">
+        <button className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/[0.06] transition-colors">
+          <Search size={18} />
+        </button>
+        <button className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/[0.06] transition-colors relative">
+          <Bell size={18} />
+          <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400" />
+        </button>
       </div>
     </header>
   );
