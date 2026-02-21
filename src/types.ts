@@ -1,12 +1,9 @@
-// V2
 export type UserRole = 'USER' | 'ADMIN' | 'ROOT';
 export type PrivacyStatus = 'PUBLIC' | 'PRIVATE' | 'ENCRYPTED';
 export type SubscriptionTier = 'LEVEL_1' | 'LEVEL_5' | 'LEVEL_10';
 
-// Type explicite pour user_id (string simple, pas UUID)
 export type UserId = string;
 
-// Interface pour les profiles utilisateurs
 export interface Profile {
   id: string;
   username: string;
@@ -14,7 +11,7 @@ export interface Profile {
   bio?: string;
   avatar_url?: string;
   is_verified?: boolean;
-  privacy: PrivacyStatus; // Utiliser le type PrivacyStatus au lieu de chaîne littérale
+  privacy: PrivacyStatus;
   created_at: string;
   updated_at: string;
 }
@@ -28,34 +25,33 @@ export interface PrivacySettings {
   typingIndicators: boolean;
 }
 
-// Interfaces pour les tables Supabase avec author_id explicite en string
 export interface SupabasePost {
   id: string;
   content: string | null;
   image_url: string | null;
-  author_id: UserId; // Utiliser author_id pour cohérence
+  author_id: UserId;
   created_at: string;
-  profiles?: Profile; // Jointure avec profiles
+  profiles?: Profile;
 }
 
 export interface SupabaseComment {
   id: string;
   post_id: string;
-  author_id: UserId; // Utiliser author_id au lieu de user_id
+  author_id: UserId;
   content: string;
   created_at: string;
-  profiles?: Profile; // Jointure avec profiles
+  profiles?: Profile;
 }
 
 export interface SupabasePostLike {
   post_id: string;
-  author_id: UserId; // Utiliser author_id pour cohérence
+  author_id: UserId;
   created_at: string;
 }
 
 export interface SupabaseStory {
   id: string;
-  author_id: UserId; // Utiliser author_id pour cohérence
+  author_id: UserId;
   image_url: string;
   created_at: string;
 }
@@ -66,7 +62,7 @@ export interface Course {
   category: string;
   duration: string;
   image: string;
-  price?: number; // For marketplace
+  price?: number;
   author?: string;
 }
 
@@ -80,9 +76,9 @@ export interface Community {
 }
 
 export interface Post {
-  id: string;
+  id: number; // Corrected from string to number
   author: string;
-  username: string; // Ajout pour la navigation vers les profils
+  username: string;
   avatar: string;
   content: string;
   image?: string;
@@ -94,14 +90,14 @@ export interface Post {
   location?: string;
   tags?: string[];
   isModerated: boolean;
-  isLiked?: boolean; // Local state
-  isReposted?: boolean; // Local state
+  isLiked?: boolean;
+  isReposted?: boolean;
 }
 
 export interface Story {
   id: string;
   user: string;
-  username: string; // Ajout pour la cohérence
+  username: string;
   avatar: string;
   image: string;
   isSeen: boolean;
@@ -124,7 +120,7 @@ export interface UserProfile {
   role: UserRole;
   privacy: PrivacyStatus;
   tier: SubscriptionTier;
-  credits: number; // Virtual currency
+  credits: number;
 }
 
 export interface SkillNode {
@@ -133,9 +129,9 @@ export interface SkillNode {
   description: string;
   cost: number;
   status: 'LOCKED' | 'AVAILABLE' | 'MASTERED';
-  x: number; // Percentage 0-100
-  y: number; // Percentage 0-100
-  dependencies: string[]; // IDs of prerequisite skills
+  x: number;
+  y: number;
+  dependencies: string[];
   icon: string;
 }
 
@@ -157,7 +153,6 @@ export enum Tab {
   ADMIN = 'ADMIN'
 }
 
-// Global definition for KaTeX
 declare global {
   interface Window {
     katex: any;
