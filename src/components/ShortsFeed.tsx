@@ -56,7 +56,11 @@ const ShortVideo: React.FC<ShortVideoProps> = ({ post, onComment, isActive }) =>
     setLikes(isLiked ? likes - 1 : likes + 1);
     setIsLiked(!isLiked);
     if (post.id) {
-      try { await supabase.rpc('increment_post_likes', { post_id_arg: post.id, increment_value: isLiked ? -1 : 1 }); } catch { /* ignore */ }
+      try { 
+        await supabase.rpc('increment_post_likes', { post_id_arg: post.id, increment_value: isLiked ? -1 : 1 }); 
+      } catch (rpcError) {
+        console.error('Error incrementing post likes:', rpcError);
+      }
     }
   };
 

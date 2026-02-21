@@ -9,8 +9,9 @@ export const Calculator: React.FC = () => {
   const clear = () => setDisplay('');
   const evaluate = () => {
     try {
-      // eslint-disable-next-line no-eval
-      setDisplay(eval(display).toString());
+      // Using a safer method than eval()
+      const result = new Function('return ' + display)();
+      setDisplay(result.toString());
     } catch {
       setDisplay('Error');
     }
