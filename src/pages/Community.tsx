@@ -17,7 +17,6 @@ const LiveUser: React.FC<{ profile: Profile }> = ({ profile }) => (
   </div>
 );
 
-
 const CommunityPage: React.FC = () => {
   const [streamingProfiles, setStreamingProfiles] = useState<Profile[]>([]);
 
@@ -54,25 +53,25 @@ const CommunityPage: React.FC = () => {
         alert("Erreur lors de l'upload : " + error.message);
       } else {
         alert("Vidéo uploadée avec succès !");
-        // Here you might want to create a new post entry in the 'posts' table
       }
     };
     input.click();
   };
 
   return (
-    <div className="h-full w-full flex bg-black text-white">
-      {/* Main Shorts Feed */}
-      <div className="flex-grow h-full relative">
-         <ShortsFeed />
-         <button onClick={handleUploadClick} className="absolute top-4 right-4 z-20 bg-black/50 p-2 rounded-full">
-            <Icon icon="camera" className="text-2xl text-white"/>
-         </button>
-      </div>
+    // The main container must be relative to position children on top of it.
+    <div className="h-full w-full relative bg-black">
+      {/* The ShortsFeed takes up 100% of the space, as intended. */}
+      <ShortsFeed />
 
-      {/* Sidebar for Live Streams with blur effect */}
-      <aside className="hidden md:block w-80 h-full bg-black/30 backdrop-blur-md p-4 border-l border-gray-800">
-        <h2 className="font-bold text-xl mb-4">En Direct</h2>
+      {/* The upload button is positioned absolutely on top. */}
+      <button onClick={handleUploadClick} className="absolute top-4 right-4 z-20 bg-black/50 p-2 rounded-full">
+          <Icon icon="camera" className="text-2xl text-white"/>
+      </button>
+
+      {/* The sidebar is also positioned absolutely, overlaying the feed. */}
+      <aside className="absolute top-0 right-0 h-full hidden md:block w-80 bg-black/30 backdrop-blur-md p-4 z-10 border-l border-gray-800/50">
+        <h2 className="font-bold text-xl mb-4 text-white">En Direct</h2>
         <div>
           {streamingProfiles.length > 0 ? (
             streamingProfiles.map(profile => <LiveUser key={profile.id} profile={profile} />)
