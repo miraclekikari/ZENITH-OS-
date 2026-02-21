@@ -63,11 +63,10 @@ const Studio: React.FC = () => {
   const handleToggleFlash = async () => {
     if (!stream) return;
     const videoTrack = stream.getVideoTracks()[0];
-    const capabilities = videoTrack.getCapabilities();
-    // @ts-ignore
+    const capabilities = videoTrack.getCapabilities() as any;
     if (capabilities.torch) {
       try {
-        await videoTrack.applyConstraints({ advanced: [{ torch: !flashOn }] });
+        await videoTrack.applyConstraints({ advanced: [{ torch: !flashOn }] } as any);
         setFlashOn(!flashOn);
       } catch (error) {
         console.error("Error toggling flash:", error);
