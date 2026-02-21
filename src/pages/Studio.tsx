@@ -1,11 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { usePermissions } from '../hooks/usePermissions';
 import Icon from '../components/Icon';
 import { useNavigate } from 'react-router-dom';
 
 const Studio: React.FC = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { permissionState: cameraPermission, requestPermission: requestCamera } = usePermissions('camera');
   const { permissionState: microphonePermission, requestPermission: requestMicrophone } = usePermissions('microphone');
@@ -90,15 +88,13 @@ const Studio: React.FC = () => {
       }
     }
   };
-  
+
   const handleStartRecording = () => {
     if (stream) {
       setIsRecording(true);
       mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'video/webm' });
       const chunks: Blob[] = [];
-      mediaRecorderRef.current.ondataavailable = (event) => {
-        chunks.push(event.data);
-      };
+      mediaRecorderRef.current.ondataavailable = event => chunks.push(event.data);
       mediaRecorderRef.current.onstop = () => {
         const blob = new Blob(chunks, { type: 'video/webm' });
         const url = URL.createObjectURL(blob);
@@ -108,7 +104,7 @@ const Studio: React.FC = () => {
       mediaRecorderRef.current.start();
     }
   };
-  
+
   const handleStopRecording = () => {
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
@@ -117,22 +113,11 @@ const Studio: React.FC = () => {
   };
 
   const handleCapture = () => {
-    if (mediaType === 'photo') {
-      handleTakePhoto();
-    } else {
-      if (isRecording) {
-        handleStopRecording();
-      } else {
-        handleStartRecording();
-      }
-    }
+    if (mediaType === 'photo') handleTakePhoto();
+    else isRecording ? handleStopRecording() : handleStartRecording();
   };
-  
-  const handleGalleryImport = () => {
-    if (fileInputRef.current) {
-        fileInputRef.current.click();
-    }
-  };
+
+  const handleGalleryImport = () => fileInputRef.current?.click();
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -149,85 +134,88 @@ const Studio: React.FC = () => {
     setIsPreviewing(false);
     startCamera(facingMode);
   };
-  
+
   const handlePost = () => {
     console.log("Posting media:", capturedMedia);
-    // Here you would typically upload the media to a server
-    // For now, we'll just reset
     handleDiscard();
   };
 
-  if (cameraPermission === 'prompt' || microphonePermission === 'prompt') {
-    return (
-      <div className="flex flex-col items-center justify-center h-full bg-black text-white p-4 text-center">
-        <Icon icon="camera-retro" className="text-6xl text-cyan-400 mb-6" />
-        <h2 className="text-2xl font-bold mb-2">Accès à la Caméra et au Micro</h2>
-        <p className="text-gray-400 mb-8 max-w-sm">Nous avons besoin de votre autorisation pour capturer des photos et des vidéos.</p>
-        <button onClick={handlePermissions} className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-full transition-transform transform hover:scale-105">
-          Autoriser
+  const renderPermissionsPrompt = () => (
+    <div className="flex flex-col items-center justify-center h-full bg-black text-white p-4 text-center">
+      <Icon icon="camera-retro" className="text-6xl text-cyan-400 mb-6" />
+      <h2 className="text-2xl font-bold mb-2">Accès Caméra & Micro</h2>
+      <p className="text-gray-400 mb-8 max-w-sm">Autorisez l'accès pour capturer des photos et vidéos.</p>
+      <button onClick={handlePermissions} className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-8 rounded-full transition-transform transform hover:scale-105">
+        Autoriser
+      </button>
+    </div>
+  );
+
+  const renderPermissionsDenied = () => (
+    <div className="flex flex-col items-center justify-center h-full bg-black text-white p-4 text-center">
+      <Icon icon="exclamation-triangle" className="text-6xl text-red-500 mb-6" />
+      <h2 className="text-2xl font-bold mb-2">Accès Refusé</h2>
+      <p className="text-gray-400 mb-8 max-w-sm">Activez l'accès à la caméra et au micro dans les paramètres de votre navigateur.</p>
+    </div>
+  );
+
+  const renderPreview = () => (
+    <div className="w-full h-full bg-black flex flex-col items-center justify-center relative">
+      {mediaType === 'photo'
+        ? <img src={capturedMedia!} alt="Preview" className="max-w-full max-h-full object-contain" />
+        : <video src={capturedMedia!} controls autoPlay loop className="max-w-full max-h-full object-contain" />
+      }
+      <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/50 to-transparent">
+        <button onClick={handleDiscard} className="text-white text-2xl"><Icon icon="times" /></button>
+      </div>
+      <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/50 to-transparent flex justify-center">
+        <button onClick={handlePost} className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-12 rounded-full transition-transform transform hover:scale-105">
+          Publier
         </button>
       </div>
-    );
-  }
+    </div>
+  );
 
-  if (cameraPermission === 'denied' || microphonePermission === 'denied') {
-    return (
-        <div className="flex flex-col items-center justify-center h-full bg-black text-white p-4 text-center">
-            <Icon icon="exclamation-triangle" className="text-6xl text-red-500 mb-6" />
-            <h2 className="text-2xl font-bold mb-2">Accès Refusé</h2>
-            <p className="text-gray-400 mb-8 max-w-sm">
-                L'accès à la caméra ou au microphone a été refusé. Veuillez l'activer dans les paramètres de votre navigateur pour utiliser le Studio.
-            </p>
-        </div>
-    );
-  }
-
-  if (isPreviewing && capturedMedia) {
-    return (
-      <div className="w-full h-full bg-black flex flex-col items-center justify-center relative">
-        {mediaType === 'photo' ? (
-          <img src={capturedMedia} alt="Preview" className="max-w-full max-h-full object-contain" />
-        ) : (
-          <video src={capturedMedia} controls autoPlay loop className="max-w-full max-h-full object-contain" />
-        )}
-        <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/50 to-transparent">
-          <button onClick={handleDiscard} className="text-white text-2xl"><i className="fas fa-times"></i></button>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/50 to-transparent flex justify-center">
-          <button onClick={handlePost} className="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-12 rounded-full transition-transform transform hover:scale-105">
-            Publier
-          </button>
-        </div>
-      </div>
-    );
-  }
-  
-  return (
+  const renderStudio = () => (
     <div className="w-full h-full bg-black flex items-center justify-center relative overflow-hidden">
       <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" muted />
+      
+      {/* Top Overlay */}
       <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center z-10">
-        <button onClick={() => navigate(-1)} className="text-white text-2xl"><i className="fas fa-times"></i></button>
+        <button onClick={() => navigate(-1)} className="text-white text-2xl"><Icon icon="times" /></button>
       </div>
+
+      {/* Right Overlay */}
       <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-8 z-10">
-        <button onClick={handleFlipCamera} className="flex flex-col items-center text-white text-shadow"><i className="fas fa-sync-alt text-2xl"></i></button>
-        <button onClick={handleToggleFlash} className={`flex flex-col items-center transition-colors text-shadow ${flashOn ? 'text-yellow-400' : 'text-white'}`}><i className="fas fa-bolt text-2xl"></i></button>
+        <button onClick={handleFlipCamera} className="text-white"><Icon icon="sync-alt" className="text-2xl" /></button>
+        <button onClick={handleToggleFlash} className={`transition-colors ${flashOn ? 'text-yellow-400' : 'text-white'}`}><Icon icon="bolt" className="text-2xl" /></button>
       </div>
+
+      {/* Bottom Overlay */}
       <div className="absolute bottom-0 left-0 right-0 p-8 flex flex-col items-center z-10">
-        <div className="flex items-center justify-center gap-8">
-          <button onClick={handleGalleryImport} className="text-white text-2xl"><i className="fas fa-images"></i></button>
+        <div className="flex items-center justify-center gap-8 w-full">
+          <button onClick={handleGalleryImport} className="text-white"><Icon icon="images" className="text-3xl" /></button>
           <button onClick={handleCapture} className={`w-20 h-20 rounded-full border-4 border-white shadow-lg flex items-center justify-center ${isRecording ? 'bg-red-500' : 'bg-white/30'}`}>
             {isRecording && <div className="w-8 h-8 bg-white rounded-md"></div>}
           </button>
-          <div className="w-10"></div>
+          <div className="w-10 h-10"></div>
         </div>
         <div className="flex gap-6 mt-4">
           <button onClick={() => setMediaType('photo')} className={`font-bold ${mediaType === 'photo' ? 'text-white' : 'text-gray-500'}`}>PHOTO</button>
           <button onClick={() => setMediaType('video')} className={`font-bold ${mediaType === 'video' ? 'text-white' : 'text-gray-500'}`}>VIDEO</button>
         </div>
       </div>
+
       <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*,video/*" className="hidden" />
     </div>
   );
+
+  if (cameraPermission !== 'granted' || microphonePermission !== 'granted') {
+    if (cameraPermission === 'prompt' || microphonePermission === 'prompt') return renderPermissionsPrompt();
+    return renderPermissionsDenied();
+  }
+
+  return isPreviewing && capturedMedia ? renderPreview() : renderStudio();
 };
 
 export default Studio;
