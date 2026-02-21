@@ -32,10 +32,12 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
@@ -45,6 +47,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
     setTimeout(scrollToBottom, 100);
   }, [messages, scrollToBottom]);
 
+  // Main data fetching logic
   useEffect(() => {
     if (!channelId) {
       setMessages([]);
@@ -65,22 +68,32 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
         const trimmedQuery = searchQuery.trim();
         if (trimmedQuery !== '') {
             if (trimmedQuery.startsWith('from:')) {
-                const username = trimmedQuery.substring(5);
-                const { data: profile, error: profileError } = await supabase.from('profiles').select('id').ilike('username', username).single();
-                if (profileError) {
-                    setError(`User "${username}" not found.`);
-                } else {
-                    query = query.eq('author_id', profile.id);
+                const username = trimmedQuery.substring(5).trim();
+                if (username) {
+                    const { data: profile, error: profileError } = await supabase.from('profiles').select('id').ilike('username', username).single();
+                    if (profileError || !profile) {
+                        setMessages([]);
+                        setError(`User "${username}" not found.`);
+                    } else {
+                        query = query.eq('author_id', profile.id);
+                    }
                 }
+            } else if (trimmedQuery.startsWith('has:image')) {
+                query = query.like('content', '%https://%.png%').or(`content.like.%https://%.jpg%,content.like.%https://%.gif%`);
+            } else if (trimmedQuery.startsWith('in:channel')){
+                // This would require a more complex implementation, possibly searching across channels
+                setError('in:channel filter is not yet implemented.');
             } else {
-                query = query.ilike('content', `%${trimmedQuery}%`);
+                 // Use full-text search for general queries
+                query = query.textSearch('content', `'${trimmedQuery.replace(/\s/g, ' & ')}'`);
             }
         }
+        if(!error){
+            const { data: messagesData, error: messagesError } = await query.order('created_at', { ascending: true });
+            if (messagesError) throw messagesError;
+            setMessages(messagesData as Message[]);
+        }
 
-        const { data: messagesData, error: messagesError } = await query.order('created_at', { ascending: true });
-
-        if (messagesError) throw messagesError;
-        setMessages(messagesData as Message[]);
       } catch (err: any) {
         console.error('Error fetching data:', err);
         setError(`Failed to load chat: ${err.message}`);
@@ -89,8 +102,44 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
       }
     };
 
-    fetchData();
+    const searchDebounce = setTimeout(() => {
+        fetchData();
+    }, 300); // Debounce search to avoid too many requests
+    return () => clearTimeout(searchDebounce);
+
   }, [channelId, searchQuery]);
+
+  // Suggestion logic
+  useEffect(() => {
+    const handleSuggestions = async () => {
+        const trimmedQuery = searchQuery.trim();
+        if (trimmedQuery.startsWith('from:')) {
+            const partialUsername = trimmedQuery.substring(5);
+            if(partialUsername){
+                const { data, error } = await supabase.from('profiles').select('username').ilike('username', `%${partialUsername}%`).limit(5);
+                if (data) {
+                    setSuggestions(data.map(p => `from:${p.username}`));
+                }
+            }
+        } else {
+            setSuggestions(['from:', 'has:image', 'in:channel']);
+        }
+    }
+    if(showSuggestions){
+        handleSuggestions();
+    }
+  }, [searchQuery, showSuggestions]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
 
   useEffect(() => {
     if (!channelId) return;
@@ -206,7 +255,28 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowSuggestions(false);
   };
+
+  const renderSearchQuery = () => {
+      const query = searchQuery.trim();
+      if (!query) return null;
+
+      const parts = query.split(/(:)/).filter(Boolean);
+      let isToken = false;
+
+      return (
+        <div className="absolute top-full left-0 mt-12 w-full text-sm text-gray-400 flex items-center">
+            <span className="mr-2">Recherche:</span>
+            {query.split(/(\s+)/).map((part, index) => {
+                if(part.startsWith('from:') || part.startsWith('has:')){
+                    return <span key={index} className="bg-indigo-500/50 text-white px-2 py-1 rounded-md mx-1">{part}</span>
+                }
+                return <span key={index}>{part}</span>;
+            })}
+        </div>
+      )
+  }
 
   return (
     <div className="flex-1 bg-[#36393f] flex flex-col" aria-label="Chat area">
@@ -220,12 +290,13 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
                 <span>{channelName}</span>
             </div>
         </div>
-        <div className="relative">
+        <div ref={searchContainerRef} className="relative">
             <form onSubmit={handleSearchSubmit}>
                 <input 
                     type="text" 
                     placeholder="Rechercher..."
                     value={searchQuery}
+                    onFocus={() => setShowSuggestions(true)}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-48 bg-[#202225] text-sm rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 focus:w-64"
                 />
@@ -233,11 +304,24 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
                     <Icon icon="search" className="w-4 h-4"/>
                 </div>
             </form>
+            {showSuggestions && (
+                <div className="absolute top-full mt-2 w-64 bg-[#2f3136] border border-black/30 rounded-md shadow-lg z-10">
+                    <ul>
+                        {suggestions.map((s, i) => (
+                            <li key={i} onMouseDown={() => {setSearchQuery(s); setShowSuggestions(false);}} className="px-4 py-2 text-white hover:bg-indigo-600 cursor-pointer">
+                               {s}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+            {renderSearchQuery()}
         </div>
       </header>
 
       <main ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1">
          { error && <div className="text-center text-red-400 p-4">{error}</div> }
+         {!loading && messages.length === 0 && !error && <div className="text-center text-gray-400 p-4">Aucun message trouvé.</div> }
          {!loading && !error && messages.map((msg, index) => {
           const previousMessage = messages[index - 1];
           const isSameAuthor = previousMessage && previousMessage.author_id === msg.author_id;
