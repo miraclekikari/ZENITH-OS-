@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePermissions } from '../hooks/usePermissions';
 import Icon from '../components/Icon';
 import { useNavigate } from 'react-router-dom';
-import { fabric } from 'fabric'; // Corrected import for v5/v6, should work for v7 modules
+import * as fabric from 'fabric';
 import { ALL_STICKERS } from '../lib/stickers';
 
 // Panel to display stickers
