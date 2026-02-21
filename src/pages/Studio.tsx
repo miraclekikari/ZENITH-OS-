@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePermissions } from '../hooks/usePermissions';
 import Icon from '../components/Icon';
 import { useNavigate } from 'react-router-dom';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import { ALL_STICKERS } from '../lib/stickers';
 
 // Panel to display stickers
@@ -68,8 +68,10 @@ const Studio: React.FC = () => {
   const handleToggleFlash = async () => {
     if (!stream) return;
     const videoTrack = stream.getVideoTracks()[0];
+    // @ts-ignore - torch is a valid capability but not in all type definitions
     if (videoTrack.getCapabilities().torch) {
       try {
+        // @ts-ignore - torch is a valid constraint but not in all type definitions
         await videoTrack.applyConstraints({ advanced: [{ torch: !flashOn }] });
         setFlashOn(!flashOn);
       } catch (err) { console.error("Error toggling flash:", err); }
