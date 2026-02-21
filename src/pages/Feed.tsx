@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Post, Story } from '../types';
+import { Post, Story, UserProfile } from '../types';
 import { getPosts, togglePostLike } from '../lib/supabaseService';
+import { getUser } from '../services/storageService';
 import PostCard from '../components/PostCard';
 import CommentsDrawer from '../components/CommentsDrawer';
 import { mapSupabaseRowToPost } from '../utils/mapSupabaseRowToPost';
@@ -38,6 +39,12 @@ const Feed: React.FC = () => {
   const [stories, setStories] = useState<Story[]>(mockStories);
   const [isLoading, setIsLoading] = useState(true);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const user = getUser();
+    setCurrentUser(user);
+  }, []);
 
   const refreshFeed = useCallback(async () => {
     setIsLoading(true);
@@ -87,6 +94,24 @@ const Feed: React.FC = () => {
         </header>
 
         <div className="w-full h-full md:pt-4 overflow-y-auto scrollbar-hide">
+            {/* User Profile Section */}
+            {currentUser && (
+                <div className="hidden md:flex items-center justify-between p-4 my-4 max-w-lg mx-auto">
+                    <div className="flex items-center">
+                        <img src={currentUser.avatar_url || 'https://picsum.photos/seed/profile/200/200'} alt="Your Profile" className="w-16 h-16 rounded-full object-cover border-2 border-cyan-400" />
+                        <div className="ml-4">
+                            <p className="font-bold text-lg">{currentUser.username}</p>
+                            <p className="text-sm text-gray-400">Welcome back!</p>
+                        </div>
+                    </div>
+                    <button 
+                        onClick={() => navigate(`/profile`)} 
+                        className="py-2 px-4 bg-cyan-500/80 hover:bg-cyan-500 text-white font-semibold rounded-lg transition-colors">
+                        View Profile
+                    </button>
+                </div>
+            )}
+
             {/* Stories Bar */}
             <div className="w-full px-2 py-3 border-b border-gray-800">
                 <div className="flex space-x-4 overflow-x-auto scrollbar-hide">
