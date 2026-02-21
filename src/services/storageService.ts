@@ -70,7 +70,14 @@ export const isAdmin = () => {
 
 // THEME
 export const saveTheme = (theme: any) => saveData('zenith_theme', theme);
-export const getTheme = () => getData('zenith_theme');
+export const getTheme = () => {
+  const theme = getData('zenith_theme');
+  if (theme === null || theme === 'ZENITH_DEFAULT') {
+    saveTheme('dark');
+    return 'dark';
+  }
+  return theme;
+};
 export const getThemeSettings = () => getData('zenith_theme_settings');
 export const saveThemeSettings = (settings: any) => saveData('zenith_theme_settings', settings);
 
