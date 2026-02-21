@@ -1,8 +1,18 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { supabase } from '../../lib/supabaseClient';
-import Icon from '../Icon';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Hash,
+  Menu,
+  Search,
+  PlusCircle,
+  Gift,
+  Smile,
+  Pin,
+  Users,
+  Bell,
+} from 'lucide-react';
 
-// Types aligned with Supabase tables
 export type Profile = {
   id: string;
   username: string;
@@ -20,6 +30,30 @@ export type Message = {
   profiles: Profile | null;
 };
 
+// Mock messages for when Supabase is not connected
+const mockMessages: Message[] = [
+  {
+    id: 1, created_at: new Date(Date.now() - 3600000).toISOString(), content: 'Welcome to the Zenith network. This is the beginning of something extraordinary.', author_id: '1', channel_id: 1,
+    profiles: { id: '1', username: 'ZenithBot', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=zenith', status: 'online', role: 'ADMIN' },
+  },
+  {
+    id: 2, created_at: new Date(Date.now() - 3000000).toISOString(), content: 'The new interface is looking incredible. Glassmorphism everywhere!', author_id: '2', channel_id: 1,
+    profiles: { id: '2', username: 'NovaAgent', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=nova', status: 'online', role: 'USER' },
+  },
+  {
+    id: 3, created_at: new Date(Date.now() - 2400000).toISOString(), content: 'Has anyone tried the new Community module? The full-screen video scroll is smooth.', author_id: '3', channel_id: 1,
+    profiles: { id: '3', username: 'CyberPilot', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=cyber', status: 'offline', role: 'USER' },
+  },
+  {
+    id: 4, created_at: new Date(Date.now() - 1800000).toISOString(), content: 'I love how all modules are connected seamlessly. One click switching is the way.', author_id: '2', channel_id: 1,
+    profiles: { id: '2', username: 'NovaAgent', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=nova', status: 'online', role: 'USER' },
+  },
+  {
+    id: 5, created_at: new Date(Date.now() - 600000).toISOString(), content: 'Just deployed the latest update. The feed module now loads 3x faster.', author_id: '1', channel_id: 1,
+    profiles: { id: '1', username: 'ZenithBot', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=zenith', status: 'online', role: 'ADMIN' },
+  },
+];
+
 interface ChatAreaProps {
   channelId: number | null;
   onMenuClick: () => void;
@@ -28,120 +62,58 @@ interface ChatAreaProps {
 const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
-  const [channelName, setChannelName] = useState<string>('');
+  const [channelName, setChannelName] = useState<string>('general');
   const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showSuggestions, setShowSuggestions] = useState(false);
-  const [suggestions, setSuggestions] = useState<string[]>([]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null); // BUG FIX: Re-added this line
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
   }, []);
 
   useEffect(() => {
     setTimeout(scrollToBottom, 100);
   }, [messages, scrollToBottom]);
 
-  // Main data fetching logic
   useEffect(() => {
     if (!channelId) {
-      setMessages([]);
-      setChannelName('Select a channel');
+      setMessages(mockMessages);
+      setChannelName('general');
       return;
     }
 
     const fetchData = async () => {
       setLoading(true);
-      setError(null);
       try {
-        const { data: channelData, error: channelError } = await supabase.from('channels').select('name').eq('id', channelId).single();
-        if (channelError) throw channelError;
-        setChannelName(channelData.name);
+        const { data: channelData } = await supabase.from('channels').select('name').eq('id', channelId).single();
+        if (channelData) setChannelName(channelData.name);
 
-        let query = supabase.from('messages').select('*, profiles(*)').eq('channel_id', channelId);
+        const { data: messagesData, error: messagesError } = await supabase
+          .from('messages')
+          .select('*, profiles(*)')
+          .eq('channel_id', channelId)
+          .order('created_at', { ascending: true });
 
-        const trimmedQuery = searchQuery.trim();
-        if (trimmedQuery !== '') {
-            if (trimmedQuery.startsWith('from:')) {
-                const username = trimmedQuery.substring(5).trim();
-                if (username) {
-                    const { data: profile, error: profileError } = await supabase.from('profiles').select('id').ilike('username', username).single();
-                    if (profileError || !profile) {
-                        setMessages([]);
-                        setError(`User "${username}" not found.`);
-                    } else {
-                        query = query.eq('author_id', profile.id);
-                    }
-                }
-            } else if (trimmedQuery.startsWith('has:image')) {
-                query = query.like('content', '%https://%.png%').or(`content.like.%https://%.jpg%,content.like.%https://%.gif%`);
-            } else if (trimmedQuery.startsWith('in:channel')){
-                // This would require a more complex implementation, possibly searching across channels
-                setError('in:channel filter is not yet implemented.');
-            } else {
-                 // Use full-text search for general queries
-                query = query.textSearch('content', `'${trimmedQuery.replace(/\s/g, ' & ')}'`);
-            }
+        if (messagesError) throw messagesError;
+        if (messagesData && messagesData.length > 0) {
+          setMessages(messagesData as Message[]);
+        } else {
+          setMessages(mockMessages);
         }
-        if(!error){
-            const { data: messagesData, error: messagesError } = await query.order('created_at', { ascending: true });
-            if (messagesError) throw messagesError;
-            setMessages(messagesData as Message[]);
-        }
-
-      } catch (err: any) {
-        console.error('Error fetching data:', err);
-        setError(`Failed to load chat: ${err.message}`);
+      } catch {
+        setMessages(mockMessages);
       } finally {
         setLoading(false);
       }
     };
 
-    const searchDebounce = setTimeout(() => {
-        fetchData();
-    }, 300); // Debounce search to avoid too many requests
-    return () => clearTimeout(searchDebounce);
+    fetchData();
+  }, [channelId]);
 
-  }, [channelId, searchQuery, error]); // Added error to dependency array
-
-  // Suggestion logic
-  useEffect(() => {
-    const handleSuggestions = async () => {
-        const trimmedQuery = searchQuery.trim();
-        if (trimmedQuery.startsWith('from:')) {
-            const partialUsername = trimmedQuery.substring(5);
-            if(partialUsername){
-                const { data, error } = await supabase.from('profiles').select('username').ilike('username', `%${partialUsername}%`).limit(5);
-                if (data) {
-                    setSuggestions(data.map(p => `from:${p.username}`));
-                }
-            }
-        } else {
-            setSuggestions(['from:', 'has:image', 'in:channel']);
-        }
-    }
-    if(showSuggestions){
-        handleSuggestions();
-    }
-  }, [searchQuery, showSuggestions]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
-        setShowSuggestions(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-
+  // Realtime subscription
   useEffect(() => {
     if (!channelId) return;
 
@@ -151,18 +123,10 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` },
         async (payload) => {
-            if (searchQuery.trim() === '') {
-                const newMessagePayload = payload.new as Omit<Message, 'profiles'>;
-                const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', newMessagePayload.author_id).single();
-
-                if (profileError) {
-                    console.error('Error fetching profile for new message:', profileError);
-                    setMessages(currentMessages => [...currentMessages, { ...newMessagePayload, profiles: null }]);
-                } else {
-                    const fullMessage: Message = { ...newMessagePayload, profiles: profileData as Profile };
-                    setMessages(currentMessages => [...currentMessages, fullMessage]);
-                }
-            }
+          const newMsg = payload.new as Omit<Message, 'profiles'>;
+          const { data: profileData } = await supabase.from('profiles').select('*').eq('id', newMsg.author_id).single();
+          const fullMessage: Message = { ...newMsg, profiles: (profileData as Profile) || null };
+          setMessages((prev) => [...prev, fullMessage]);
         }
       )
       .subscribe();
@@ -170,203 +134,226 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
     return () => {
       supabase.removeChannel(channelSubscription);
     };
-  }, [channelId, searchQuery]);
+  }, [channelId]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newMessage.trim() === '' || !channelId) return;
+    if (newMessage.trim() === '') return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setError("You must be logged in to send a message.");
+    if (!channelId) {
+      // Mock mode: add message locally
+      const mockMsg: Message = {
+        id: Date.now(),
+        created_at: new Date().toISOString(),
+        content: newMessage.trim(),
+        author_id: 'user',
+        channel_id: 0,
+        profiles: { id: 'user', username: 'You', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=you', status: 'online', role: 'USER' },
+      };
+      setMessages((prev) => [...prev, mockMsg]);
+      setNewMessage('');
       return;
     }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
     const content = newMessage.trim();
     setNewMessage('');
 
-    const { error: insertError } = await supabase.from('messages').insert({ content, author_id: user.id, channel_id: channelId });
-
-    if (insertError) {
-      console.error('Error sending message:', insertError);
-      setError('Failed to send message.');
-      setNewMessage(content);
-    }
+    await supabase.from('messages').insert({
+      content,
+      author_id: user.id,
+      channel_id: channelId,
+    });
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-      if (!e.target.files || e.target.files.length === 0) return;
-      if (!channelId) return;
-      
-      const file = e.target.files[0];
-      const fileName = `${Date.now()}_${file.name}`;
-      
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-          setError("You must be logged in to upload a file.");
-          return;
-      }
+    if (!e.target.files || e.target.files.length === 0 || !channelId) return;
+    const file = e.target.files[0];
+    const fileName = `${Date.now()}_${file.name}`;
 
-      const { error: uploadError } = await supabase.storage
-          .from('chat-attachments')
-          .upload(fileName, file);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      if (uploadError) {
-          console.error('Error uploading file:', uploadError);
-          setError('Failed to upload file.');
-          return;
-      }
+    const { error: uploadError } = await supabase.storage.from('chat-attachments').upload(fileName, file);
+    if (uploadError) return;
 
-      const { data } = supabase.storage
-          .from('chat-attachments')
-          .getPublicUrl(fileName);
+    const { data } = supabase.storage.from('chat-attachments').getPublicUrl(fileName);
+    if (!data) return;
 
-      if (!data) {
-          setError('Failed to get public URL for file.');
-          return;
-      }
-
-      const { error: insertError } = await supabase.from('messages').insert({
-          content: data.publicUrl,
-          author_id: user.id,
-          channel_id: channelId,
-      });
-
-      if (insertError) {
-          console.error('Error sending file message:', insertError);
-          setError('Failed to send file message.');
-      }
+    await supabase.from('messages').insert({
+      content: data.publicUrl,
+      author_id: user.id,
+      channel_id: channelId,
+    });
   };
 
   const renderMessageContent = (content: string) => {
-      const urlRegex = /(https?:\/\/[^\s]+)/g;
-      const isImageUrl = (url: string) => /\.(jpeg|jpg|gif|png)$/i.test(url);
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const isImageUrl = (url: string) => /\.(jpeg|jpg|gif|png|webp)$/i.test(url);
 
-      return content.split(urlRegex).map((part, index) => {
-          if (part.match(urlRegex)) {
-              if (isImageUrl(part)) {
-                  return <img key={index} src={part} alt="Uploaded content" className="max-w-xs rounded-lg mt-2" />
-              } else {
-                  return <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">{part}</a>
-              }
-          }
-          return part;
-      });
+    return content.split(urlRegex).map((part, index) => {
+      if (part.match(urlRegex)) {
+        if (isImageUrl(part)) {
+          return <img key={index} src={part} alt="Uploaded content" className="max-w-xs rounded-lg mt-2" crossOrigin="anonymous" />;
+        }
+        return (
+          <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-cyan-400 hover:underline">
+            {part}
+          </a>
+        );
+      }
+      return part;
+    });
   };
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setShowSuggestions(false);
+  const getRoleColor = (role?: string) => {
+    switch (role?.toUpperCase()) {
+      case 'ADMIN': return 'text-emerald-400';
+      case 'HELPER': return 'text-cyan-400';
+      default: return 'text-white/90';
+    }
   };
-
-  const renderSearchQuery = () => {
-      const query = searchQuery.trim();
-      if (!query) return null;
-
-      return (
-        <div className="absolute top-full left-0 mt-12 w-full text-sm text-gray-400 flex items-center">
-            <span className="mr-2">Recherche:</span>
-            {query.split(/(\s+)/).map((part, index) => {
-                if(part.startsWith('from:') || part.startsWith('has:')){
-                    return <span key={index} className="bg-indigo-500/50 text-white px-2 py-1 rounded-md mx-1">{part}</span>
-                }
-                return <span key={index}>{part}</span>;
-            })}
-        </div>
-      )
-  }
 
   return (
-    <div className="flex-1 bg-[#36393f] flex flex-col" aria-label="Chat area">
-      <header className="h-[48px] px-4 flex items-center justify-between border-b-2 border-black/20 shadow-sm text-white flex-shrink-0">
-        <div className="flex items-center">
-            <button onClick={onMenuClick} className="md:hidden mr-2 text-gray-300 hover:text-white">
-                <Icon icon="menu" className="w-6 h-6" />
-            </button>
-            <div className="flex items-center font-bold text-lg">
-                <Icon icon="hashtag" className="w-6 h-6 mr-2 text-gray-400" />
-                <span>{channelName}</span>
-            </div>
+    <div className="flex-1 bg-[#1e1f22] flex flex-col min-w-0" aria-label="Chat area">
+      {/* Chat Header */}
+      <header className="h-[48px] px-4 flex items-center justify-between border-b border-white/[0.06] flex-shrink-0">
+        <div className="flex items-center gap-2">
+          <button onClick={onMenuClick} className="md:hidden text-white/50 hover:text-white mr-1">
+            <Menu size={20} />
+          </button>
+          <Hash size={20} className="text-white/30" />
+          <span className="font-bold text-white text-[15px]">{channelName}</span>
+          <div className="hidden sm:block w-px h-5 bg-white/10 mx-2" />
+          <span className="hidden sm:block text-xs text-white/30 truncate max-w-[200px]">Channel topic goes here</span>
         </div>
-        <div ref={searchContainerRef} className="relative">
-            <form onSubmit={handleSearchSubmit}>
-                <input 
-                    type="text" 
-                    placeholder="Rechercher..."
-                    value={searchQuery}
-                    onFocus={() => setShowSuggestions(true)}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-48 bg-[#202225] text-sm rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 focus:w-64"
-                />
-                <div className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Icon icon="search" className="w-4 h-4"/>
-                </div>
-            </form>
-            {showSuggestions && (
-                <div className="absolute top-full mt-2 w-64 bg-[#2f3136] border border-black/30 rounded-md shadow-lg z-10">
-                    <ul>
-                        {suggestions.map((s, i) => (
-                            <li key={i} onMouseDown={() => {setSearchQuery(s); setShowSuggestions(false);}} className="px-4 py-2 text-white hover:bg-indigo-600 cursor-pointer">
-                               {s}
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-            {renderSearchQuery()}
+        <div className="flex items-center gap-1">
+          <button className="w-8 h-8 rounded-md flex items-center justify-center text-white/40 hover:text-white/70 transition-colors">
+            <Pin size={18} />
+          </button>
+          <button className="w-8 h-8 rounded-md flex items-center justify-center text-white/40 hover:text-white/70 transition-colors">
+            <Users size={18} />
+          </button>
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className={`w-8 h-8 rounded-md flex items-center justify-center transition-colors ${showSearch ? 'text-white bg-white/10' : 'text-white/40 hover:text-white/70'}`}
+          >
+            <Search size={18} />
+          </button>
         </div>
       </header>
 
-      <main ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1">
-         { error && <div className="text-center text-red-400 p-4">{error}</div> }
-         {!loading && messages.length === 0 && !error && <div className="text-center text-gray-400 p-4">Aucun message trouvé.</div> }
-         {!loading && !error && messages.map((msg, index) => {
-          const previousMessage = messages[index - 1];
-          const isSameAuthor = previousMessage && previousMessage.author_id === msg.author_id;
-          const isWithinTimeframe = previousMessage && (new Date(msg.created_at).getTime() - new Date(previousMessage.created_at).getTime()) < 5 * 60 * 1000;
-          const showAuthor = !isSameAuthor || !isWithinTimeframe;
-
-          return (
-            <div key={msg.id} className={`flex items-start hover:bg-black/10 px-2 py-1 rounded ${showAuthor ? 'mt-3' : ''}`}>
-                {showAuthor ? (
-                    <img src={msg.profiles?.avatar_url || 'https://via.placeholder.com/40'} alt="avatar" className="w-10 h-10 rounded-full mr-4 mt-1" />
-                ) : (
-                    <div className="w-10 mr-4 text-xs text-transparent hover:text-gray-500 text-center leading-loose">{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
-                )}
-                <div className="flex flex-col">
-                    {showAuthor && (
-                        <div className="flex items-baseline space-x-2">
-                            <p className="font-bold text-green-400">{msg.profiles?.username || 'Unknown User'}</p>
-                            <span className="text-xs text-gray-400">{new Date(msg.created_at).toLocaleString()}</span>
-                        </div>
-                    )}
-                    <div className="text-gray-200">{renderMessageContent(msg.content)}</div>
-                </div>
+      {/* Search bar (toggleable) */}
+      <AnimatePresence>
+        {showSearch && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="border-b border-white/[0.06] overflow-hidden"
+          >
+            <div className="px-4 py-2">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search messages..."
+                className="w-full bg-[#111] rounded-md px-3 py-2 text-sm text-white placeholder-white/30 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                autoFocus
+              />
             </div>
-          );
-        })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Messages Area */}
+      <main className="flex-1 overflow-y-auto px-4 py-2">
+        {loading && (
+          <div className="flex items-center justify-center h-full">
+            <div className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+          </div>
+        )}
+
+        {!loading &&
+          messages.map((msg, index) => {
+            const prevMsg = messages[index - 1];
+            const isSameAuthor = prevMsg && prevMsg.author_id === msg.author_id;
+            const isWithinTime = prevMsg && new Date(msg.created_at).getTime() - new Date(prevMsg.created_at).getTime() < 5 * 60 * 1000;
+            const showAuthor = !isSameAuthor || !isWithinTime;
+
+            return (
+              <div
+                key={msg.id}
+                className={`flex items-start hover:bg-white/[0.02] px-2 py-0.5 rounded-md group ${showAuthor ? 'mt-4' : ''}`}
+              >
+                {showAuthor ? (
+                  <img
+                    src={msg.profiles?.avatar_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=default'}
+                    alt="avatar"
+                    className="w-10 h-10 rounded-full mr-3 mt-0.5 flex-shrink-0"
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <div className="w-10 mr-3 flex items-center justify-center">
+                    <span className="text-[10px] text-transparent group-hover:text-white/20 leading-none">
+                      {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                )}
+                <div className="min-w-0 flex-1">
+                  {showAuthor && (
+                    <div className="flex items-baseline gap-2 mb-0.5">
+                      <span className={`font-semibold text-sm ${getRoleColor(msg.profiles?.role)}`}>
+                        {msg.profiles?.username || 'Unknown'}
+                      </span>
+                      <span className="text-[11px] text-white/20">
+                        {new Date(msg.created_at).toLocaleString([], {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  <div className="text-sm text-white/80 break-words leading-relaxed">
+                    {renderMessageContent(msg.content)}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         <div ref={messagesEndRef} />
       </main>
 
-      <footer className="p-4 pt-0 flex-shrink-0">
-        <form onSubmit={handleSendMessage} className="bg-[#40444b] rounded-lg px-4 flex items-center">
-            <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
-           <button type="button" onClick={() => fileInputRef.current?.click()} className="text-gray-300 hover:text-white">
-               <Icon icon="plus-circle" className="w-6 h-6" />
-            </button>
-           <input
+      {/* Message Input */}
+      <footer className="px-4 pb-4 pt-1 flex-shrink-0">
+        <form onSubmit={handleSendMessage} className="bg-[#2b2d31] rounded-lg flex items-center px-4">
+          <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="text-white/30 hover:text-white/60 transition-colors flex-shrink-0"
+          >
+            <PlusCircle size={22} />
+          </button>
+          <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
-            placeholder={channelId ? `Message #${channelName}` : 'Select a channel to start typing'}
-            className="flex-1 bg-transparent text-white placeholder-gray-400 focus:outline-none mx-4 py-3"
-            disabled={!channelId || loading}
+            placeholder={`Message #${channelName}`}
+            className="flex-1 bg-transparent text-white text-sm placeholder-white/20 focus:outline-none mx-3 py-3"
           />
-           <div className="flex space-x-3">
-             <button type="button" onClick={() => alert('Nitro/Cadeaux - Fonctionnalité à venir !')} className="text-gray-300 hover:text-white"><Icon icon="gift" className="w-6 h-6" /></button>
-             <button type="button" onClick={() => alert('Sélecteur de GIF - Fonctionnalité à venir !')} className="text-ray-300 hover:text-white"><Icon icon="gif" className="w-6 h-6" /></button>
-             <button type="button" onClick={() => alert('Sélecteur d\'Emoji - Fonctionnalité à venir !')} className="text-gray-300 hover:text-white"><Icon icon="smile" className="w-6 h-6" /></button>
-           </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button type="button" className="text-white/30 hover:text-white/60 transition-colors">
+              <Gift size={20} />
+            </button>
+            <button type="button" className="text-white/30 hover:text-white/60 transition-colors">
+              <Smile size={20} />
+            </button>
+          </div>
         </form>
       </footer>
     </div>

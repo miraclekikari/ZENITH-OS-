@@ -1,21 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X, Send } from 'lucide-react';
 
 interface Comment {
-    id: number;
-    content: string;
-    created_at: string;
-    user_id: string;
-    // You might want to join with profiles to get user info
+  id: number;
+  content: string;
+  created_at: string;
+  user_id: string;
+  profiles?: { username: string; avatar_url: string };
 }
 
 interface CommentsDrawerProps {
-  postId: string; // Corrected from number to string
+  postId: string;
   isOpen: boolean;
   onClose: () => void;
-  onCommentAdded?: () => void; // Optional callback
+  onCommentAdded?: () => void;
 }
 
 const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ postId, isOpen, onClose, onCommentAdded }) => {
@@ -26,9 +26,9 @@ const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ postId, isOpen, onClose
 
   useEffect(() => {
     const getUserId = async () => {
-        const {data: {user}} = await supabase.auth.getUser();
-        if(user) setUserId(user.id);
-    }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserId(user.id);
+    };
     getUserId();
   }, []);
 
@@ -38,23 +38,20 @@ const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ postId, isOpen, onClose
     try {
       const { data, error } = await supabase
         .from('post_comments')
-        .select('*, profiles(username, avatar_url)') // Example of joining with profiles
+        .select('*, profiles(username, avatar_url)')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
-
       if (error) throw error;
       setComments(data || []);
-    } catch (error) {
-      console.error('Error fetching comments:', error);
+    } catch {
+      setComments([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (isOpen) {
-      fetchComments();
-    }
+    if (isOpen) fetchComments();
   }, [isOpen, postId]);
 
   const handleAddComment = async (e: React.FormEvent) => {
@@ -66,65 +63,113 @@ const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ postId, isOpen, onClose
         .from('post_comments')
         .insert({ post_id: postId, user_id: userId, content: newComment.trim() })
         .select();
-
       if (error) throw error;
-      
       if (data) {
-        await fetchComments(); // Refetch all comments to get the latest
+        await fetchComments();
         setNewComment('');
-        await supabase.rpc('increment_post_comments', { post_id_arg: postId });
-        onCommentAdded?.(); // Call the callback if it exists
+        try { await supabase.rpc('increment_post_comments', { post_id_arg: postId }); } catch { /* ignore */ }
+        onCommentAdded?.();
       }
-
-    } catch (error) {
-      console.error('Error adding comment:', error);
+    } catch (err) {
+      console.error('Error adding comment:', err);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className={`fixed top-0 right-0 h-full w-full md:w-96 bg-[#1c1c1c] text-white shadow-lg transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
-        <div className="p-4 flex flex-col h-full">
-            <div className="flex justify-between items-center mb-4 border-b border-gray-700 pb-3">
-                <h2 className="text-xl font-bold">Commentaires</h2>
-                <button onClick={onClose} className="text-gray-400 hover:text-white"><FontAwesomeIcon icon={faTimes} size="lg" /></button>
-            </div>
-            
-            <div className="flex-grow overflow-y-auto mb-4 space-y-4 pr-2">
-                {loading ? <p className="text-center text-gray-400">Chargement...</p> : 
-                    comments.map(comment => (
-                        <div key={comment.id} className="flex items-start space-x-3">
-                           {/* Replace with actual avatar */}
-                           <div className="w-8 h-8 bg-gray-600 rounded-full flex-shrink-0"></div>
-                           <div className="flex-grow">
-                                <p className="text-sm">
-                                    <span className="font-bold text-gray-200 mr-2">{(comment as any).profiles?.username || 'Anonyme'}</span>
-                                    {comment.content}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-1">{new Date(comment.created_at).toLocaleDateString()}</p>
-                           </div>
-                        </div>
-                    ))
-                }
-                {comments.length === 0 && !loading && <p className="text-gray-400 text-center pt-10">Soyez le premier à commenter.</p>}
+    <AnimatePresence>
+      {isOpen && (
+        <>
+          {/* Overlay */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"
+            onClick={onClose}
+          />
+
+          {/* Drawer */}
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="fixed top-0 right-0 h-full w-full md:w-96 bg-[#111]/95 backdrop-blur-xl border-l border-white/[0.06] text-white shadow-2xl z-50 flex flex-col"
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b border-white/[0.06] flex-shrink-0">
+              <h2 className="font-bold text-base">Comments</h2>
+              <button onClick={onClose} className="w-8 h-8 rounded-full flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all">
+                <X size={18} />
+              </button>
             </div>
 
+            {/* Comments list */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 scrollbar-hide">
+              {loading && (
+                <div className="flex items-center justify-center py-10">
+                  <div className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+                </div>
+              )}
+
+              {!loading && comments.map((comment) => (
+                <div key={comment.id} className="flex items-start gap-3">
+                  <img
+                    src={(comment as any).profiles?.avatar_url || 'https://api.dicebear.com/7.x/bottts/svg?seed=default'}
+                    alt="avatar"
+                    className="w-8 h-8 rounded-full flex-shrink-0"
+                    crossOrigin="anonymous"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm">
+                      <span className="font-bold text-white/80 mr-2">
+                        {(comment as any).profiles?.username || 'Anonymous'}
+                      </span>
+                      <span className="text-white/60">{comment.content}</span>
+                    </p>
+                    <p className="text-[11px] text-white/20 mt-1">
+                      {new Date(comment.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+
+              {!loading && comments.length === 0 && (
+                <div className="text-center py-10">
+                  <p className="text-white/20 text-sm">Be the first to comment.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Input */}
             {userId ? (
-                <form onSubmit={handleAddComment} className="mt-auto border-t border-gray-700 pt-3">
-                    <input 
-                        type="text"
-                        value={newComment}
-                        onChange={(e) => setNewComment(e.target.value)}
-                        placeholder="Laissez un commentaire..."
-                        className="w-full bg-[#2a2a2a] text-white placeholder-gray-400 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                    />
-                </form>
+              <form onSubmit={handleAddComment} className="p-4 border-t border-white/[0.06] flex-shrink-0">
+                <div className="flex items-center gap-2 bg-white/[0.04] rounded-xl px-4 py-2 border border-white/[0.06]">
+                  <input
+                    type="text"
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                    placeholder="Add a comment..."
+                    className="flex-1 bg-transparent text-sm text-white placeholder-white/20 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    disabled={!newComment.trim()}
+                    className="text-emerald-400 disabled:text-white/10 transition-colors"
+                  >
+                    <Send size={18} />
+                  </button>
+                </div>
+              </form>
             ) : (
-                <p className="text-center text-sm text-gray-400 mt-auto border-t border-gray-700 pt-4">Vous devez être connecté pour commenter.</p>
+              <div className="p-4 border-t border-white/[0.06] text-center">
+                <p className="text-white/20 text-sm">Sign in to comment</p>
+              </div>
             )}
-        </div>
-    </div>
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
   );
 };
 

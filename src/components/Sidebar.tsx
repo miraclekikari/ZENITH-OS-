@@ -1,68 +1,137 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faBookOpen, faComments, faUsers, faPaintBrush, faFlask, 
-  faCog, faUser, faQuestionCircle, faUserShield,
-  faPlay, faPause, faForward, faBackward
-} from '@fortawesome/free-solid-svg-icons';
+import { NavLink, useLocation } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import {
+  Home,
+  MessageCircle,
+  Image as ImageIcon,
+  Play,
+  Palette,
+  User,
+  Settings,
+  HelpCircle,
+  Shield,
+} from 'lucide-react';
 import { isAdmin } from '../services/storageService';
 
 const Sidebar: React.FC = () => {
   const admin = isAdmin();
+  const location = useLocation();
 
-  const navLinks = [
-    { to: "/", icon: faBookOpen, text: "Academy" },
-    { to: "/chat", icon: faComments, text: "Chat" },
-    { to: "/community", icon: faUsers, text: "Community" },
-    { to: "/studio", icon: faPaintBrush, text: "Studio" },
-    { to: "/lab", icon: faFlask, text: "Lab" },
-    { to: "/profile", icon: faUser, text: "Profile" },
-    { to: "/settings", icon: faCog, text: "Settings" },
-    { to: "/support", icon: faQuestionCircle, text: "Support" },
-    ...(admin ? [{ to: "/admin", icon: faUserShield, text: "Admin" }] : []),
+  const mainLinks = [
+    { to: '/', icon: Home, label: 'Home' },
+    { to: '/chat', icon: MessageCircle, label: 'Chat' },
+    { to: '/feed', icon: ImageIcon, label: 'Feed' },
+    { to: '/community', icon: Play, label: 'Community' },
+    { to: '/studio', icon: Palette, label: 'Studio' },
+  ];
+
+  const bottomLinks = [
+    { to: '/settings', icon: Settings, label: 'Settings' },
+    { to: '/support', icon: HelpCircle, label: 'Support' },
+    ...(admin ? [{ to: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 
   return (
-    <aside className="hidden md:flex group fixed top-0 left-0 h-screen flex-col justify-between bg-black/10 backdrop-blur-md text-white w-16 hover:w-60 transition-all duration-300 ease-in-out z-[100]">
-      <div>
-        <div className="flex items-center justify-center mt-6 mb-8">
-          {/* Logo Placeholder */}
-          <div className="w-10 h-10 bg-cyan-500 rounded-full border-2 border-cyan-300"></div>
-        </div>
+    <aside className="hidden md:flex fixed top-0 left-0 h-screen w-[68px] flex-col items-center justify-between bg-[#0a0a0a]/80 backdrop-blur-xl border-r border-white/[0.06] z-[100] py-4">
+      {/* Logo */}
+      <div className="flex flex-col items-center gap-6">
+        <NavLink to="/" className="relative flex items-center justify-center w-10 h-10 mb-2">
+          <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 opacity-20 blur-sm" />
+          <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center text-black font-bold text-sm tracking-wider font-tech">
+            Z
+          </div>
+        </NavLink>
 
-        <nav className="flex flex-col space-y-2 px-2">
-          {navLinks.map((link) => (
-            <NavLink 
-              key={link.to}
-              to={link.to} 
-              className={({ isActive }) =>
-                `flex items-center p-3 rounded-lg hover:bg-white/10 ${isActive ? 'bg-cyan-500/20' : ''}`
-              }
-            >
-              <FontAwesomeIcon icon={link.icon} className="w-6 h-6 text-white/80 shrink-0" />
-              <span className="ml-4 font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-100 whitespace-nowrap">{link.text}</span>
-            </NavLink>
-          ))}
+        {/* Divider */}
+        <div className="w-8 h-px bg-white/10" />
+
+        {/* Main Navigation */}
+        <nav className="flex flex-col items-center gap-1">
+          {mainLinks.map((link) => {
+            const isActive = location.pathname === link.to || 
+              (link.to !== '/' && location.pathname.startsWith(link.to));
+            const Icon = link.icon;
+
+            return (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className="relative group flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200"
+              >
+                {/* Active indicator */}
+                {isActive && (
+                  <motion.div
+                    layoutId="sidebar-active"
+                    className="absolute left-[-14px] w-1 h-5 rounded-r-full bg-emerald-400"
+                    transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+                  />
+                )}
+
+                {/* Icon container */}
+                <div
+                  className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? 'bg-emerald-500/15 text-emerald-400'
+                      : 'text-white/40 hover:text-white/80 hover:bg-white/[0.06]'
+                  }`}
+                >
+                  <Icon size={20} strokeWidth={isActive ? 2.2 : 1.8} />
+                </div>
+
+                {/* Tooltip */}
+                <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">
+                  {link.label}
+                </div>
+              </NavLink>
+            );
+          })}
         </nav>
       </div>
-      
-      {/* Music Player Section */}
-      <div className="px-2 pb-4">
-          <div className="w-full p-3 bg-white/5 rounded-lg">
-            <div className="flex items-center">
-                <div className="w-10 h-10 bg-zinc-700 rounded shrink-0"></div>
-                <div className="ml-2 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-100">
-                    <p className="text-sm font-bold truncate whitespace-nowrap">Starlight Echoes</p>
-                    <p className="text-xs text-white/60 truncate whitespace-nowrap">Nova Beat</p>
-                </div>
-            </div>
-            <div className="flex justify-around items-center mt-3 opacity-0 group-hover:opacity-100 transition-opacity duration-200 delay-100">
-                <FontAwesomeIcon icon={faBackward} className="w-4 h-4 text-white/70 hover:text-white" />
-                <FontAwesomeIcon icon={faPlay} className="w-5 h-5 text-white" />
-                <FontAwesomeIcon icon={faForward} className="w-4 h-4 text-white/70 hover:text-white" />
+
+      {/* Bottom Section */}
+      <div className="flex flex-col items-center gap-1">
+        {bottomLinks.map((link) => {
+          const isActive = location.pathname === link.to;
+          const Icon = link.icon;
+          return (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className="relative group flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200"
+            >
+              <div
+                className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 ${
+                  isActive
+                    ? 'bg-emerald-500/15 text-emerald-400'
+                    : 'text-white/40 hover:text-white/80 hover:bg-white/[0.06]'
+                }`}
+              >
+                <Icon size={18} strokeWidth={1.8} />
+              </div>
+              <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">
+                {link.label}
+              </div>
+            </NavLink>
+          );
+        })}
+
+        {/* Divider */}
+        <div className="w-8 h-px bg-white/10 my-1" />
+
+        {/* User Avatar */}
+        <NavLink to="/profile" className="relative group">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-cyan-600 p-[2px]">
+            <div className="w-full h-full rounded-full bg-[#0a0a0a] flex items-center justify-center">
+              <User size={16} className="text-white/60" />
             </div>
           </div>
+          {/* Online status dot */}
+          <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0a0a0a]" />
+          <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">
+            Profile
+          </div>
+        </NavLink>
       </div>
     </aside>
   );

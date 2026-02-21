@@ -1,32 +1,44 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBookOpen, faUsers, faPaintBrush, faComments, faUser } from '@fortawesome/free-solid-svg-icons';
+import { NavLink, useLocation } from 'react-router-dom';
+import { Home, MessageCircle, Image as ImageIcon, Play, User } from 'lucide-react';
 
 const BottomNavBar: React.FC = () => {
+  const location = useLocation();
+
   const navLinks = [
-    { to: "/", icon: faBookOpen, text: "Academy" },
-    { to: "/community", icon: faUsers, text: "Community" },
-    { to: "/studio", icon: faPaintBrush, text: "Studio" },
-    { to: "/chat", icon: faComments, text: "Chat" },
-    { to: "/profile", icon: faUser, text: "Profile" },
+    { to: '/', icon: Home, label: 'Home' },
+    { to: '/chat', icon: MessageCircle, label: 'Chat' },
+    { to: '/feed', icon: ImageIcon, label: 'Feed' },
+    { to: '/community', icon: Play, label: 'Community' },
+    { to: '/profile', icon: User, label: 'Profile' },
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-black/50 backdrop-blur-lg border-t border-white/10 z-50">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0a0a]/90 backdrop-blur-xl border-t border-white/[0.06] z-50 safe-area-bottom">
       <div className="flex justify-around items-center h-16">
-        {navLinks.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `flex flex-col items-center justify-center text-xs w-full h-full ${isActive ? 'text-cyan-400' : 'text-white/70'}`
-            }
-          >
-            <FontAwesomeIcon icon={link.icon} className="w-6 h-6 mb-1" />
-            <span>{link.text}</span>
-          </NavLink>
-        ))}
+        {navLinks.map((link) => {
+          const isActive = location.pathname === link.to ||
+            (link.to !== '/' && location.pathname.startsWith(link.to));
+          const Icon = link.icon;
+
+          return (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              className="flex flex-col items-center justify-center w-full h-full gap-1"
+            >
+              <div className={`relative flex items-center justify-center transition-colors duration-200 ${isActive ? 'text-emerald-400' : 'text-white/40'}`}>
+                <Icon size={22} strokeWidth={isActive ? 2.2 : 1.6} />
+                {isActive && (
+                  <div className="absolute -top-2 w-1 h-1 rounded-full bg-emerald-400" />
+                )}
+              </div>
+              <span className={`text-[10px] transition-colors duration-200 ${isActive ? 'text-emerald-400 font-medium' : 'text-white/30'}`}>
+                {link.label}
+              </span>
+            </NavLink>
+          );
+        })}
       </div>
     </nav>
   );

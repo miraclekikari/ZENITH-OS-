@@ -11,41 +11,32 @@ const Chat: React.FC = () => {
 
   const handleChannelSelect = (id: number) => {
     setActiveChannelId(id);
-    setDrawerOpen(false); // Close drawer on channel selection
-  }
+    setDrawerOpen(false);
+  };
 
   return (
-    <div className="flex h-screen text-white bg-gray-800 antialiased">
-      {/* Drawer for Mobile, containing both sidebars */}
+    <div className="flex h-[100dvh] md:h-screen text-white bg-[#1e1f22] antialiased">
+      {/* Drawer for Mobile */}
       <Drawer isOpen={isDrawerOpen} onClose={() => setDrawerOpen(false)}>
-          <ServersBar />
-          <ChannelsBar 
-              setActiveChannelId={handleChannelSelect} 
-              activeChannelId={activeChannelId} 
-          />
+        <ServersBar />
+        <ChannelsBar setActiveChannelId={handleChannelSelect} activeChannelId={activeChannelId} />
       </Drawer>
 
-      {/* Column 1: Servers Bar (hidden on mobile) */}
+      {/* Col 1: Servers (hidden on mobile) */}
       <div className="hidden md:flex">
         <ServersBar />
       </div>
 
-      {/* Column 2: Channels Bar (hidden on mobile) */}
+      {/* Col 2: Channels (hidden on mobile) */}
       <div className="hidden md:flex">
-        <ChannelsBar 
-            setActiveChannelId={handleChannelSelect} 
-            activeChannelId={activeChannelId} 
-        />
+        <ChannelsBar setActiveChannelId={handleChannelSelect} activeChannelId={activeChannelId} />
       </div>
 
-      {/* Column 3: Chat Area (takes full width on mobile) */}
-      <ChatArea 
-        channelId={activeChannelId}
-        onMenuClick={() => setDrawerOpen(true)}
-      />
+      {/* Col 3: Chat Area */}
+      <ChatArea channelId={activeChannelId} onMenuClick={() => setDrawerOpen(true)} />
 
-      {/* Column 4: Members List (hidden on mobile) */}
-      <div className="hidden md:flex">
+      {/* Col 4: Members (hidden on mobile & tablet) */}
+      <div className="hidden lg:flex">
         <MembersList channelId={activeChannelId} />
       </div>
     </div>
