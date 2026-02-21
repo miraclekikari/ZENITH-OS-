@@ -38,6 +38,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null); // BUG FIX: Re-added this line
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
@@ -107,7 +108,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
     }, 300); // Debounce search to avoid too many requests
     return () => clearTimeout(searchDebounce);
 
-  }, [channelId, searchQuery]);
+  }, [channelId, searchQuery, error]); // Added error to dependency array
 
   // Suggestion logic
   useEffect(() => {
@@ -261,9 +262,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
   const renderSearchQuery = () => {
       const query = searchQuery.trim();
       if (!query) return null;
-
-      const parts = query.split(/(:)/).filter(Boolean);
-      let isToken = false;
 
       return (
         <div className="absolute top-full left-0 mt-12 w-full text-sm text-gray-400 flex items-center">
