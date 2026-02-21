@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { usePermissions } from '../hooks/usePermissions';
 import Icon from '../components/Icon';
 import { useNavigate } from 'react-router-dom';
-import * as fabric from 'fabric';
+import { fabric } from 'fabric'; // Corrected import for v5/v6, should work for v7 modules
 import { ALL_STICKERS } from '../lib/stickers';
 
 // Panel to display stickers
@@ -68,11 +68,10 @@ const Studio: React.FC = () => {
   const handleToggleFlash = async () => {
     if (!stream) return;
     const videoTrack = stream.getVideoTracks()[0];
-    // @ts-ignore - torch is a valid capability but not in all type definitions
-    if (videoTrack.getCapabilities().torch) {
+    const capabilities = videoTrack.getCapabilities() as any;
+    if (capabilities.torch) {
       try {
-        // @ts-ignore - torch is a valid constraint but not in all type definitions
-        await videoTrack.applyConstraints({ advanced: [{ torch: !flashOn }] });
+        await videoTrack.applyConstraints({ advanced: [{ torch: !flashOn }] } as any);
         setFlashOn(!flashOn);
       } catch (err) { console.error("Error toggling flash:", err); }
     }
@@ -144,7 +143,16 @@ const Studio: React.FC = () => {
   const handleAddText = () => {
     if (!fabricCanvasRef.current) return;
     const canvas = fabricCanvasRef.current;
-    const text = new fabric.IText('Tapez ici', { left: canvas.width! / 2, top: canvas.height! / 2, originX: 'center', originY: 'center', fontFamily: 'Rajdhani', fill: '#FFFFFF', fontSize: 40, shadow: 'rgba(0,0,0,0.7) 2px 2px 4px' });
+    const text = new fabric.IText('Tapez ici', {
+        left: canvas.width! / 2,
+        top: canvas.height! / 2,
+        originX: 'center',
+        originY: 'center',
+        fontFamily: 'Rajdhani',
+        fill: '#FFFFFF',
+        fontSize: 40,
+        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.7)', blur: 4, offsetX: 2, offsetY: 2 }),
+    });
     canvas.add(text);
     canvas.setActiveObject(text);
     canvas.renderAll();
@@ -155,21 +163,26 @@ const Studio: React.FC = () => {
     if (!fabricCanvasRef.current) return;
     const canvas = fabricCanvasRef.current;
     try {
-      const stickerImg = await fabric.Image.fromURL(url);
-      stickerImg.scale(0.5).set({
-        left: canvas.width! / 2,
-        top: canvas.height! / 2,
-        originX: 'center',
-        originY: 'center',
-      });
-      canvas.add(stickerImg);
-      canvas.setActiveObject(stickerImg);
-      canvas.renderAll();
+        fabric.Image.fromURL(url, (stickerImg) => {
+            if (stickerImg) {
+                stickerImg.scale(0.5);
+                stickerImg.set({
+                    left: canvas.width! / 2,
+                    top: canvas.height! / 2,
+                    originX: 'center',
+                    originY: 'center',
+                });
+                canvas.add(stickerImg);
+                canvas.setActiveObject(stickerImg);
+                canvas.renderAll();
+            }
+        });
     } catch (error) {
-      console.error("Error loading sticker:", error);
+        console.error("Error loading sticker:", error);
     }
     setShowStickerPanel(false);
-  };
+};
+
 
   useEffect(() => {
     if (isPreviewing && canvasRef.current && capturedMedia) {
@@ -178,18 +191,26 @@ const Studio: React.FC = () => {
         fabricCanvasRef.current = canvas;
 
         const setCanvasSize = () => {
-          if (canvasRef.current?.parentElement) {
-            canvas.setWidth(canvasRef.current.parentElement.clientWidth);
-            canvas.setHeight(canvasRef.current.parentElement.clientHeight);
-            canvas.renderAll();
-          }
+            if (canvasRef.current?.parentElement) {
+                const { clientWidth, clientHeight } = canvasRef.current.parentElement;
+                canvas.setDimensions({ width: clientWidth, height: clientHeight });
+                canvas.renderAll();
+            }
         };
 
         if (mediaType === 'photo') {
-          try {
-            const img = await fabric.Image.fromURL(capturedMedia);
-            canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), { scaleX: canvas.width! / (img.width || 1), scaleY: canvas.height! / (img.height || 1) });
-          } catch (error) { console.error("Error loading background image:", error); }
+            try {
+                fabric.Image.fromURL(capturedMedia, (img) => {
+                    if (img) {
+                        canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas), {
+                            scaleX: canvas.width! / (img.width || 1),
+                            scaleY: canvas.height! / (img.height || 1),
+                        });
+                    }
+                });
+            } catch (error) {
+                console.error("Error loading background image:", error);
+            }
         }
 
         setCanvasSize();
