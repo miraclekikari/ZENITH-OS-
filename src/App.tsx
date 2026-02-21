@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { supabase } from './lib/supabaseClient';
 import { Session } from '@supabase/supabase-js';
 import { initUser, logout, isAdmin, getUser } from './services/storageService';
@@ -32,7 +32,7 @@ function App() {
         const profile = await initUser(session.user);
         setUser(profile);
       } else {
-        setUser(getUser());
+        setUser(getUser()); // Guest user for public routes
       }
       setLoading(false);
     };
@@ -55,34 +55,35 @@ function App() {
   if (loading) {
     return <div className="w-full h-screen flex items-center justify-center bg-black"></div>;
   }
+  
+  const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
+      return session ? children : <Navigate to="/login" />;
+  };
 
   return (
     <Router>
       <ThemeProvider>
         <Layout isAuthenticated={!!session} >
           <Routes>
-            {session ? (
-              <>
-                <Route path="/" element={<Academy />} />
-                <Route path="/chat" element={<Chat />} />
-                <Route path="/chat/:id" element={<Chat />} />
-                <Route path="/community" element={<Feed />} />
-                <Route path="/studio" element={<Studio />} />
-                <Route path="/lab" element={<Lab />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/profile/:username" element={<Profile />} />
-                <Route path="/support" element={<Support />} />
-                {isAdmin() && <Route path="/admin" element={<Admin />} />}
-                <Route path="/login" element={<Navigate to="/" />} />
-                <Route path="*" element={<NotFound />} />
-              </>
-            ) : (
-              <>
-                <Route path="/login" element={<Login />} />
-                <Route path="*" element={<Navigate to="/login" />} />
-              </>
-            )}
+            {/* Public routes */}
+            <Route path="/live/:id" element={<Chat />} />
+            <Route path="/login" element={<Login />} />
+
+            {/* Protected routes */}
+            <Route path="/" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/community" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
+            <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+            <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/profile/:username" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+            <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+            {isAdmin() && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
+            
+            {/* Catch-all */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
       </ThemeProvider>
