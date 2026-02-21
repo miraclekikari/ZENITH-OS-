@@ -6,7 +6,8 @@ import {
   faUnlink, faCheckCircle, faTimesCircle, faSyncAlt, faStethoscope,
   faRedo, faSpinner, faTimes, faLink, faShare, faMicrochip, faRetweet, 
   faBookmark, faCameraRetro, faExclamationTriangle, faBolt, faImages,
-  faMagic, faSmile, faFont, faCamera, faPlus
+  faMagic, faSmile, faFont, faCamera, faPlus,
+  faEraser, faTags, faCropAlt, faWandMagicSparkles, faStar, faRobot
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -63,6 +64,14 @@ export const iconMap = {
   'magic': faMagic,
   'smile': faSmile,
   'font': faFont,
+
+  // AI Enhance icons
+  'eraser': faEraser,
+  'tags': faTags,
+  'crop-alt': faCropAlt,
+  'wand-magic-sparkles': faWandMagicSparkles,
+  'star': faStar,
+  'robot': faRobot,
 
   // Regular icons
   'heart-regular': faHeartRegular,
