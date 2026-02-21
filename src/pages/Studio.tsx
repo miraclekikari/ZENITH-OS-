@@ -22,7 +22,7 @@ const StickerPanel: React.FC<{ onSelect: (url: string) => void }> = ({ onSelect 
 const AIEnhancePanel: React.FC<{ 
   visible: boolean; 
   onClose: () => void; 
-  applyEffect: (effect: string) => void;
+  applyEffect: (effect: string) => Promise<void>;
 }> = ({ visible, onClose, applyEffect }) => {
   const [activeEffect, setActiveEffect] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
@@ -65,6 +65,8 @@ const AIEnhancePanel: React.FC<{
     try {
       await applyEffect(id);
       setActiveEffect(prev => (prev === id ? null : id));
+    } catch(e) {
+      console.error("Effect application failed", e);
     } finally {
       setProcessingId(null);
     }
@@ -347,6 +349,7 @@ const Studio: React.FC = () => {
 
       if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
         console.error('Cloudinary environment variables are not set.');
+        alert('Cloudinary environment variables are not set.');
         return;
       }
 
@@ -364,21 +367,24 @@ const Studio: React.FC = () => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to upload image to Cloudinary');
+          const errorData = await response.json();
+          throw new Error(`Failed to upload image to Cloudinary: ${errorData.error.message}`);
         }
 
         const data = await response.json();
         const newImageUrl = data.secure_url;
 
         const canvas = fabricCanvasRef.current;
-        fabric.Image.fromURL(newImageUrl, (img) => {
-          img.scaleToWidth(canvas.getWidth());
-          img.scaleToHeight(canvas.getHeight());
-          canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-        }, { crossOrigin: 'anonymous' });
+        const img = await fabric.Image.fromURL(newImageUrl, { crossOrigin: 'anonymous' });
+
+        img.scaleToWidth(canvas.getWidth());
+        img.scaleToHeight(canvas.getHeight());
+        canvas.backgroundImage = img;
+        canvas.renderAll();
 
       } catch (error) {
         console.error('Error removing background:', error);
+        alert(`Error removing background: ${error instanceof Error ? error.message : String(error)}`);
       }
     }
   };
@@ -399,9 +405,9 @@ const Studio: React.FC = () => {
 
         if (mediaType === 'photo') {
             try {
-                const img = await fabric.Image.fromURL(capturedMedia);
-                img.scaleX = canvas.width! / (img.width || 1);
-                img.scaleY = canvas.height! / (img.height || 1);
+                const img = await fabric.Image.fromURL(capturedMedia, { crossOrigin: 'anonymous' });
+                img.scaleToWidth(canvas.getWidth());
+                img.scaleToHeight(canvas.getHeight());
                 canvas.backgroundImage = img;
                 canvas.renderAll();
             } catch (error) {
