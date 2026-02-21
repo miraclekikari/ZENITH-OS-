@@ -56,19 +56,25 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch channel name
         const { data: channelData, error: channelError } = await supabase.from('channels').select('name').eq('id', channelId).single();
         if (channelError) throw channelError;
         setChannelName(channelData.name);
 
-        // Base query for messages
         let query = supabase.from('messages').select('*, profiles(*)').eq('channel_id', channelId);
 
-        // Apply search filter if searchQuery exists
-        if (searchQuery.trim() !== '') {
-            // For simplicity, we'll use `ilike` for partial matching. 
-            // A more advanced implementation would use .textSearch()
-            query = query.ilike('content', `%${searchQuery.trim()}%`);
+        const trimmedQuery = searchQuery.trim();
+        if (trimmedQuery !== '') {
+            if (trimmedQuery.startsWith('from:')) {
+                const username = trimmedQuery.substring(5);
+                const { data: profile, error: profileError } = await supabase.from('profiles').select('id').ilike('username', username).single();
+                if (profileError) {
+                    setError(`User "${username}" not found.`);
+                } else {
+                    query = query.eq('author_id', profile.id);
+                }
+            } else {
+                query = query.ilike('content', `%${trimmedQuery}%`);
+            }
         }
 
         const { data: messagesData, error: messagesError } = await query.order('created_at', { ascending: true });
@@ -84,7 +90,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
     };
 
     fetchData();
-  }, [channelId, searchQuery]); // Re-run effect if channelId or searchQuery changes
+  }, [channelId, searchQuery]);
 
   useEffect(() => {
     if (!channelId) return;
@@ -95,7 +101,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages', filter: `channel_id=eq.${channelId}` },
         async (payload) => {
-            // Ignore new messages if a search is active to avoid confusion
             if (searchQuery.trim() === '') {
                 const newMessagePayload = payload.new as Omit<Message, 'profiles'>;
                 const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('id', newMessagePayload.author_id).single();
@@ -201,8 +206,6 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // The search is already triggered by the useEffect listening on searchQuery
-    // This function is here to prevent form submission from reloading the page
   };
 
   return (
@@ -234,6 +237,7 @@ const ChatArea: React.FC<ChatAreaProps> = ({ channelId, onMenuClick }) => {
       </header>
 
       <main ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1">
+         { error && <div className="text-center text-red-400 p-4">{error}</div> }
          {!loading && !error && messages.map((msg, index) => {
           const previousMessage = messages[index - 1];
           const isSameAuthor = previousMessage && previousMessage.author_id === msg.author_id;

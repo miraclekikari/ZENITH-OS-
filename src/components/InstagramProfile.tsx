@@ -25,7 +25,7 @@ const InstagramProfile: React.FC<InstagramProfileProps> = ({ profileId, isOwnPro
 
   useEffect(() => {
     fetchProfile();
-    fetchPosts();
+    fetchPosts(); // Now fetches from user-assets bucket
     if (!isOwnProfile) {
       checkFollowStatus();
     }
@@ -49,18 +49,40 @@ const InstagramProfile: React.FC<InstagramProfileProps> = ({ profileId, isOwnPro
     }
   };
 
+  // MODIFIED to fetch from Storage instead of 'posts' table
   const fetchPosts = async () => {
     try {
-      const { data, error } = await supabase
-        .from('posts')
-        .select('*')
-        .eq('user_id', profileId)
-        .order('created_at', { ascending: false });
+      // List files in the user-specific folder within the 'user-assets' bucket
+      const { data: fileList, error: listError } = await supabase.storage
+        .from('user-assets')
+        .list(profileId, {
+          limit: 100, // Or however many you want to show
+          offset: 0,
+          sortBy: { column: 'created_at', order: 'desc' },
+        });
 
-      if (error) throw error;
-      setPosts(data || []);
+      if (listError) throw listError;
+
+      // Create post objects from the file list
+      const fetchedPosts = fileList.map(file => {
+        const { data: { publicUrl } } = supabase.storage
+          .from('user-assets')
+          .getPublicUrl(`${profileId}/${file.name}`);
+          
+        return {
+          id: file.id, // Use file id
+          image_url: publicUrl,
+          caption: file.name, // Use file name as caption
+          created_at: file.created_at,
+          user_id: profileId,
+          likes_count: 0, // Placeholder
+          comments_count: 0, // Placeholder
+        };
+      });
+
+      setPosts(fetchedPosts);
     } catch (error) {
-      console.error('Error fetching posts:', error);
+      console.error('Error fetching posts from storage:', error);
     }
   };
 
@@ -347,7 +369,7 @@ const InstagramProfile: React.FC<InstagramProfileProps> = ({ profileId, isOwnPro
           </div>
                     <div className="flex gap-6 mt-2 text-sm">
               <span className="font-medium text-gray-900">
-                <strong>{profile.posts_count}</strong> posts
+                <strong>{posts.length}</strong> posts
               </span>
               <span className="font-medium text-gray-900">
                 <strong>{followersCount}</strong> followers
@@ -407,8 +429,8 @@ const InstagramProfile: React.FC<InstagramProfileProps> = ({ profileId, isOwnPro
         <div className="mt-4">
           {activeTab === 'posts' && (
             <div className="grid grid-cols-3 gap-1">
-              {posts.map((post) => (
-                <div key={post.id} className="relative aspect-square group cursor-pointer">
+              {posts.map((post, index) => (
+                <div key={post.id} className="relative aspect-square group cursor-pointer" onClick={() => handleImageClick(index + 2)}>
                   <img
                     src={post.image_url}
                     alt={post.caption}
