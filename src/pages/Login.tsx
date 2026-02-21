@@ -25,7 +25,7 @@ const SocialSignInButton: React.FC<{
       });
       if (error) throw error;
     } catch (err: any) {
-      console.error(`${provider} sign-in error:`, err.message);
+      console.error(`Error during ${provider} OAuth sign-in:`, err.message);
       setIsLoading(false);
     }
   };
@@ -58,11 +58,17 @@ const Login: React.FC = () => {
 
     try {
       if (isRegister) {
-        const { error } = await supabase.auth.signUp(formData);
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+        });
         if (error) throw error;
         alert('Check your email for the confirmation link!');
       } else {
-        const { error } = await supabase.auth.signInWithPassword(formData);
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
+        });
         if (error) throw error;
       }
     } catch (err: any) {

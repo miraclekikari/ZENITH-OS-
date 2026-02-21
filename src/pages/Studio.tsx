@@ -19,7 +19,11 @@ const StickerPanel: React.FC<{ onSelect: (url: string) => void }> = ({ onSelect 
 );
 
 // AI Enhance panel with premium glow buttons
-const AIEnhancePanel: React.FC<{ visible: boolean; onClose: () => void }> = ({ visible, onClose }) => {
+const AIEnhancePanel: React.FC<{ 
+  visible: boolean; 
+  onClose: () => void; 
+  applyEffect: (effect: string) => void;
+}> = ({ visible, onClose, applyEffect }) => {
   const [activeEffect, setActiveEffect] = useState<string | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
@@ -56,13 +60,14 @@ const AIEnhancePanel: React.FC<{ visible: boolean; onClose: () => void }> = ({ v
     },
   ];
 
-  const handleActivate = (id: string) => {
+  const handleActivate = async (id: string) => {
     setProcessingId(id);
-    // Simulate AI processing
-    setTimeout(() => {
-      setProcessingId(null);
+    try {
+      await applyEffect(id);
       setActiveEffect(prev => (prev === id ? null : id));
-    }, 1800);
+    } finally {
+      setProcessingId(null);
+    }
   };
 
   if (!visible) return null;
@@ -333,6 +338,50 @@ const Studio: React.FC = () => {
     setShowStickerPanel(false);
   };
 
+  const handleAIEffect = async (effect: string) => {
+    if (effect === 'remove-bg') {
+      if (!capturedMedia || !fabricCanvasRef.current) return;
+
+      const CLOUDINARY_CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+      const CLOUDINARY_UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+      if (!CLOUDINARY_CLOUD_NAME || !CLOUDINARY_UPLOAD_PRESET) {
+        console.error('Cloudinary environment variables are not set.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('file', capturedMedia);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      formData.append('background_removal', 'cloudinary_ai');
+
+      const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload image to Cloudinary');
+        }
+
+        const data = await response.json();
+        const newImageUrl = data.secure_url;
+
+        const canvas = fabricCanvasRef.current;
+        fabric.Image.fromURL(newImageUrl, (img) => {
+          img.scaleToWidth(canvas.getWidth());
+          img.scaleToHeight(canvas.getHeight());
+          canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
+        }, { crossOrigin: 'anonymous' });
+
+      } catch (error) {
+        console.error('Error removing background:', error);
+      }
+    }
+  };
 
   useEffect(() => {
     if (isPreviewing && canvasRef.current && capturedMedia) {
@@ -390,7 +439,11 @@ const Studio: React.FC = () => {
             onToggleAI={() => { setShowAIPanel(p => !p); setShowStickerPanel(false); }}
             aiActive={showAIPanel}
           />
-          <AIEnhancePanel visible={showAIPanel} onClose={() => setShowAIPanel(false)} />
+          <AIEnhancePanel 
+            visible={showAIPanel} 
+            onClose={() => setShowAIPanel(false)} 
+            applyEffect={handleAIEffect} 
+          />
           {showStickerPanel && <StickerPanel onSelect={handleAddSticker} />}
 
           <div className="absolute top-0 left-0 right-0 p-4 flex justify-between items-center bg-gradient-to-b from-black/50 to-transparent z-10">
