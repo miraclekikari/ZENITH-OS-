@@ -5,7 +5,8 @@ import {
   faGlobeAmericas, faSlidersH, faShieldAlt, faDatabase, faTable, 
   faUnlink, faCheckCircle, faTimesCircle, faSyncAlt, faStethoscope,
   faRedo, faSpinner, faTimes, faLink, faShare, faMicrochip, faRetweet, 
-  faBookmark, faCameraRetro, faExclamationTriangle, faBolt, faImages
+  faBookmark, faCameraRetro, faExclamationTriangle, faBolt, faImages,
+  faMagic, faSmile, faFont
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -55,6 +56,9 @@ export const iconMap = {
   'exclamation-triangle': faExclamationTriangle,
   'bolt': faBolt,
   'images': faImages,
+  'magic': faMagic,
+  'smile': faSmile,
+  'font': faFont,
 
   // Regular icons
   'heart-regular': faHeartRegular,
