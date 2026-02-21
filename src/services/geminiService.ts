@@ -8,7 +8,7 @@ console.log('🔧 Gemini config:', {
   mode: import.meta.env.MODE
 });
 
-export const askZenithAI = async (prompt: string): Promise<string> => {
+const askZenithAI = async (prompt: string): Promise<string> => {
   console.log('📤 Envoi à IA:', prompt.substring(0, 80));
   
   if (!API_KEY) {
@@ -49,9 +49,8 @@ export const askZenithAI = async (prompt: string): Promise<string> => {
   }
 };
 
-// Fonctions pour la modération et génération de contenu
-export const moderateContent = async (content: string): Promise<boolean> => {
-  if (!API_KEY) return true; // Pas de vérification si pas de clé
+const moderateContent = async (content: string): Promise<boolean> => {
+  if (!API_KEY) return true;
   
   try {
     const response = await fetch(API_URL, {
@@ -69,7 +68,7 @@ export const moderateContent = async (content: string): Promise<boolean> => {
     const data = await response.json();
     if (data.error) {
       console.error('❌ Erreur modération:', data.error);
-      return true; // Par défaut, on autorise si erreur
+      return true;
     }
     
     const result = data.candidates[0].content.parts[0].text.trim().toLowerCase();
@@ -77,11 +76,11 @@ export const moderateContent = async (content: string): Promise<boolean> => {
     
   } catch (error) {
     console.error('❌ Erreur réseau modération:', error);
-    return true; // Par défaut, on autorise si erreur
+    return true;
   }
 };
 
-export const generateCreativeCaption = async (context: string): Promise<{ caption: string; success: boolean }> => {
+const generateCreativeCaption = async (context: string): Promise<{ caption: string; success: boolean }> => {
   if (!API_KEY) {
     return { caption: 'Configuration IA manquante', success: false };
   }
@@ -121,18 +120,20 @@ export const generateCreativeCaption = async (context: string): Promise<{ captio
   }
 };
 
-// Compatibilité avec les imports existants
-export const generateContent = askZenithAI;
-export const getGeminiResponse = askZenithAI;
-export const generateCommunityNews = async (topic?: string): Promise<string> => {
+const generateContent = askZenithAI;
+const getGeminiResponse = askZenithAI;
+const generateCommunityNews = async (topic?: string): Promise<string> => {
   const topicPrompt = topic ? ` pour le thème: ${topic}` : '';
   return askZenithAI(`Génère 3 news tech${topicPrompt}.`);
 };
-export default { 
-  askZenithAI, 
-  generateContent, 
-  getGeminiResponse, 
-  generateCommunityNews, 
-  moderateContent, 
-  generateCreativeCaption 
+
+const geminiService = {
+  askZenithAI,
+  generateContent,
+  getGeminiResponse,
+  generateCommunityNews,
+  moderateContent,
+  generateCreativeCaption
 };
+
+export default geminiService;
