@@ -1,135 +1,124 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { createComment, getComments } from '../lib/supabaseService';
-import { DEFAULT_USER_ID } from '../lib/constants';
-import { UserId, SupabaseComment } from '../types';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
 
-export interface CommentRow {
-  id: string;
-  post_id: string;
-  author_id: UserId; // Utiliser author_id comme dans la nouvelle table
-  content: string;
-  created_at?: string;
+interface Comment {
+    id: number;
+    content: string;
+    created_at: string;
+    user_id: string;
+    // Add profile info if you want to display username/avatar
 }
 
 interface CommentsDrawerProps {
-  postId: string;
-  postAuthor?: string;
+  postId: number;
   isOpen: boolean;
   onClose: () => void;
-  onCommentAdded?: () => void;
 }
 
-const CommentsDrawer: React.FC<CommentsDrawerProps> = ({
-  postId,
-  postAuthor,
-  isOpen,
-  onClose,
-  onCommentAdded
-}) => {
-  const [comments, setComments] = useState<CommentRow[]>([]);
-  const [input, setInput] = useState('');
+const CommentsDrawer: React.FC<CommentsDrawerProps> = ({ postId, isOpen, onClose }) => {
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(false);
-  const [sending, setSending] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const fetchComments = useCallback(async () => {
-    if (!postId) return;
+  useEffect(() => {
+    const getUserId = async () => {
+        const {data: {user}} = await supabase.auth.getUser();
+        if(user) setUserId(user.id);
+    }
+    getUserId();
+  }, []);
+
+  useEffect(() => {
+    if (isOpen && postId) {
+      fetchComments();
+    }
+  }, [isOpen, postId]);
+
+  const fetchComments = async () => {
     setLoading(true);
     try {
-      const { data, error } = await getComments(postId);
-      if (!error) setComments((data ?? []) as CommentRow[]);
+      const { data, error } = await supabase
+        .from('post_comments')
+        .select('*') // Consider selecting specific columns + user profile
+        .eq('post_id', postId)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setComments(data || []);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
     } finally {
       setLoading(false);
     }
-  }, [postId]);
+  };
 
-  useEffect(() => {
-    if (isOpen && postId) fetchComments();
-  }, [isOpen, postId, fetchComments]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleAddComment = async (e: React.FormEvent) => {
     e.preventDefault();
-    const text = input.trim();
-    if (!text || sending) return;
-    setSending(true);
+    if (!newComment.trim() || !userId) return;
+
     try {
-      const { error } = await createComment(postId, text);
-      if (!error) {
-        setInput('');
-        await fetchComments();
-        onCommentAdded?.();
+      const { data, error } = await supabase
+        .from('post_comments')
+        .insert({ post_id: postId, user_id: userId, content: newComment.trim() })
+        .select();
+
+      if (error) throw error;
+      
+      // Optimistically add comment to UI
+      if (data) {
+        setComments([...comments, data[0]]);
+        setNewComment('');
+        // Increment comments_count on the post
+        await supabase.rpc('increment_post_comments', { post_id_arg: postId });
       }
-    } finally {
-      setSending(false);
+
+    } catch (error) {
+      console.error('Error adding comment:', error);
     }
   };
 
   if (!isOpen) return null;
 
   return (
-    <>
-      <div
-        className="fixed inset-0 bg-black z-[9998]"
-        onClick={onClose}
-        aria-hidden
-      />
-      <div
-        className="fixed left-0 right-0 bottom-0 z-[9999] bg-black border-t-2 border-cyan-500/30 shadow-[0_-10px_40px_rgba(0,255,255,0.3)] flex flex-col max-h-[85vh] animate-slide-up"
-        role="dialog"
-        aria-label="Commentaires"
-      >
-        <div className="p-4 border-b border-zenith-greenDim flex items-center justify-between bg-zinc-950">
-          <h3 className="font-tech text-white text-sm tracking-wider">COMMENTAIRES CHIFFRÉS</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-zenith-dim hover:text-white transition-colors p-2"
-            aria-label="Fermer"
-          >
-            <i className="fas fa-times text-lg" />
-          </button>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0 bg-zinc-950">
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <div className="w-8 h-8 border-2 border-zenith-green border-t-transparent rounded-full animate-spin" />
+    <div className={`fixed top-0 right-0 h-full w-full md:w-96 bg-[#2f3136] text-white shadow-lg transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
+        <div className="p-4 flex flex-col h-full">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-bold">Commentaires</h2>
+                <button onClick={onClose}><FontAwesomeIcon icon={faTimes} /></button>
             </div>
-          ) : comments.length === 0 ? (
-            <p className="text-zenith-dim text-sm text-center py-6">Aucun commentaire. Soyez le premier.</p>
-          ) : (
-            comments.map((c) => (
-              <div key={c.id} className="flex gap-3">
-                <img src={`https://picsum.photos/seed/${encodeURIComponent(String(c.author_id))}/64/64`} alt="" className="w-8 h-8 rounded-full flex-shrink-0 object-cover bg-zenith-greenDim/50" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-zenith-dim text-[10px] font-mono">{c.author_id}</p>
-                  <p className="text-white text-sm break-words">{c.content}</p>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+            
+            <div className="flex-grow overflow-y-auto mb-4">
+                {loading ? <p>Chargement...</p> : 
+                    comments.map(comment => (
+                        <div key={comment.id} className="mb-3 p-2 rounded-lg bg-black/20">
+                            <div className="flex items-center mb-1">
+                                {/* Add user avatar here */}
+                                <p className="font-bold text-sm text-green-400">{comment.user_id.substring(0, 8)}...</p> {/* Replace with actual username */}
+                            </div>
+                            <p className="text-gray-300">{comment.content}</p>
+                            <p className="text-xs text-gray-500 mt-1">{new Date(comment.created_at).toLocaleString()}</p>
+                        </div>
+                    ))
+                }
+                 {comments.length === 0 && !loading && <p className="text-gray-400 text-center">Aucun commentaire pour l'instant.</p>}
+            </div>
 
-        <form onSubmit={handleSubmit} className="sticky bottom-0 p-4 border-t border-zenith-greenDim bg-zinc-950">
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Écrire un commentaire..."
-              className="flex-1 bg-black border border-zenith-greenDim rounded-xl px-4 py-3 text-white placeholder-zenith-dim focus:outline-none focus:border-zenith-green text-sm"
-              maxLength={500}
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || sending}
-              className="px-5 py-3 bg-zenith-green text-black font-bold rounded-xl text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-[0_0_15px_var(--z-primary)] transition-all"
-            >
-              {sending ? <i className="fas fa-spinner fa-spin" /> : 'OK'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </>
+            {userId && (
+                <form onSubmit={handleAddComment} className="mt-auto">
+                    <input 
+                        type="text"
+                        value={newComment}
+                        onChange={(e) => setNewComment(e.target.value)}
+                        placeholder="Ajouter un commentaire..."
+                        className="w-full bg-[#40444b] text-white placeholder-gray-400 rounded-lg px-3 py-2 focus:outline-none"
+                    />
+                </form>
+            )}
+        </div>
+    </div>
   );
 };
 
