@@ -6,8 +6,7 @@ import {
   faSmile, 
   faHeart, 
   faGift, 
-  faShare, 
-  faTimes 
+  faShare 
 } from '@fortawesome/free-solid-svg-icons';
 import { Message } from '../types/chat';
 import SupabaseChatService from '../services/supabaseChatService';
@@ -20,7 +19,6 @@ interface ChatProps {
 const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
   const { id: liveId } = useParams<{ id: string }>();
   const chatService = SupabaseChatService;
-  const currentUser = getUser() || { id: 'guest', username: 'Guest' }; // Guest user
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -61,7 +59,6 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
 
   const handleSendMessage = async () => {
     if (!inputText.trim() || !liveId) return;
-
     try {
       await chatService.sendMessage(liveId, inputText.trim());
       setInputText('');
@@ -77,9 +74,11 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
     }
   };
 
+  // Render full-screen live experience if isLive is true
   if (isLive) {
     return (
-      <div className="fixed inset-0 bg-black text-white flex flex-col">
+      <div className="fixed inset-0 bg-black text-white">
+        {/* Video Background */}
         <div className="absolute inset-0 z-0">
           <video 
             className="w-full h-full object-cover" 
@@ -91,20 +90,8 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
           <div className="absolute inset-0 bg-black/30"></div>
         </div>
 
-        <div className="relative z-10 p-4 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <img src="https://picsum.photos/seed/live/100/100" alt="Streamer" className="w-10 h-10 rounded-full border-2 border-red-500" />
-            <div>
-              <h3 className="font-bold">Live Streamer</h3>
-              <span className="text-sm text-gray-300">1.2M viewers</span>
-            </div>
-          </div>
-          <button onClick={() => window.history.back()} className="p-2 bg-white/20 rounded-full">
-            <FontAwesomeIcon icon={faTimes} />
-          </button>
-        </div>
-
-        <div className="absolute bottom-20 left-4 right-4 z-10 max-h-60 overflow-y-auto space-y-2 no-scrollbar">
+        {/* Floating Chat - Adjusted for sidebar */}
+        <div className="absolute bottom-20 left-20 right-4 z-10 max-h-60 overflow-y-auto space-y-2 no-scrollbar">
           {messages.map((message) => (
             <div key={message.id} className="flex items-start gap-2 text-shadow-md">
               <img src={message.senderAvatar} alt={message.senderName} className="w-8 h-8 rounded-full" />
@@ -117,7 +104,8 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
            <div ref={messagesEndRef} />
         </div>
 
-        <div className="absolute bottom-4 left-4 right-4 z-10 flex items-center gap-3">
+        {/* Input & Actions - Adjusted for sidebar */}
+        <div className="absolute bottom-4 left-20 right-4 z-10 flex items-center gap-3">
           <div className="flex-1 relative">
             <input
               type="text"
@@ -137,6 +125,7 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
           </button>
         </div>
         
+        {/* Interaction Buttons (TikTok style) */}
         <div className="absolute right-4 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-6">
             <button className="flex flex-col items-center gap-1 text-white">
                 <FontAwesomeIcon icon={faHeart} className="text-4xl drop-shadow-lg"/>
@@ -155,11 +144,13 @@ const Chat: React.FC<ChatProps> = ({ isLive = false }) => {
     );
   }
 
+  // Standard Chat UI for non-live routes
   return (
-    <div className="flex h-screen bg-zenith-bg text-zenith-text">
-        <div className="flex-1 flex items-center justify-center">
-            <h1 className="text-2xl">Select a channel to get started.</h1>
-        </div>
+    <div className="flex flex-col h-full">
+      {/* Replace with your standard chat UI, this is just a placeholder */}
+      <div className="flex-1 flex items-center justify-center">
+        <h1 className="text-2xl">Select a chat to begin.</h1>
+      </div>
     </div>
   );
 };
