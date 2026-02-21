@@ -43,7 +43,7 @@
 ### **1. Variable d'environnement** ⚠️
 - ⚠️ **.env protégé** : Impossible à créer (sécurité .gitignore)
 - ✅ **Solution manuelle** : Utilisateur doit créer le fichier
-- ✅ **Contenu fourni** : `VITE_GEMINI_API_KEY=AIzaSyCuSYgPpmnojVJlNk-mPziiKpSqgJwMgxI`
+- ✅ **Contenu fourni** :
 
 ### **2. Stabilisation Design** ✅
 - ✅ **CDN rétablis** : Tailwind + FontAwesome dans index.html
