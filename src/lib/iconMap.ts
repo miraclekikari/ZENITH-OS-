@@ -1,13 +1,18 @@
-// Mapping des icônes FontAwesome pour éviter les imports individuels
-import { 
+import {
   faPowerOff, faChevronDown, faUserLock, faBan, faClock, faCheck, 
-  faStore, faHeart, faComment, faSatellite, faPaperPlane, faCloudUploadAlt,
-  faSearch, faUser, faCog, faPlusSquare, faFlask, faGraduationCap, 
+  faStore, faHeart as faHeartSolid, faComment, faSatellite, faPaperPlane as faPaperPlaneSolid, faCloudUploadAlt,
+  faSearch, faUser, faCog, faPlusSquare as faPlusSquareSolid, faFlask, faGraduationCap, 
   faGlobeAmericas, faSlidersH, faShieldAlt, faDatabase, faTable, 
   faUnlink, faCheckCircle, faTimesCircle, faSyncAlt, faStethoscope,
   faRedo, faSpinner, faTimes, faLink, faShare, faMicrochip, faRetweet, 
   faBookmark, faCameraRetro, faExclamationTriangle, faBolt, faImages
 } from '@fortawesome/free-solid-svg-icons';
+
+import {
+  faHeart as faHeartRegular,
+  faPlusSquare as faPlusSquareRegular,
+  faPaperPlane as faPaperPlaneRegular
+} from '@fortawesome/free-regular-svg-icons';
 
 export const iconMap = {
   'power-off': faPowerOff,
@@ -17,15 +22,15 @@ export const iconMap = {
   'clock': faClock,
   'check': faCheck,
   'store': faStore,
-  'heart': faHeart,
+  'heart': faHeartSolid,
   'comment': faComment,
   'satellite': faSatellite,
-  'paper-plane': faPaperPlane,
+  'paper-plane': faPaperPlaneSolid,
   'cloud-upload-alt': faCloudUploadAlt,
   'search': faSearch,
   'user': faUser,
   'cog': faCog,
-  'plus-square': faPlusSquare,
+  'plus-square': faPlusSquareSolid,
   'flask': faFlask,
   'graduation-cap': faGraduationCap,
   'globe-americas': faGlobeAmericas,
@@ -49,5 +54,10 @@ export const iconMap = {
   'camera-retro': faCameraRetro,
   'exclamation-triangle': faExclamationTriangle,
   'bolt': faBolt,
-  'images': faImages
+  'images': faImages,
+
+  // Regular icons
+  'heart-regular': faHeartRegular,
+  'plus-square-regular': faPlusSquareRegular,
+  'paper-plane-regular': faPaperPlaneRegular,
 };
