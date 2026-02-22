@@ -15,7 +15,7 @@
     "@fortawesome/fontawesome-svg-core": "^6.5.1",
     "@fortawesome/free-regular-svg-icons": "^6.5.1",
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
-    "@fortawesome/react-fontawesome": "^0.2.0",
+    "@fortawesome/react-fontawesome": "^3.2.0",
     "@google/generative-ai": "^0.21.0",
     "@supabase/supabase-js": "^2.95.3",
     "fabric": "^7.2.0",
