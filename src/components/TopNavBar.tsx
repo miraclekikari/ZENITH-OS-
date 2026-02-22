@@ -1,18 +1,35 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
 import { Bell, Search } from 'lucide-react';
+import { useLocation, NavLink } from 'react-router-dom';
 
-const TopNavBar: React.FC = () => {
+interface TopNavBarProps {
+  onSearchClick: () => void;
+  onNotificationsClick: () => void; // <-- NEW PROP
+}
+
+const TopNavBar: React.FC<TopNavBarProps> = ({ onSearchClick, onNotificationsClick }) => {
+  const location = useLocation();
+  const getTitle = () => {
+    const path = location.pathname.split('/')[1] || 'home';
+    return path.charAt(0).toUpperCase() + path.slice(1);
+  };
+
   return (
-    <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-white/[0.06] z-50 flex items-center justify-between px-4">
-      <h1 className="font-tech text-base font-bold tracking-[0.2em] text-white">ZENITH</h1>
-      <div className="flex items-center gap-3">
-        <button className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/[0.06] transition-colors">
+    <header className="md:hidden fixed top-0 left-0 right-0 h-14 bg-[#0a0a0a]/80 backdrop-blur-xl border-b border-white/[0.06] z-[90] flex items-center justify-between px-4">
+      <NavLink to="/">
+        <h1 className="font-tech text-lg font-bold tracking-widest text-white">ZENITH</h1>
+      </NavLink>
+      <div className="flex-1 flex justify-center">
+        <p className="font-semibold text-white/80 capitalize">
+          {getTitle()}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <button onClick={onSearchClick} className="w-8 h-8 flex items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white transition-colors">
           <Search size={18} />
         </button>
-        <button className="w-9 h-9 rounded-full flex items-center justify-center text-white/50 hover:text-white/80 hover:bg-white/[0.06] transition-colors relative">
+        <button onClick={onNotificationsClick} className="w-8 h-8 flex items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white transition-colors"> {/* <-- ADD ONCLICK */}
           <Bell size={18} />
-          <div className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-400" />
         </button>
       </div>
     </header>

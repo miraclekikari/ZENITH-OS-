@@ -16,7 +16,7 @@ import Studio from './pages/Studio';
 import Lab from './pages/Lab';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
-import ProfilePage from './pages/ProfilePage';
+import NewProfile from './pages/NewProfile'; // <-- IMPORT
 import Support from './pages/Support';
 import NotFound from './pages/NotFound';
 
@@ -95,8 +95,7 @@ const AppContent: React.FC = () => {
         <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
         <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><ProfilePage isOwnProfile={true} /></ProtectedRoute>} />
-        <Route path="/profile/:username" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
         <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
         {isAdmin() && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
         

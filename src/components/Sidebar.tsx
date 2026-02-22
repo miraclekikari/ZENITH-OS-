@@ -15,6 +15,7 @@ import {
 import { isAdmin } from '../services/storageService';
 import { supabase } from '../lib/supabaseClient';
 import { Profile } from '../types/profile';
+import { formatAvatar } from '../utils/avatar'; // <-- IMPORT
 
 const Sidebar: React.FC = () => {
   const admin = isAdmin();
@@ -28,7 +29,7 @@ const Sidebar: React.FC = () => {
         if (user) {
           const { data: profileData, error } = await supabase
             .from('profiles')
-            .select('*') // Select all columns to match the Profile type
+            .select('*')
             .eq('id', user.id)
             .single();
           if (error) throw error;
@@ -66,6 +67,8 @@ const Sidebar: React.FC = () => {
     { to: '/support', icon: HelpCircle, label: 'Support' },
     ...(admin ? [{ to: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
+
+  const avatarUrl = profile ? formatAvatar(profile.avatar_url, profile.username) : formatAvatar(null, 'guest');
 
   return (
     <aside className="hidden md:flex fixed top-0 left-0 h-screen w-[68px] flex-col items-center justify-between bg-[#0a0a0a]/80 backdrop-blur-xl border-r border-white/[0.06] z-[100] py-4">
@@ -110,13 +113,7 @@ const Sidebar: React.FC = () => {
         <NavLink to="/profile" className="relative group">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-cyan-600 p-[2px]">
             <div className="w-full h-full rounded-full bg-[#0a0a0a] flex items-center justify-center overflow-hidden">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="User Avatar" className="w-full h-full object-cover" />
-              ) : profile?.username ? (
-                <span className="font-bold text-sm text-white/80">{(profile.username.charAt(0) || '').toUpperCase()}</span>
-              ) : (
-                <User size={16} className="text-white/60" />
-              )}
+                <img src={avatarUrl} alt="User Avatar" className="w-full h-full object-cover" />
             </div>
           </div>
           <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0a0a0a]" />

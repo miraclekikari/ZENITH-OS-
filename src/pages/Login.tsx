@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Loader2, Fingerprint } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, Fingerprint, Key } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const SocialSignInButton: React.FC<{
   provider: 'google' | 'facebook';
@@ -46,13 +47,25 @@ const Login: React.FC = () => {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkUser = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+            navigate('/');
+        }
+    };
+    checkUser();
+  }, [navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    console.log("Tentative d'authentification avec :", formData.email);
+    setInfo('');
 
     try {
       if (isRegister) {
@@ -60,20 +73,15 @@ const Login: React.FC = () => {
           email: formData.email,
           password: formData.password,
         });
-        if (error) {
-            alert(error.message);
-            throw error;
-        }
-        alert('Check your email for the confirmation link!');
+        if (error) throw error;
+        setInfo('Check your email for the confirmation link!');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
-        if (error) {
-            alert(error.message);
-            throw error;
-        }
+        if (error) throw error;
+        navigate('/'); // Navigate to home on successful sign in
       }
     } catch (err: any) {
       setError(err.error_description || err.message);
@@ -82,21 +90,26 @@ const Login: React.FC = () => {
     }
   };
 
-  const handleAdminCreate = async () => {
-    console.log('ADMIN CREATE: Tentative de création de l\'utilisateur admin...');
-    const { data, error } = await supabase.auth.signUp({
-      email: 'admin@zenith.com', 
-      password: 'password123',
-    });
-
-    if (error) {
-      console.error('ADMIN CREATE Error:', error);
-      alert(`ADMIN CREATE Error: ${error.message}`);
-    } else {
-      console.log('ADMIN CREATE Success:', data);
-      alert('ADMIN CREATE: Utilisateur créé avec succès! Vérifiez la console et la table auth.users dans Supabase.');
+  const handlePasswordReset = async () => {
+    if (!formData.email) {
+      setError('Please enter your email address to reset your password.');
+      return;
     }
-  };
+    setLoading(true);
+    setError('');
+    setInfo('');
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+      setInfo('Check your email for a password reset link.');
+    } catch (err: any) {
+      setError(err.error_description || err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="h-screen w-full flex items-center justify-center bg-[#0a0a0a] p-4 relative overflow-hidden">
@@ -133,6 +146,8 @@ const Login: React.FC = () => {
 
           <form onSubmit={handleAuth} className="space-y-4">
             {error && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-red-500/10 border border-red-500/20 text-red-300 text-xs p-3 rounded-lg text-center font-medium">{error}</motion.div>}
+            {info && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs p-3 rounded-lg text-center font-medium">{info}</motion.div>}
+            
             <div className="relative group">
               <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-emerald-400 transition-colors" />
               <input type="email" placeholder="Email address" required className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl py-3 pl-10 pr-4 text-white text-sm placeholder-white/20 focus:outline-none focus:border-emerald-500/40 focus:bg-white/[0.06] transition-all" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
@@ -142,7 +157,16 @@ const Login: React.FC = () => {
               <input type={showPass ? 'text' : 'password'} placeholder="Password" required className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl py-3 pl-10 pr-10 text-white text-sm placeholder-white/20 focus:outline-none focus:border-emerald-500/40 focus:bg-white/[0.06] transition-all" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
               <button type="button" onClick={() => setShowPass(!showPass)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/40 transition-colors">{showPass ? <EyeOff size={16} /> : <Eye size={16} />}</button>
             </div>
-            <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="submit" disabled={loading} className="w-full py-3 rounded-xl font-bold text-sm transition-all bg-gradient-to-r from-emerald-500 to-cyan-500 text-black hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+
+            {!isRegister && (
+                <div className="text-right -mt-2">
+                    <button type="button" onClick={handlePasswordReset} className="text-xs text-cyan-400 hover:text-cyan-300 font-medium transition-colors flex items-center justify-end gap-1 w-full">
+                        <Key size={12} /> Forgot Password?
+                    </button>
+                </div>
+            )}
+
+            <motion.button whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }} type="submit" disabled={loading} className="w-full py-3 mt-4 rounded-xl font-bold text-sm transition-all bg-gradient-to-r from-emerald-500 to-cyan-500 text-black hover:brightness-110 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2">
               {loading && <Loader2 size={16} className="animate-spin" />}
               {loading ? 'PROCESSING...' : isRegister ? 'CREATE ACCOUNT' : 'AUTHENTICATE'}
             </motion.button>
@@ -150,17 +174,10 @@ const Login: React.FC = () => {
 
           <div className="mt-6 text-center text-sm">
             <span className="text-white/25">{isRegister ? 'Already have an ID?' : "Don't have an ID?"}</span>
-            <button onClick={() => { setIsRegister(!isRegister); setError(''); }} className="ml-2 text-emerald-400 font-semibold hover:text-emerald-300 transition-colors">
+            <button onClick={() => { setIsRegister(!isRegister); setError(''); setInfo(''); }} className="ml-2 text-emerald-400 font-semibold hover:text-emerald-300 transition-colors">
               {isRegister ? 'Sign In' : 'Sign Up'}
             </button>
           </div>
-
-          <div className="mt-4 border-t border-white/[0.06] pt-4">
-            <button onClick={handleAdminCreate} className="w-full text-center text-xs text-amber-400/50 hover:text-amber-400 transition-colors p-2 rounded-lg bg-amber-400/10">
-                [DEBUG] ADMIN CREATE
-            </button>
-          </div>
-
         </div>
       </motion.div>
     </div>
