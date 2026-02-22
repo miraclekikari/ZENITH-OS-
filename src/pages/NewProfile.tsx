@@ -7,7 +7,7 @@ import { Image, User, AtSign, Calendar, MessageSquare, Heart } from 'lucide-reac
 
 interface Post {
   id: string;
-  imageUrl: string;
+  image_url: string;
   caption: string;
   created_at: string;
 }
@@ -37,7 +37,7 @@ const NewProfile: React.FC = () => {
         // Fetch user's posts
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
-          .select('id, imageUrl, caption, created_at')
+          .select('id, image_url, caption, created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false });
         if (postsError) throw postsError;
@@ -92,7 +92,7 @@ const NewProfile: React.FC = () => {
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
                     {posts.map((post) => (
                         <div key={post.id} className="relative aspect-square group overflow-hidden rounded-xl border border-white/[0.08]">
-                            <img src={post.imageUrl} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
+                            <img src={post.image_url} alt={post.caption || 'Post'} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"/>
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
                                 <p className="text-xs text-white/90 truncate">{post.caption}</p>
                             </div>
