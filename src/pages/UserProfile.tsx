@@ -14,51 +14,46 @@ const UserProfile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
 
   useEffect(() => {
-    if (username) {
-      loadUserProfile();
-      loadUserPosts();
-      loadProfileStats();
-    }
-  }, [username]);
+    const loadPageData = async () => {
+      if (!username) return;
 
-  const loadUserProfile = async () => {
-    try {
-      const { data, error } = await getProfileByUsername(username);
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Erreur chargement profil:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+      setLoading(true);
+      try {
+        // 1. Get profile by username
+        const { data: profileData, error: profileError } = await getProfileByUsername(username);
 
-  const loadUserPosts = async () => {
-    try {
-      const { data, error } = await getUserPosts(username);
-      if (error) throw error;
-      setPosts(data || []);
-    } catch (error) {
-      console.error('Erreur chargement posts:', error);
-    }
-  };
+        if (profileError || !profileData) {
+          throw profileError || new Error('Profil non trouvé');
+        }
 
-  const loadProfileStats = async () => {
-    try {
-      const stats = await getProfileStats(username);
-      setStats(stats);
-    } catch (error) {
-      console.error('Erreur chargement stats:', error);
-    }
-  };
+        setProfile(profileData);
+
+        // 2. Use the profile ID to get posts and stats
+        const [postsResponse, statsResponse] = await Promise.all([
+          getUserPosts(profileData.id),
+          getProfileStats(profileData.id),
+        ]);
+
+        if (postsResponse.error) throw postsResponse.error;
+        setPosts(postsResponse.data || []);
+
+        if (statsResponse.error) throw statsResponse.error;
+        setStats(statsResponse);
+
+      } catch (error) {
+        console.error('Erreur chargement profil:', error);
+        setProfile(null); // This will trigger the "not found" message
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPageData();
+  }, [username, navigate]);
 
   const getStatusColor = () => {
     // Simuler un statut en ligne (à remplacer par une vraie logique)
     return 'bg-green-500';
-  };
-
-  const getDefaultAvatar = (username: string) => {
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${username}`;
   };
 
   if (loading) {
