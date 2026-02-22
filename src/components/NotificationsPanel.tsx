@@ -26,7 +26,7 @@ const mockNotifications: Notification[] = [
   {
     id: '2',
     type: 'new_message',
-    text: 'sent you a message: "Wanna build a rocket?"'',
+    text: 'sent you a message: "Wanna build a rocket?"',
     relatedUser: { username: 'gwynne', avatar_url: '' },
     createdAt: '30m ago'
   },
