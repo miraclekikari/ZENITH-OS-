@@ -28,7 +28,7 @@ const Sidebar: React.FC = () => {
         if (user) {
           const { data: profileData, error } = await supabase
             .from('profiles')
-            .select('avatar_url, username')
+            .select('*') // Select all columns to match the Profile type
             .eq('id', user.id)
             .single();
           if (error) throw error;

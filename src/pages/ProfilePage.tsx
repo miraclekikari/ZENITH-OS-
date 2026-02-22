@@ -2,14 +2,18 @@ import React from 'react';
 import InstagramProfile from '../components/InstagramProfile';
 import { useParams } from 'react-router-dom';
 
-const ProfilePage: React.FC = () => {
+// Define the props interface to accept isOwnProfile
+interface ProfilePageProps {
+  isOwnProfile?: boolean;
+}
+
+const ProfilePage: React.FC<ProfilePageProps> = ({ isOwnProfile: isOwnProfileProp }) => {
   const { username } = useParams<{ username: string }>();
+  // Fallback to localStorage is kept for robustness
   const currentUser = JSON.parse(localStorage.getItem('zenith_user') || '{}');
 
-  let profileId = username;
-  if (!profileId) {
-    profileId = currentUser?.id;
-  }
+  // If a username is in the URL, we view that profile. Otherwise, we view our own.
+  const profileId = username || currentUser?.id;
 
   if (!profileId) {
     return (
@@ -19,7 +23,9 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  const isOwnProfile = currentUser?.id === profileId;
+  // The prop from the router takes precedence. If it's not passed (e.g., for /profile/:username),
+  // we calculate it by comparing the current user's ID to the ID being viewed.
+  const isOwnProfile = isOwnProfileProp !== undefined ? isOwnProfileProp : currentUser?.id === profileId;
 
   return (
     <div className="min-h-screen bg-gray-50">
