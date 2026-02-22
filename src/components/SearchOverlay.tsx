@@ -41,11 +41,11 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose }) => {
           .limit(5);
         if (userError) throw userError;
 
-        // Fetch posts (simple caption search)
+        // Fetch posts (simple content search)
         const { data: posts, error: postError } = await supabase
             .from('posts')
-            .select('id, caption, user_id, profiles(username, avatar_url)') // Assuming you have RLS and policies set up for this
-            .textSearch('caption', searchTerm, { type: 'websearch' })
+            .select('id, content, user_id, profiles(username, avatar_url)') // Assuming you have RLS and policies set up for this
+            .textSearch('content', searchTerm, { type: 'websearch' })
             .limit(5);
         if(postError) throw postError;
 
@@ -61,7 +61,7 @@ const SearchOverlay: React.FC<SearchOverlayProps> = ({ isOpen, onClose }) => {
         const formattedPosts: SearchResult[] = posts.map((post: any) => ({
             id: post.id,
             type: 'post',
-            title: post.caption.substring(0, 40) + '...',
+            title: post.content.substring(0, 40) + '...',
             subtitle: `by @${post.profiles.username}`,
             avatarUrl: formatAvatar(post.profiles.avatar_url, post.profiles.username),
             path: `/post/${post.id}` // Assuming a /post/:id route

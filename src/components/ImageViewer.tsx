@@ -80,7 +80,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ post, isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 bg-black/90 z-50 flex flex-col md:flex-row items-center justify-center" onClick={onClose}>
       <div className="relative w-full h-full md:w-3/4 md:h-auto p-4" onClick={(e) => e.stopPropagation()}>
-        <img src={post.image_url} alt={post.caption || 'Post image'} className="w-full h-full object-contain" />
+        <img src={post.image_url} alt={post.content || 'Post image'} className="w-full h-full object-contain" />
       </div>
       
       <div className="w-full md:w-1/4 h-full bg-[#1c1c1c] text-white flex flex-col p-4" onClick={(e) => e.stopPropagation()}>
@@ -90,7 +90,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({ post, isOpen, onClose }) => {
                 <div className="w-10 h-10 bg-gray-600 rounded-full mr-3"></div>
                 <span className="font-bold">{post.user_id}</span> { /* Replace with profile username later */}
             </div>
-            <p className="mb-4 text-gray-300">{post.caption}</p>
+            <p className="mb-4 text-gray-300">{post.content}</p>
 
             <div className="flex items-center space-x-4 mb-4">
                 <button onClick={handleLike} className="flex items-center space-x-2 text-lg">
