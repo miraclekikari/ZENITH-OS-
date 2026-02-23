@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import * as fabric from 'fabric';
+import { fabric } from 'fabric';
 
 interface EditorViewProps {
   media: {
@@ -23,37 +23,54 @@ const EditorView = forwardRef<EditorViewRef, EditorViewProps>(({ media }, ref) =
   useEffect(() => {
     if (!canvasRef.current || media.type !== 'image') return;
 
+    let isMounted = true;
     const canvas = new fabric.Canvas(canvasRef.current, { isDrawingMode: false });
     fabricCanvasRef.current = canvas;
 
-    const setCanvasSize = () => {
-      if (canvasRef.current?.parentElement) {
-        const { clientWidth, clientHeight } = canvasRef.current.parentElement;
-        canvas.setDimensions({ width: clientWidth, height: clientHeight });
+    const initCanvas = async () => {
+      if (!canvasRef.current?.parentElement) return;
 
-        fabric.Image.fromURL(media.url, (img) => {
-          const scale = Math.min(clientWidth / img.width!, clientHeight / img.height!);
-          img.scale(scale);
-          img.set({
-            originX: 'center',
-            originY: 'center',
-            left: clientWidth / 2,
-            top: clientHeight / 2,
-            selectable: false,
-            evented: false,
-          });
-          canvas.setBackgroundImage(img, canvas.renderAll.bind(canvas));
-        }, { crossOrigin: 'anonymous' });
+      const { clientWidth, clientHeight } = canvasRef.current.parentElement;
+      canvas.setDimensions({ width: clientWidth, height: clientHeight });
+
+      try {
+        // CORRECTED: Using modern async/await syntax for image loading
+        const img = await fabric.Image.fromURL(media.url, undefined, { crossOrigin: 'anonymous' });
+        
+        if (!isMounted) return; // Prevent state updates if component is unmounted
+
+        const scale = Math.min(clientWidth / (img.width || 1), clientHeight / (img.height || 1));
+        img.scale(scale);
+        img.set({
+          originX: 'center',
+          originY: 'center',
+          left: clientWidth / 2,
+          top: clientHeight / 2,
+          selectable: false,
+          evented: false,
+        });
+
+        // CORRECTED: Use the backgroundImage property and call renderAll() manually.
+        canvas.backgroundImage = img;
+        canvas.renderAll();
+
+      } catch (error) {
+        console.error("Error loading image into fabric canvas:", error);
       }
     };
 
-    setCanvasSize();
-    window.addEventListener('resize', setCanvasSize);
+    const handleResize = () => initCanvas();
+    initCanvas();
+
+    window.addEventListener('resize', handleResize);
 
     return () => {
-      window.removeEventListener('resize', setCanvasSize);
-      canvas.dispose();
-      fabricCanvasRef.current = null;
+      isMounted = false;
+      window.removeEventListener('resize', handleResize);
+      if (fabricCanvasRef.current) {
+        fabricCanvasRef.current.dispose();
+        fabricCanvasRef.current = null;
+      }
     };
   }, [media]);
 
