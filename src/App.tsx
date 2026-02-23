@@ -13,10 +13,11 @@ import Chat from './pages/Chat';
 import Feed from './pages/Feed';
 import CommunityPage from './pages/Community';
 import Studio from './pages/Studio';
+import Publish from './pages/Publish'; // <-- IMPORT
 import Lab from './pages/Lab';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
-import NewProfile from './pages/NewProfile'; // <-- IMPORT
+import NewProfile from './pages/NewProfile';
 import Support from './pages/Support';
 import NotFound from './pages/NotFound';
 
@@ -93,6 +94,7 @@ const AppContent: React.FC = () => {
         <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
         <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
         <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+        <Route path="/publish" element={<ProtectedRoute><Publish /></ProtectedRoute>} /> {/* <-- ADDED ROUTE */}
         <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
