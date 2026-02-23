@@ -1,27 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient';
+import { getMembers, Profile } from '../../services/chatService'; // Updated import
 import { Search } from 'lucide-react';
-
-type MemberProfile = {
-  id: string;
-  username: string;
-  avatar_url: string;
-  status: 'online' | 'offline' | string;
-  role: string;
-};
 
 interface MembersListProps {
   channelId: number | null;
 }
-
-const mockMembers: MemberProfile[] = [
-  { id: '1', username: 'ZenithBot', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=zenith', status: 'online', role: 'ADMIN' },
-  { id: '2', username: 'NovaAgent', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=nova', status: 'online', role: 'ADMIN' },
-  { id: '3', username: 'CyberPilot', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=cyber', status: 'online', role: 'USER' },
-  { id: '4', username: 'DataStream', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=data', status: 'online', role: 'USER' },
-  { id: '5', username: 'NeonDrift', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=neon', status: 'offline', role: 'USER' },
-  { id: '6', username: 'QuantumX', avatar_url: 'https://api.dicebear.com/7.x/bottts/svg?seed=quantum', status: 'offline', role: 'USER' },
-];
 
 const StatusDot: React.FC<{ status: string }> = ({ status }) => (
   <span
@@ -40,42 +23,23 @@ const getRoleColor = (role: string) => {
 };
 
 const MembersList: React.FC<MembersListProps> = ({ channelId }) => {
-  const [members, setMembers] = useState<MemberProfile[]>([]);
+  const [members, setMembers] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!channelId) {
-      setMembers(mockMembers);
+      setMembers([]);
       return;
     }
 
     const fetchMembers = async () => {
       setLoading(true);
       try {
-        const { data: memberIds, error: idsError } = await supabase
-          .from('channel_members')
-          .select('profile_id')
-          .eq('channel_id', channelId);
-
-        if (idsError || !memberIds || memberIds.length === 0) {
-          setMembers(mockMembers);
-          setLoading(false);
-          return;
-        }
-
-        const profileIds = memberIds.map((m) => m.profile_id);
-        const { data: profilesData, error: profilesError } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('id', profileIds);
-
-        if (profilesError || !profilesData) {
-          setMembers(mockMembers);
-        } else {
-          setMembers(profilesData as MemberProfile[]);
-        }
-      } catch {
-        setMembers(mockMembers);
+        const membersData = await getMembers(channelId);
+        setMembers(membersData);
+      } catch (error) {
+        console.error("Failed to fetch members:", error);
+        setMembers([]);
       } finally {
         setLoading(false);
       }
@@ -89,7 +53,7 @@ const MembersList: React.FC<MembersListProps> = ({ channelId }) => {
     if (!acc[role]) acc[role] = [];
     acc[role].push(m);
     return acc;
-  }, {} as Record<string, MemberProfile[]>);
+  }, {} as Record<string, Profile[]>);
 
   const roleOrder = ['ADMIN', 'HELPER', 'USER'];
   const sortedRoles = Object.keys(grouped).sort((a, b) => {
@@ -113,9 +77,11 @@ const MembersList: React.FC<MembersListProps> = ({ channelId }) => {
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 pb-2 scrollbar-hide">
-        {loading && <div className="text-white/30 text-xs p-2">Loading...</div>}
-
-        {!loading && sortedRoles.map((role) => (
+        {loading ? (
+          <div className="text-white/30 text-xs p-2">Loading...</div>
+        ) : sortedRoles.length === 0 ? (
+            <div className="text-white/20 text-xs p-2 text-center">No members found for this channel.</div>
+        ) : sortedRoles.map((role) => (
           <div key={role} className="mb-3">
             <h3 className="text-[11px] font-bold text-white/30 uppercase tracking-wider px-1 mb-1.5">
               {role} -- {grouped[role].length}
@@ -143,10 +109,6 @@ const MembersList: React.FC<MembersListProps> = ({ channelId }) => {
             </div>
           </div>
         ))}
-
-        {!loading && members.length === 0 && (
-          <div className="text-white/20 text-xs p-2 text-center">No members found</div>
-        )}
       </div>
     </div>
   );
