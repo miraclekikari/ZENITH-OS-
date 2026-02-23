@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 
 interface EditorViewProps {
   media: {
@@ -34,10 +34,9 @@ const EditorView = forwardRef<EditorViewRef, EditorViewProps>(({ media }, ref) =
       canvas.setDimensions({ width: clientWidth, height: clientHeight });
 
       try {
-        // CORRECTED: Using modern async/await syntax for image loading
         const img = await fabric.Image.fromURL(media.url, undefined, { crossOrigin: 'anonymous' });
         
-        if (!isMounted) return; // Prevent state updates if component is unmounted
+        if (!isMounted) return;
 
         const scale = Math.min(clientWidth / (img.width || 1), clientHeight / (img.height || 1));
         img.scale(scale);
@@ -50,7 +49,6 @@ const EditorView = forwardRef<EditorViewRef, EditorViewProps>(({ media }, ref) =
           evented: false,
         });
 
-        // CORRECTED: Use the backgroundImage property and call renderAll() manually.
         canvas.backgroundImage = img;
         canvas.renderAll();
 
