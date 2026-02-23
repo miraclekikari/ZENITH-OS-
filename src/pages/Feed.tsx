@@ -55,7 +55,7 @@ const StoryCircle: React.FC<{ story: Story; index: number }> = ({ story, index }
     <div className={`w-[66px] h-[66px] rounded-full p-[2px] ${
       story.isSeen
         ? 'bg-white/10'
-        : 'bg-gradient-to-tr from-amber-500 via-rose-500 to-fuchsia-500'
+        : 'bg-gradient-to-tr from-emerald-500 to-cyan-500'
     }`}>
       <div className="w-full h-full bg-[#0a0a0a] rounded-full p-[2px]">
         <img
