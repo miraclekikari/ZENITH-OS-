@@ -33,7 +33,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onLike, onComment }) => {
     <article className="bg-[#0a0a0a] md:bg-[#111] md:rounded-xl md:border md:border-white/[0.06] mb-3 md:mb-5 overflow-hidden">
       {/* Post Header */}
       <div className="flex items-center gap-3 p-3">
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-cyan-500 p-[2px] flex-shrink-0">
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-purple-500 p-[2px] flex-shrink-0">
           <img
             src={post.avatar}
             alt={post.author}
