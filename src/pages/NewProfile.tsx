@@ -38,7 +38,7 @@ const NewProfile: React.FC = () => {
         const { data: postsData, error: postsError } = await supabase
           .from('posts')
           .select('id, image_url, content, created_at')
-          .eq('user_id', user.id)
+          .eq('author_id', user.id)
           .order('created_at', { ascending: false });
         if (postsError) throw postsError;
         setPosts(postsData || []);
