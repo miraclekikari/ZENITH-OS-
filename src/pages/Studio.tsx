@@ -7,29 +7,45 @@ import EditorView, { EditorViewRef } from '../components/studio/EditorView';
 import Icon from '../components/Icon';
 import { usePermissions } from '../hooks/usePermissions';
 
-// CameraView and ImportView remain the same as before
 const CameraView: React.FC<{ onCapture: (blob: Blob, type: 'image' | 'video') => void }> = ({ onCapture }) => {
   const { permissionState: cameraPermission, requestPermission: requestCamera } = usePermissions('camera');
   const { permissionState: microphonePermission, requestPermission: requestMicrophone } = usePermissions('microphone');
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   const startCamera = useCallback(async (mode: 'user' | 'environment') => {
     try {
-      if (stream) stream.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
       const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode, width: 1920, height: 1080 }, audio: true });
+      streamRef.current = newStream;
       setStream(newStream);
-      if (videoRef.current) videoRef.current.srcObject = newStream;
-    } catch (error) { console.error("Error starting camera:", error); }
-  }, [stream]);
+      if (videoRef.current) {
+        videoRef.current.srcObject = newStream;
+      }
+    } catch (error) { 
+      console.error("Error starting camera:", error); 
+    }
+  }, []); // Removed stream from dependencies to break loop
 
   useEffect(() => {
-    if (cameraPermission === 'granted' && microphonePermission === 'granted') startCamera(facingMode);
-    return () => { if (stream) stream.getTracks().forEach(track => track.stop()); };
+    if (cameraPermission === 'granted' && microphonePermission === 'granted') {
+      startCamera(facingMode);
+    }
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
   }, [cameraPermission, microphonePermission, facingMode, startCamera]);
 
-  const handlePermissions = async () => { await requestCamera(); await requestMicrophone(); };
+  const handlePermissions = async () => { 
+    await requestCamera(); 
+    await requestMicrophone(); 
+  };
   
   const handleTakePhoto = () => {
     if (videoRef.current) {
@@ -57,7 +73,7 @@ const CameraView: React.FC<{ onCapture: (blob: Blob, type: 'image' | 'video') =>
 
   return (
     <div className="w-full h-full bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
-        <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" muted />
+        <video ref={videoRef} autoPlay playsInline className="h-full w-full object-contain" muted />
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6">
             <button onClick={handleTakePhoto} className="w-16 h-16 rounded-full border-4 border-white bg-white/20"></button>
         </div>
@@ -106,7 +122,7 @@ const Studio: React.FC = () => {
         top: canvas.height! / 2,
         originX: 'center',
         originY: 'center',
-        fontFamily: 'Rajdhani', // Assuming Rajdhani is loaded
+        fontFamily: 'Rajdhani',
         fill: '#FFFFFF',
         fontSize: 50,
         shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.8)', blur: 5, offsetX: 3, offsetY: 3 }),
@@ -128,6 +144,7 @@ const Studio: React.FC = () => {
     const dataURL = canvas.toDataURL({
       format: 'png',
       quality: 0.9,
+      multiplier: 1,
     });
 
     const link = document.createElement('a');
@@ -141,7 +158,6 @@ const Studio: React.FC = () => {
   const handleToolSelect = (toolId: string) => {
       if (toolId === 'text') {
           if(media) handleAddText();
-          // Don't switch active tool for text, as it's a one-off action for now
       } else {
           setActiveTool(toolId);
       }

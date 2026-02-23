@@ -40,7 +40,7 @@ const EditorView = forwardRef<EditorViewRef, EditorViewProps>(({ media }, ref) =
 
         // Add new brightness filter if value is not neutral
         if (brightnessValue !== 0) {
-            const filter = new fabric.Image.filters.Brightness({
+            const filter = new fabric.filters.Brightness({
                 brightness: brightnessValue,
             });
             image.filters.push(filter);
@@ -50,7 +50,7 @@ const EditorView = forwardRef<EditorViewRef, EditorViewProps>(({ media }, ref) =
         canvas.renderAll();
       }
     },
-  }), [media]); // Added media dependency
+  }), [media]);
 
   useEffect(() => {
     if (!canvasRef.current || media.type !== 'image') return;
