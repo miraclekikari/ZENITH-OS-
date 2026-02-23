@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 
 interface EditorViewProps {
   media: {

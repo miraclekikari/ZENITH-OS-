@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { fabric } from 'fabric';
+import * as fabric from 'fabric';
 import Toolbox from '../components/studio/Toolbox';
 import PropertiesPanel from '../components/studio/PropertiesPanel';
 import EditorView, { EditorViewRef } from '../components/studio/EditorView';
