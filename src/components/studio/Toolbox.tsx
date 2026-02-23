@@ -2,13 +2,12 @@ import React from 'react';
 import Icon from '../Icon'; // Assuming a generic Icon component exists
 
 const tools = [
-  { id: 'studio', name: 'Studio', icon: 'layout-template', pro: false },
   { id: 'camera', name: 'Camera', icon: 'camera-retro', pro: false },
-  { id: 'import', name: 'Import', icon: 'upload', pro: false },
+  { id: 'import', name: 'Import', icon: 'cloud-upload-alt', pro: false },
   { id: 'text', name: 'Text', icon: 'font', pro: false },
-  { id: 'filters', name: 'Filters', icon: 'filter', pro: false },
+  { id: 'adjustments', name: 'Adjustments', icon: 'sliders-h', pro: false },
+  { id: 'filters', name: 'Filters', icon: 'wand-magic-sparkles', pro: false },
   { id: 'effects', name: 'Effects', icon: 'magic', pro: true },
-  { id: 'adjust', name: 'Adjust', icon: 'sliders-h', pro: false },
   { id: 'import-tool', name: 'Import Tools', icon: 'plus-square', pro: true, disabled: true },
 ];
 

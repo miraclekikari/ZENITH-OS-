@@ -7,7 +7,7 @@ import {
   faRedo, faSpinner, faTimes, faLink, faShare, faMicrochip, faRetweet, 
   faBookmark, faCameraRetro, faExclamationTriangle, faBolt, faImages,
   faMagic, faSmile, faFont, faCamera, faPlus,
-  faEraser, faTags, faCropAlt, faWandMagicSparkles, faStar, faRobot
+  faEraser, faTags, faCropAlt, faWandMagicSparkles, faStar, faRobot, faSun
 } from '@fortawesome/free-solid-svg-icons';
 
 import {
@@ -64,6 +64,7 @@ export const iconMap = {
   'magic': faMagic,
   'smile': faSmile,
   'font': faFont,
+  'sun': faSun, // Added icon
 
   // AI Enhance icons
   'eraser': faEraser,

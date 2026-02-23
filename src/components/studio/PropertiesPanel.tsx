@@ -3,10 +3,11 @@ import Icon from '../Icon';
 
 interface PropertiesPanelProps {
   activeTool: string;
+  onBrightnessChange: (value: number) => void;
   // Add any other props needed for the panels, like onAddSticker, onApplyEffect, etc.
 }
 
-const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ activeTool }) => {
+const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ activeTool, onBrightnessChange }) => {
 
   const renderPanelContent = () => {
     switch (activeTool) {
@@ -20,11 +21,24 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ activeTool }) => {
                 </div>
             );
         
-        case 'filters':
+        case 'adjustments':
              return (
                 <div>
-                    <h3 className="text-white/80 font-semibold mb-3">Filters</h3>
-                     <div className="text-white/30 text-sm">Filters are coming soon.</div>
+                    <h3 className="text-white/80 font-semibold mb-3">Adjustments</h3>
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3">
+                            <Icon icon="sun" className="text-white/50 w-5"/>
+                            <input 
+                                type="range"
+                                min="-1"
+                                max="1"
+                                step="0.01"
+                                defaultValue="0"
+                                onChange={(e) => onBrightnessChange(parseFloat(e.target.value))}
+                                className="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+                            />
+                        </div>
+                    </div>
                 </div>
             );
 
@@ -42,7 +56,7 @@ const PropertiesPanel: React.FC<PropertiesPanelProps> = ({ activeTool }) => {
   }
 
   return (
-    <aside className="w-72 bg-[#111111] h-full border-l border-white/[0.04] p-4">
+    <aside className="w-72 bg-[#111111] h-full border-l border-white/[0.04] p-4 backdrop-blur-md bg-opacity-80">
       <h2 className="text-white font-bold mb-4 text-lg capitalize flex items-center gap-2">
           <Icon icon="sliders-h" className="text-white/40"/>
           Properties

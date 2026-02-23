@@ -8,7 +8,6 @@ import Icon from '../components/Icon';
 import { usePermissions } from '../hooks/usePermissions';
 
 // CameraView and ImportView remain the same as before
-
 const CameraView: React.FC<{ onCapture: (blob: Blob, type: 'image' | 'video') => void }> = ({ onCapture }) => {
   const { permissionState: cameraPermission, requestPermission: requestCamera } = usePermissions('camera');
   const { permissionState: microphonePermission, requestPermission: requestMicrophone } = usePermissions('microphone');
@@ -77,7 +76,7 @@ const ImportView: React.FC<{ onImport: (blob: Blob, type: 'image' | 'video') => 
     };
     return (
         <div className="w-full h-full flex flex-col items-center justify-center bg-black/20 rounded-lg text-white p-4 text-center">
-            <Icon icon="upload" className="text-5xl text-white/30 mb-4" />
+            <Icon icon="cloud-upload-alt" className="text-5xl text-white/30 mb-4" />
             <h3 className="text-xl font-bold mb-2">Import Media</h3>
             <p className="text-white/40 mb-6 max-w-xs">Select a photo or video from your device to start editing.</p>
             <button onClick={() => fileInputRef.current?.click()} className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-2 px-6 rounded-lg transition-colors">Select File</button>
@@ -94,9 +93,11 @@ const Studio: React.FC = () => {
 
   const handleMediaSelected = (blob: Blob, type: 'image' | 'video') => {
     setMedia({ url: URL.createObjectURL(blob), type });
+    setActiveTool('adjustments'); // Switch to adjustments view after media is selected
   }
 
   const handleAddText = () => {
+    if (!media) return;
     const canvas = editorRef.current?.getCanvas();
     if (!canvas) return;
 
@@ -114,11 +115,16 @@ const Studio: React.FC = () => {
     canvas.setActiveObject(text);
     canvas.renderAll();
   };
+  
+  const handleBrightnessChange = (value: number) => {
+    if (!media || media.type !== 'image') return;
+    editorRef.current?.applyFilter('brightness', value);
+  };
 
   const handleToolSelect = (toolId: string) => {
       if (toolId === 'text') {
-          handleAddText();
-          // We don't set active tool to text to not show the properties panel yet
+          if(media) handleAddText();
+          // Don't switch active tool for text, as it's a one-off action for now
       } else {
           setActiveTool(toolId);
       }
@@ -135,7 +141,13 @@ const Studio: React.FC = () => {
       case 'import':
         return <ImportView onImport={handleMediaSelected} />;
       default:
-        return <div className="text-white">Select a tool to start</div>;
+        return (
+            <div className="w-full h-full flex flex-col items-center justify-center bg-black/20 rounded-lg text-white p-4 text-center">
+                <Icon icon="camera-retro" className="text-5xl text-white/30 mb-4" />
+                <h3 className="text-xl font-bold mb-2">Create</h3>
+                <p className="text-white/40 mb-6 max-w-xs">Select the camera or import a file to start.</p>
+            </div>
+        );
     }
   };
 
@@ -146,7 +158,6 @@ const Studio: React.FC = () => {
       <main className="flex-1 flex flex-col min-w-0">
         <header className="h-14 bg-[#111111] border-b border-white/[0.04] flex-shrink-0 flex items-center justify-between px-6">
             <div className="flex items-center gap-3">
-                <Icon icon="layout-template" className="text-white/40"/>
                 <h1 className="text-lg font-bold text-white">Studio</h1>
             </div>
             <div className="flex items-center gap-2">
@@ -164,7 +175,10 @@ const Studio: React.FC = () => {
         </div>
       </main>
 
-      <PropertiesPanel activeTool={activeTool} />
+      <PropertiesPanel 
+        activeTool={activeTool} 
+        onBrightnessChange={handleBrightnessChange} 
+      />
     </div>
   );
 };
