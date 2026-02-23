@@ -121,6 +121,23 @@ const Studio: React.FC = () => {
     editorRef.current?.applyFilter('brightness', value);
   };
 
+  const handleExport = () => {
+    const canvas = editorRef.current?.getCanvas();
+    if (!canvas) return;
+
+    const dataURL = canvas.toDataURL({
+      format: 'png',
+      quality: 0.9,
+    });
+
+    const link = document.createElement('a');
+    link.href = dataURL;
+    link.download = `zenith-edit-${Date.now()}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const handleToolSelect = (toolId: string) => {
       if (toolId === 'text') {
           if(media) handleAddText();
@@ -164,7 +181,7 @@ const Studio: React.FC = () => {
                  <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all">
                     <Icon icon="times" />
                 </button>
-                <button className="px-4 py-2 text-sm bg-emerald-500 rounded-lg text-white font-semibold hover:bg-emerald-600 transition-colors">
+                <button onClick={handleExport} className="px-4 py-2 text-sm bg-emerald-500 rounded-lg text-white font-semibold hover:bg-emerald-600 transition-colors disabled:bg-emerald-800 disabled:cursor-not-allowed" disabled={!media}>
                     Export
                 </button>
             </div>

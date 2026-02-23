@@ -21,8 +21,13 @@ const EditorView = forwardRef<EditorViewRef, EditorViewProps>(({ media }, ref) =
     getCanvas: () => fabricCanvasRef.current,
     applyFilter: (filterType: 'brightness', value: number) => {
       const canvas = fabricCanvasRef.current;
-      const image = canvas?.backgroundImage as fabric.Image;
-      if (!image) return;
+      const bgImage = canvas?.backgroundImage;
+
+      if (!bgImage || !(bgImage instanceof fabric.Image)) {
+        return;
+      }
+
+      const image = bgImage as fabric.Image;
 
       // Normalize value to be between -1 and 1
       const brightnessValue = Math.max(-1, Math.min(value, 1));
@@ -30,7 +35,7 @@ const EditorView = forwardRef<EditorViewRef, EditorViewProps>(({ media }, ref) =
       if (filterType === 'brightness') {
         // Remove existing brightness filter to avoid stacking them
         image.filters = image.filters?.filter(
-          (f) => !(f && (f as any).type === 'Brightness')
+          (f) => f.type !== 'Brightness'
         ) || [];
 
         // Add new brightness filter if value is not neutral
@@ -45,7 +50,7 @@ const EditorView = forwardRef<EditorViewRef, EditorViewProps>(({ media }, ref) =
         canvas.renderAll();
       }
     },
-  }), []);
+  }), [media]); // Added media dependency
 
   useEffect(() => {
     if (!canvasRef.current || media.type !== 'image') return;
