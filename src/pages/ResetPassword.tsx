@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 
@@ -10,24 +10,8 @@ const ResetPassword = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleReset = async () => {
-      const { data, error } = await supabase.auth.getSessionFromUrl({
-        storeSession: true,
-      });
-
-      if (error) {
-        setError('Error parsing reset token from URL: ' + error.message);
-      } else if (!data.session) {
-        setError('Password reset link is invalid or has expired. Please request a new one.');
-      }
-    };
-    
-    if (window.location.hash.includes('access_token')) {
-        handleReset();
-    }
-  }, []);
-
+  // The user is automatically authenticated when they land on this page
+  // from the password reset link. We just need to capture the new password.
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,11 +28,13 @@ const ResetPassword = () => {
     }
 
     setLoading(true);
+    // The user is already authenticated by the session from the URL fragment.
+    // We can now update their password.
     const { error: updateError } = await supabase.auth.updateUser({ password });
     setLoading(false);
 
     if (updateError) {
-      setError(`Failed to reset password: ${updateError.message}`);
+      setError(`Failed to reset password: ${updateError.message}. Please try requesting a new link.`);
     } else {
       setMessage("Your password has been reset successfully! Redirecting to login...");
       setTimeout(() => {
@@ -61,6 +47,7 @@ const ResetPassword = () => {
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
       <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold text-center text-zenith-primary">Reset Your Password</h2>
+        <p className="text-center text-gray-400">You are authenticated. Enter your new password below.</p>
         
         <form onSubmit={handlePasswordReset} className="space-y-4">
           <div>
