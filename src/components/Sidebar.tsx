@@ -2,25 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Home,
+  BookOpen,      // Changed from Home for Academy
   MessageCircle,
-  Image as ImageIcon,
-  Play,
-  Palette,
-  User,
+  Rss,           // Changed from ImageIcon for Feed
+  Users,         // Changed from Play for Community
+  Palette,       // Studio
+  FlaskConical,  // Lab (Tools)
   Settings,
   HelpCircle,
   Shield,
+  User,          // Profile
 } from 'lucide-react';
 import { isAdmin } from '../services/storageService';
 import { supabase } from '../lib/supabaseClient';
-import { Profile } from '../types/profile';
-import { formatAvatar } from '../utils/avatar'; // <-- IMPORT
+import { UserProfile } from '../types'; // Using the fuller UserProfile
+import { formatAvatar } from '../utils/avatar';
 
 const Sidebar: React.FC = () => {
   const admin = isAdmin();
   const location = useLocation();
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -33,7 +34,7 @@ const Sidebar: React.FC = () => {
             .eq('id', user.id)
             .single();
           if (error) throw error;
-          setProfile(profileData);
+          setProfile(profileData as UserProfile);
         }
       } catch (error) {
         console.error("Error fetching sidebar profile:", error);
@@ -55,20 +56,21 @@ const Sidebar: React.FC = () => {
   }, []);
 
   const mainLinks = [
-    { to: '/', icon: Home, label: 'Home' },
+    { to: '/', icon: BookOpen, label: 'Academy' },
+    { to: '/feed', icon: Rss, label: 'Feed' },
+    { to: '/community', icon: Users, label: 'Community' },
     { to: '/chat', icon: MessageCircle, label: 'Chat' },
-    { to: '/feed', icon: ImageIcon, label: 'Feed' },
-    { to: '/community', icon: Play, label: 'Community' },
     { to: '/studio', icon: Palette, label: 'Studio' },
   ];
 
-  const bottomLinks = [
-    { to: '/settings', icon: Settings, label: 'Settings' },
+  const utilityLinks = [
+    { to: '/lab', icon: FlaskConical, label: 'Outils' },
+    { to: '/settings', icon: Settings, label: 'Paramètres' },
     { to: '/support', icon: HelpCircle, label: 'Support' },
     ...(admin ? [{ to: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 
-  const avatarUrl = profile ? formatAvatar(profile.avatar_url, profile.username) : formatAvatar(null, 'guest');
+  const avatarUrl = profile ? formatAvatar(profile.avatar, profile.username) : formatAvatar(null, 'guest');
 
   return (
     <aside className="hidden md:flex fixed top-0 left-0 h-screen w-[68px] flex-col items-center justify-between bg-[#0a0a0a]/80 backdrop-blur-xl border-r border-white/[0.06] z-[100] py-4">
@@ -97,18 +99,20 @@ const Sidebar: React.FC = () => {
         </nav>
       </div>
       <div className="flex flex-col items-center gap-1">
-        {bottomLinks.map((link) => {
-          const isActive = location.pathname === link.to;
-          const Icon = link.icon;
-          return (
-            <NavLink key={link.to} to={link.to} className="relative group flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200">
-              <div className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 ${isActive ? 'bg-emerald-500/15 text-emerald-400' : 'text-white/40 hover:text-white/80 hover:bg-white/[0.06]'}`}>
-                <Icon size={18} strokeWidth={1.8} />
-              </div>
-              <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">{link.label}</div>
-            </NavLink>
-          );
-        })}
+        <nav className="flex flex-col items-center gap-1">
+          {utilityLinks.map((link) => {
+            const isActive = location.pathname.startsWith(link.to);
+            const Icon = link.icon;
+            return (
+              <NavLink key={link.to} to={link.to} className="relative group flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200">
+                 <div className={`flex items-center justify-center w-12 h-12 rounded-xl transition-all duration-200 ${isActive ? 'bg-emerald-500/15 text-emerald-400' : 'text-white/40 hover:text-white/80 hover:bg-white/[0.06]'}`}>
+                  <Icon size={18} strokeWidth={1.8} />
+                </div>
+                <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">{link.label}</div>
+              </NavLink>
+            );
+          })}
+        </nav>
         <div className="w-8 h-px bg-white/10 my-1" />
         <NavLink to="/profile" className="relative group">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-cyan-600 p-[2px]">
@@ -117,7 +121,7 @@ const Sidebar: React.FC = () => {
             </div>
           </div>
           <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0a0a0a]" />
-          <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">Profile</div>
+          <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">Profil</div>
         </NavLink>
       </div>
     </aside>
