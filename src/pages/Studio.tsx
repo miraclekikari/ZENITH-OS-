@@ -29,7 +29,7 @@ const CameraView: React.FC<{ onCapture: (blob: Blob, type: 'image' | 'video') =>
     } catch (error) { 
       console.error("Error starting camera:", error); 
     }
-  }, []); // Removed stream from dependencies to break loop
+  }, []);
 
   useEffect(() => {
     if (cameraPermission === 'granted' && microphonePermission === 'granted') {
@@ -73,7 +73,7 @@ const CameraView: React.FC<{ onCapture: (blob: Blob, type: 'image' | 'video') =>
 
   return (
     <div className="w-full h-full bg-black rounded-lg overflow-hidden relative flex items-center justify-center">
-        <video ref={videoRef} autoPlay playsInline className="h-full w-full object-contain" muted />
+        <video ref={videoRef} autoPlay playsInline className="h-full w-full object-cover" muted />
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-6">
             <button onClick={handleTakePhoto} className="w-16 h-16 rounded-full border-4 border-white bg-white/20"></button>
         </div>
