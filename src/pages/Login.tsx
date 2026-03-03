@@ -51,16 +51,6 @@ const Login: React.FC = () => {
   const [formData, setFormData] = useState({ email: '', password: '' });
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const checkUser = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-            navigate('/');
-        }
-    };
-    checkUser();
-  }, [navigate]);
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -69,11 +59,14 @@ const Login: React.FC = () => {
 
     try {
       if (isRegister) {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
         });
         if (error) throw error;
+        if (data.user?.identities?.length === 0) {
+            throw new Error("This email is already in use.")
+        }
         setInfo('Check your email for the confirmation link!');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
@@ -81,9 +74,10 @@ const Login: React.FC = () => {
           password: formData.password,
         });
         if (error) throw error;
-        navigate('/'); // Navigate to home on successful sign in
+        // The navigation is now handled by the onAuthStateChange listener in App.tsx
       }
     } catch (err: any) {
+      console.error("Authentication Error:", { message: err.message, status: err.status });
       setError(err.error_description || err.message);
     } finally {
       setLoading(false);

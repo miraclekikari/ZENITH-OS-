@@ -1,5 +1,6 @@
 import { UserProfile } from '../types';
 import { User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient'; // Import supabase client
 
 // GENERIC DATA
 export const saveData = (key: string, data: any) => {
@@ -34,26 +35,62 @@ export const getUser = (): UserProfile | null => {
 };
 
 export const initUser = async (user: User): Promise<UserProfile> => {
-  let profile = getUser();
-  if (profile) return profile;
+  // 1. Check for profile in the database first
+  const { data: profile, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', user.id)
+    .single();
 
-  const newProfile: UserProfile = {
-      id: user.id,
-      username: user.email?.split('@')[0] || 'Zenith User',
-      handle: `@${user.email?.split('@')[0].toLowerCase()}`,
-      avatar: `https://picsum.photos/seed/${user.id}/200/200`,
-      banner: 'https://picsum.photos/seed/banner/1200/400',
-      bio: 'New pilot in the Zenith network.',
-      followers: 0,
-      following: 0,
-      postsCount: 0,
-      badges: ['Cadet'],
-      role: user.email?.includes('admin') ? 'ADMIN' : 'USER',
-      privacy: 'PUBLIC',
-      tier: 'LEVEL_1',
-      credits: 100
+  if (error && error.code !== 'PGRST116') { // PGRST116 = row not found
+    console.error('Error fetching profile:', error);
+    throw error;
+  }
+
+  // 2. If profile exists, cache it and return
+  if (profile) {
+    saveUser(profile);
+    return profile as UserProfile;
+  }
+
+  // 3. If no profile, it's a new user. Create the profile in the DB.
+  const newProfileData = {
+    id: user.id,
+    username: user.email?.split('@')[0] || 'Zenith User',
+    handle: `@${user.email?.split('@')[0].toLowerCase()}`,
+    email: user.email, // Make sure to store the email
+    avatar_url: `https://api.dicebear.com/6.x/bottts/svg?seed=${user.id}`,
+    banner_url: 'https://source.unsplash.com/random/1200x400?space',
+    bio: 'New pilot in the Zenith network.',
+    role: user.email?.includes('admin') ? 'ADMIN' : 'USER',
   };
 
+  const { error: insertError } = await supabase.from('profiles').insert(newProfileData);
+
+  if (insertError) {
+    console.error('Error creating profile:', insertError);
+    throw insertError;
+  }
+
+  // Convert to UserProfile format for local use
+  const newProfile: UserProfile = {
+    id: newProfileData.id,
+    username: newProfileData.username,
+    handle: newProfileData.handle,
+    avatar: newProfileData.avatar_url,
+    banner: newProfileData.banner_url,
+    bio: newProfileData.bio,
+    role: newProfileData.role as 'USER' | 'ADMIN' | 'ROOT',
+    followers: 0, 
+    following: 0,
+    postsCount: 0,
+    badges: ['Cadet'],
+    privacy: 'PUBLIC',
+    tier: 'LEVEL_1',
+    credits: 100
+  };
+
+  // 4. Cache the newly created profile and return
   saveUser(newProfile);
   return newProfile;
 };
