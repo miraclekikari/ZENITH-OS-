@@ -18,7 +18,7 @@ const SocialSignInButton: React.FC<{
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo: `${window.location.origin}/feed` }, // Redirect to feed after OAuth
       });
       if (error) throw error;
     } catch (err: any) {
@@ -64,17 +64,17 @@ const Login: React.FC = () => {
           password: formData.password,
         });
         if (error) throw error;
-        if (data.user?.identities?.length === 0) {
-            throw new Error("This email is already in use.")
-        }
-        setInfo('Check your email for the confirmation link!');
+        // User is automatically signed in by Supabase. Redirect them to the feed.
+        navigate('/feed', { state: { message: 'Welcome to ZENITH! Explore the feed while you confirm your email.' } });
       } else {
         const { error } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
         if (error) throw error;
-        // The navigation is now handled by the onAuthStateChange listener in App.tsx
+        // Successful login, onAuthStateChange in App.tsx will handle the redirect.
+        // We can force a redirect here too for faster UX
+        navigate('/');
       }
     } catch (err: any) {
       console.error("Authentication Error:", { message: err.message, status: err.status });

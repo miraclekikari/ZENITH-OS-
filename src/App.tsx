@@ -20,6 +20,7 @@ import Admin from './pages/Admin';
 import NewProfile from './pages/NewProfile';
 import Support from './pages/Support';
 import NotFound from './pages/NotFound';
+import VerificationBanner from './components/VerificationBanner'; // <-- Import the new component
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -76,35 +77,40 @@ const AppContent: React.FC = () => {
     return <Navigate to="/" replace />;
   }
   
+  const isEmailConfirmed = !!session?.user?.email_confirmed_at;
+
   const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
       return session ? children : <Navigate to="/login" replace />;
   };
 
   return (
-    <Layout>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/live/:id" element={<Chat />} />
-        <Route path="/login" element={<Login />} />
+    <>
+      {session && <VerificationBanner isConfirmed={isEmailConfirmed} />}
+      <Layout>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/live/:id" element={<Chat />} />
+          <Route path="/login" element={<Login />} />
 
-        {/* Protected routes */}
-        <Route path="/" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
-        <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-        <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-        <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
-        <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
-        <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
-        <Route path="/publish" element={<ProtectedRoute><Publish /></ProtectedRoute>} />
-        <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
-        <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
-        {isAdmin() && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
-        
-        {/* Catch-all */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Layout>
+          {/* Protected routes */}
+          <Route path="/" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
+          <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+          <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+          <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
+          <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
+          <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+          <Route path="/publish" element={<ProtectedRoute><Publish /></ProtectedRoute>} />
+          <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
+          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
+          <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+          {isAdmin() && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
+          
+          {/* Catch-all */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Layout>
+    </>
   );
 }
 
