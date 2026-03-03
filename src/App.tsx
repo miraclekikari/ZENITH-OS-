@@ -20,7 +20,8 @@ import Admin from './pages/Admin';
 import NewProfile from './pages/NewProfile';
 import Support from './pages/Support';
 import NotFound from './pages/NotFound';
-import VerificationBanner from './components/VerificationBanner'; // <-- Import the new component
+import ResetPassword from './pages/ResetPassword'; // <-- IMPORT NEW PAGE
+import VerificationBanner from './components/VerificationBanner';
 
 const AppContent: React.FC = () => {
   const [session, setSession] = useState<Session | null>(null);
@@ -91,6 +92,7 @@ const AppContent: React.FC = () => {
           {/* Public routes */}
           <Route path="/live/:id" element={<Chat />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} /> {/* <-- ADD NEW ROUTE */}
 
           {/* Protected routes */}
           <Route path="/" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
