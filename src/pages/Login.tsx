@@ -68,7 +68,7 @@ const Login: React.FC = () => {
           const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('email')
-            .or(`username.eq.${formData.identifier},id.eq.${formData.identifier}`)
+            .eq('username', formData.identifier)
             .single();
 
           if (profileError || !profile) {
@@ -121,7 +121,7 @@ const Login: React.FC = () => {
           <div className="text-center mb-6">
             <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-cyan-500 flex items-center justify-center"><Fingerprint size={28} className="text-black" /></div>
             <h1 className="font-tech text-2xl font-bold tracking-[0.2em] text-white">{{ 'sign-in': 'ACCESS CORE', 'sign-up': 'CREATE ID', 'magic-link': 'BEAM ACCESS', 'forgot-password': 'RECOVER ID' }[authView]}</h1>
-            <p className="text-white/25 text-sm mt-2">Secure Gateway v7.4</p>
+            <p className="text-white/25 text-sm mt-2">Secure Gateway v7.5</p>
           </div>
 
           {error && <motion.div initial={{opacity:0}} animate={{opacity:1}} className="bg-red-900/50 border border-red-500/30 text-red-300 text-xs font-mono uppercase tracking-wider p-3 rounded-lg text-center mb-4">{error}</motion.div>}
