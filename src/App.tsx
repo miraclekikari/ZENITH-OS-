@@ -13,7 +13,7 @@ import Chat from './pages/Chat';
 import Feed from './pages/Feed';
 import CommunityPage from './pages/Community';
 import Studio from './pages/Studio';
-import Publish from './pages/Publish'; // <-- IMPORT
+import Publish from './pages/Publish';
 import Lab from './pages/Lab';
 import Settings from './pages/Settings';
 import Admin from './pages/Admin';
@@ -94,7 +94,7 @@ const AppContent: React.FC = () => {
         <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
         <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
         <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
-        <Route path="/publish" element={<ProtectedRoute><Publish /></ProtectedRoute>} /> {/* <-- ADDED ROUTE */}
+        <Route path="/publish" element={<ProtectedRoute><Publish /></ProtectedRoute>} />
         <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
         <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
@@ -109,7 +109,7 @@ const AppContent: React.FC = () => {
 }
 
 const App: React.FC = () => (
-  <Router>
+  <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
     <ThemeProvider>
       <AppContent />
     </ThemeProvider>
