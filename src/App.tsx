@@ -1,6 +1,6 @@
 import React, { Suspense } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { UserProvider, useUser } from './context/UserContext'; // Import UserProvider
+import { UserProvider, useUser } from './context/UserContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import VerificationBanner from './components/VerificationBanner';
@@ -20,7 +20,7 @@ const NewProfile = React.lazy(() => import('./pages/NewProfile'));
 const Support = React.lazy(() => import('./pages/Support'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
-const Diagnostic = React.lazy(() => import('./pages/Diagnostic')); // Added
+const Diagnostic = React.lazy(() => import('./pages/Diagnostic'));
 
 const LoadingFallback: React.FC = () => (
   <div className="w-full h-screen flex items-center justify-center bg-black">
@@ -28,24 +28,29 @@ const LoadingFallback: React.FC = () => (
   </div>
 );
 
+// This component defines the core routing and layout logic.
 const AppContent: React.FC = () => {
   const { session, profile, loading, isAdmin } = useUser();
   const location = useLocation();
 
+  // Display a loading indicator while session is being verified.
   if (loading) {
     return <LoadingFallback />;
   }
 
+  // Redirect logged-in users away from the login page.
   if (session && location.pathname === '/login') {
     return <Navigate to="/feed" replace />;
   }
   
+  // Force new users to complete their profile.
   if (session && !profile && location.pathname !== '/profile' && location.pathname !== '/settings') {
       return <Navigate to="/profile" replace />;
   }
 
   const isEmailConfirmed = !!session?.user?.email_confirmed_at;
 
+  // A wrapper to protect routes that require authentication.
   const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
       return session ? children : <Navigate to="/login" replace />;
   };
@@ -59,7 +64,9 @@ const AppContent: React.FC = () => {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/diagnostic" element={<Diagnostic />} /> {/* Added */}
+
+            {/* Diagnostic page - available only in development mode for security. */}
+            {import.meta.env.DEV && <Route path="/diagnostic" element={<Diagnostic />} />}
 
             {/* Protected routes */}
             <Route path="/" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
@@ -76,7 +83,7 @@ const AppContent: React.FC = () => {
             <Route path="/live/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
             {isAdmin && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
             
-            {/* Catch-all */}
+            {/* Catch-all for undefined routes */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
@@ -88,7 +95,7 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => (
   <Router>
     <ThemeProvider>
-      <UserProvider> {/* This is the correct placement */}
+      <UserProvider>
         <AppContent />
       </UserProvider>
     </ThemeProvider>
