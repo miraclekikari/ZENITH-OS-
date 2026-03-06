@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, MessageCircle, Search, Bell, User } from 'lucide-react';
+import { Home, MessageCircle, Search, User } from 'lucide-react';
 
 const BottomNavBar: React.FC = () => {
   const location = useLocation();
@@ -9,7 +9,6 @@ const BottomNavBar: React.FC = () => {
     { to: '/feed', icon: Home, label: 'Feed' },
     { to: '/search', icon: Search, label: 'Search' },
     { to: '/chat', icon: MessageCircle, label: 'Chat' },
-    { to: '/notifications', icon: Bell, label: 'Alerts' },
     { to: '/profile', icon: User, label: 'Profile' },
   ];
 
