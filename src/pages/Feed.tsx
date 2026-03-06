@@ -7,9 +7,9 @@ import { getUser } from '../services/storageService';
 import PostCard from '../components/PostCard';
 import CommentsDrawer from '../components/CommentsDrawer';
 import { mapSupabaseRowToPost } from '../utils/mapSupabaseRowToPost';
-import { Heart, MessageCircle, PlusSquare, Send } from 'lucide-react';
+import { Heart, MessageCircle, PlusSquare, Send, Command } from 'lucide-react';
 
-// Mock stories
+// Mock stories (structure preserved)
 const mockStories: Story[] = [
   { id: '1', user: 'Your Story', username: 'you', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=you', image: '', isSeen: false },
   { id: '2', user: 'Sarah', username: 'sarah.c', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=sarah', image: '', isSeen: false },
@@ -21,7 +21,7 @@ const mockStories: Story[] = [
   { id: '8', user: 'Aria', username: 'aria.m', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=aria', image: '', isSeen: false },
 ];
 
-// Mock posts for when Supabase is not available
+// Mock posts (structure preserved)
 const mockPosts: Post[] = [
   {
     id: '1', author: 'NovaAgent', username: 'nova_agent', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=nova',
@@ -36,12 +36,6 @@ const mockPosts: Post[] = [
     image: 'https://picsum.photos/seed/zenith2/600/750', likes: 1523, comments: 87, shares: 34,
     isVerified: false, timestamp: new Date(Date.now() - 7200000).toISOString(), isModerated: false, isLiked: true,
     location: 'Tokyo, Japan',
-  },
-  {
-    id: '3', author: 'DataStream', username: 'data_stream', avatar: 'https://api.dicebear.com/7.x/bottts/svg?seed=data',
-    content: 'The ZENITH OS architecture is next level. Seamless module switching with zero reload. This is the future of social platforms.',
-    image: 'https://picsum.photos/seed/zenith3/600/600', likes: 4210, comments: 256, shares: 167,
-    isVerified: true, timestamp: new Date(Date.now() - 14400000).toISOString(), isModerated: false, isLiked: false,
   },
 ];
 
@@ -77,6 +71,15 @@ const Feed: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [commentPostId, setCommentPostId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState({ avatar: ''});
+
+  useEffect(() => {
+    const fetchUser = async () => {
+        const user = await getUser();
+        if(user) setCurrentUser(user);
+    }
+    fetchUser();
+  }, [])
 
   const refreshFeed = useCallback(async () => {
     setIsLoading(true);
@@ -115,19 +118,11 @@ const Feed: React.FC = () => {
 
   return (
     <div className="w-full h-full bg-[#0a0a0a] text-white">
-      {/* Desktop Header */}
       <header className="hidden md:flex items-center justify-between px-6 py-3 border-b border-white/[0.06] sticky top-0 bg-[#0a0a0a]/90 backdrop-blur-xl z-10">
         <h1 className="font-tech text-xl text-white tracking-[0.15em]">ZENITH</h1>
         <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate('/studio')}
-            className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"
-          >
-            <PlusSquare size={22} />
-          </button>
-          <button className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all">
-            <Heart size={22} />
-          </button>
+          <button onClick={() => navigate('/studio')} className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"><PlusSquare size={22} /></button>
+          <button className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"><Heart size={22} /></button>
           <button className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all relative">
             <Send size={20} />
             <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
@@ -135,42 +130,54 @@ const Feed: React.FC = () => {
         </div>
       </header>
 
-      <div className="w-full h-full overflow-y-auto">
-        {/* Stories Bar */}
-        <div className="px-4 py-4 border-b border-white/[0.06]">
-          <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-1 max-w-lg mx-auto">
-            {mockStories.map((story, index) => (
-              <StoryCircle key={story.id} story={story} index={index} />
-            ))}
+      <div className="w-full h-full overflow-y-auto pb-20 md:pb-4">
+        <div className="max-w-lg mx-auto">
+          <div className="px-4 md:px-0 py-4 border-b border-white/[0.06]">
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-1">
+              {mockStories.map((story, index) => <StoryCircle key={story.id} story={story} index={index} />)}
+            </div>
           </div>
-        </div>
 
-        {/* Loading State */}
-        {isLoading && (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-          </div>
-        )}
-
-        {/* Posts */}
-        {!isLoading && (
-          <div className="w-full max-w-lg mx-auto pt-2 pb-20 md:pb-4">
-            {posts.map((post, index) => (
-              <motion.div
-                key={post.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.08, duration: 0.3 }}
-              >
-                <PostCard
-                  post={post}
-                  onLike={() => toggleLike(post.id)}
-                  onComment={() => setCommentPostId(post.id)}
+          <div className="p-4 md:px-0">
+            <div className="flex items-center gap-3 bg-black/[0.2] rounded-lg p-3">
+                <span className="text-emerald-400 font-mono text-sm whitespace-nowrap">USER@ZENITH_OS:~$</span>
+                <input 
+                    type="text" 
+                    placeholder="Initiate a new broadcast..."
+                    className="bg-transparent w-full focus:outline-none text-white/80 placeholder-white/20 text-sm"
                 />
-              </motion.div>
-            ))}
+            </div>
           </div>
-        )}
+          
+          <div className="px-4 md:px-0 flex items-center gap-2.5 text-xs text-emerald-400/70 font-mono uppercase border-b border-t border-white/[0.05] py-2.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+            LIVE STREAM ACTIVE
+          </div>
+
+          {isLoading && (
+            <div className="flex items-center justify-center py-20"><div className="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" /></div>
+          )}
+
+          {!isLoading && (
+            <div className="pt-4">
+              {posts.map((post, index) => (
+                <motion.div
+                  key={post.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.08, duration: 0.3 }}
+                  className="border-b border-white/[0.05] last:border-b-0 transition-all hover:bg-white/[0.02]"
+                >
+                  <PostCard
+                    post={post}
+                    onLike={() => toggleLike(post.id)}
+                    onComment={() => setCommentPostId(post.id)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <CommentsDrawer
