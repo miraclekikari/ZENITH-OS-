@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { UserProfile } from '../types';
-import { getProfile } from '../services/storageService';
+import { getProfile, initUser } from '../services/storageService';
 
 interface UserContextType {
   session: Session | null;
@@ -24,27 +24,27 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    const fetchSession = async () => {
+    const fetchSessionAndProfile = async () => {
       try {
         const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         if (error) throw error;
         
         setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+        const currentUser = currentSession?.user;
+        setUser(currentUser ?? null);
 
-        if (currentSession?.user) {
-          try {
-            const userProfile = await getProfile(currentSession.user.id);
-            setProfile(userProfile);
-            setIsAdmin(userProfile?.role === 'admin');
-          } catch (profileError) {
-            console.error("UserProvider: Error fetching profile on initial load", profileError);
-            setProfile(null); // Ensure profile is cleared on error
+        if (currentUser) {
+          // Attempt to fetch profile, if null, it might be a new user
+          let userProfile = await getProfile(currentUser.id);
+          if (!userProfile) {
+            // This will create the profile if it doesn't exist
+            userProfile = await initUser(currentUser);
           }
+          setProfile(userProfile);
+          setIsAdmin(userProfile?.role === 'ADMIN' || userProfile?.role === 'ROOT');
         }
       } catch (e) {
-        console.error("UserProvider: Error fetching session", e);
-        // Clear all session-related state on error
+        console.error("UserProvider: Error during initial session/profile fetch", e);
         setSession(null);
         setUser(null);
         setProfile(null);
@@ -54,22 +54,24 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     };
 
-    fetchSession();
+    fetchSessionAndProfile();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
       setLoading(true);
+      const newUser = newSession?.user;
       setSession(newSession);
-      setUser(newSession?.user ?? null);
+      setUser(newUser ?? null);
 
-      if (newSession?.user) {
+      if (newUser) {
+        // On auth change (login), fetch or create user profile
         try {
-          // Await the profile fetch to prevent race conditions
-          const userProfile = await getProfile(newSession.user.id);
+          const userProfile = await initUser(newUser); // Use initUser to handle both new and existing users
           setProfile(userProfile);
-          setIsAdmin(userProfile?.role === 'admin');
+          setIsAdmin(userProfile?.role === 'ADMIN' || userProfile?.role === 'ROOT');
         } catch (profileError) {
-          console.error("UserProvider: Error fetching profile on auth change", profileError);
+          console.error("UserProvider: Error initializing user on auth change", profileError);
           setProfile(null);
+          setIsAdmin(false);
         }
       } else {
         // User logged out
@@ -86,10 +88,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     await supabase.auth.signOut();
-    setSession(null);
-    setUser(null);
-    setProfile(null);
-    setIsAdmin(false);
+    // State will be cleared by onAuthStateChange listener
   };
 
   const value = {
