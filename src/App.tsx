@@ -4,6 +4,7 @@ import { UserProvider, useUser } from './context/UserContext';
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import VerificationBanner from './components/VerificationBanner';
+import InstallBanner from './components/InstallBanner';
 
 // --- Lazy Loading Pages ---
 const Login = React.lazy(() => import('./pages/Login'));
@@ -58,6 +59,7 @@ const AppContent: React.FC = () => {
 
   return (
     <>
+      <InstallBanner />
       {session && !isEmailConfirmed && <VerificationBanner isConfirmed={isEmailConfirmed} />}
       <Layout>
         <Suspense fallback={<LoadingFallback />}>
