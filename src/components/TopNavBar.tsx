@@ -2,15 +2,13 @@ import React from 'react';
 import { Bell, Search } from 'lucide-react';
 import { useLocation, NavLink } from 'react-router-dom';
 
-interface TopNavBarProps {
-  onSearchClick: () => void;
-  onNotificationsClick: () => void; // <-- NEW PROP
-}
-
-const TopNavBar: React.FC<TopNavBarProps> = ({ onSearchClick, onNotificationsClick }) => {
+const TopNavBar: React.FC = () => {
   const location = useLocation();
   const getTitle = () => {
     const path = location.pathname.split('/')[1] || 'home';
+    if (path === 'feed') return 'FEED'; // Custom titles
+    if (path === 'search') return 'NETWORK SCAN';
+    if (path === 'notifications') return 'SYSTEM LOGS';
     return path.charAt(0).toUpperCase() + path.slice(1);
   };
 
@@ -20,17 +18,21 @@ const TopNavBar: React.FC<TopNavBarProps> = ({ onSearchClick, onNotificationsCli
         <h1 className="font-tech text-lg font-bold tracking-widest text-white">ZENITH</h1>
       </NavLink>
       <div className="flex-1 flex justify-center">
-        <p className="font-semibold text-white/80 capitalize">
+        <p className="font-semibold text-white/80 capitalize font-mono">
           {getTitle()}
         </p>
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={onSearchClick} className="w-8 h-8 flex items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white transition-colors">
+        <NavLink to="/search" className={({ isActive }) =>
+            `w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`
+        }>
           <Search size={18} />
-        </button>
-        <button onClick={onNotificationsClick} className="w-8 h-8 flex items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white transition-colors"> {/* <-- ADD ONCLICK */}
+        </NavLink>
+        <NavLink to="/notifications" className={({ isActive }) =>
+            `w-8 h-8 flex items-center justify-center rounded-full transition-colors ${isActive ? 'bg-white/10 text-white' : 'text-white/60 hover:bg-white/10 hover:text-white'}`
+        }>
           <Bell size={18} />
-        </button>
+        </NavLink>
       </div>
     </header>
   );

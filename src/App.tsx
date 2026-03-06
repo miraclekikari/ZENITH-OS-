@@ -21,6 +21,8 @@ const Support = React.lazy(() => import('./pages/Support'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
 const Diagnostic = React.lazy(() => import('./pages/Diagnostic'));
+const Search = React.lazy(() => import('./pages/Search'));
+const Notifications = React.lazy(() => import('./pages/Notifications'));
 
 const LoadingFallback: React.FC = () => (
   <div className="w-full h-screen flex items-center justify-center bg-black">
@@ -81,6 +83,8 @@ const AppContent: React.FC = () => {
             <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
             <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
             <Route path="/live/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/search" element={<ProtectedRoute><Search /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             {isAdmin && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
             
             {/* Catch-all for undefined routes */}
