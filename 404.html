@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Zenith OS - Redirecting...</title>
+    <script>
+      // Get the current path from the URL
+      const path = window.location.pathname;
+
+      // Get any search query parameters
+      const search = window.location.search;
+
+      // Get the hash part of the URL (fragment)
+      const hash = window.location.hash;
+
+      // We are redirecting to the index.html page, but we want to preserve the
+      // original path in the hash so our React Router can pick it up.
+      // We also preserve the search params and the original hash.
+      // The path is stored in sessionStorage to be read by the app.
+      sessionStorage.setItem('redirectPath', path + search);
+
+      // Construct the new URL
+      // The new URL will be the root of the site, with the path stored in the hash.
+      // Example: https://me.com/foo -> https://me.com/#/foo
+      // Example: https://me.com/foo?bar=1 -> https://me.com/#/foo?bar=1
+      window.location.replace(
+        '/' + 
+        (search ? '' + search : '') + // Keep original search params if they exist
+        '#' + // Add the hash for the router
+        path + // The original path
+        (hash ? hash : '') // Keep original hash if it exists
+      );
+    </script>
+  </head>
+  <body>
+    <p>If you are not redirected automatically, <a href="/">click here</a>.</p>
+  </body>
+</html>
