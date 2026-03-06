@@ -73,6 +73,7 @@ const Login: React.FC = () => {
           authEmail = formData.identifier;
         } else {
           setLoadingText('VERIFYING ID...');
+          // RPC to securely get email from username server-side
           const { data, error: rpcError } = await supabase.rpc('get_email_from_username', { p_username: formData.identifier });
 
           if (rpcError || !data) {
@@ -82,13 +83,14 @@ const Login: React.FC = () => {
           authEmail = data;
           const masked = maskEmail(authEmail);
           setInfo(`ID VERIFIED: ${masked}`);
-          setLoadingText('ID VERIFIED');
-          await new Promise(resolve => setTimeout(resolve, 1500)); // Pause pour l'immersion
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
 
-        setLoadingText('AUTHENTICATING...');
+        setLoadingText('ESTABLISHING UPLINK...');
         const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: formData.password });
-         if (!error) {
+        if (!error) {
+          setLoadingText('ACCESS GRANTED');
+          await new Promise(resolve => setTimeout(resolve, 1000));
           navigate('/feed');
         } else {
           responseError = error;
@@ -98,6 +100,8 @@ const Login: React.FC = () => {
         setLoadingText('CREATING ID...');
         const { error } = await supabase.auth.signUp({ email: formData.email, password: formData.password });
         if (!error) {
+          setLoadingText('ACCESS GRANTED');
+          await new Promise(resolve => setTimeout(resolve, 1000));
           navigate('/feed', { state: { message: 'Welcome to ZENITH! Your journey begins now.' } });
         } else { responseError = error; }
       } else {
@@ -105,14 +109,16 @@ const Login: React.FC = () => {
         if (!emailToUse) { throw new Error('Email is required.') }
 
         if (authView === 'magic-link') {
-          setLoadingText('SENDING LINK...');
-          const { error } = await supabase.auth.signInWithOtp({ email: emailToUse, options: { emailRedirectTo: `${window.location.origin}` }});
-          if (!error) setInfo(`Magic Link sent to ${emailToUse}. Check your inbox!`);
+          setLoadingText('DISPATCHING KEY...');
+          const { error } = await supabase.auth.signInWithOtp({ email: emailToUse, options: { emailRedirectTo: `${window.location.origin}/ZENITH-OS-/` }});
+          if (!error) setInfo(`Key dispatched to ${emailToUse}.`);
           responseError = error;
         } else if (authView === 'forgot-password') {
-          setLoadingText('SENDING RESET...');
-          const { error } = await supabase.auth.resetPasswordForEmail(emailToUse, { redirectTo: `${window.location.origin}/reset-password` });
-          if (!error) setInfo(`Password reset link sent to ${emailToUse}.`);
+          setLoadingText('DISPATCHING RECOVERY KEY...');
+          // Critical: Add # for HashRouter on GitHub Pages
+          const redirectTo = `${window.location.origin}/ZENITH-OS-/#/reset-password`;
+          const { error } = await supabase.auth.resetPasswordForEmail(emailToUse, { redirectTo });
+          if (!error) setInfo(`Recovery key dispatched to ${emailToUse}.`);
           responseError = error;
         }
       }
