@@ -53,8 +53,8 @@ const AppContent: React.FC = () => {
   const isEmailConfirmed = !!session?.user?.email_confirmed_at;
 
   // A wrapper to protect routes that require authentication.
-  const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
-      return session ? children : <Navigate to="/login" replace />;
+  const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+      return session ? <>{children}</> : <Navigate to="/login" replace />;
   };
 
   return (
