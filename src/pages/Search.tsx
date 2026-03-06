@@ -30,7 +30,7 @@ const Search = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           className="font-tech text-2xl text-white tracking-[0.15em] mb-6 select-none">
-          > NETWORK_SCAN
+          {' > NETWORK_SCAN'}
         </motion.h1>
 
         <motion.div 

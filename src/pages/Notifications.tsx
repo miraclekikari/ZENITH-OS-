@@ -39,7 +39,7 @@ const Notifications = () => {
           animate={{ opacity: 1, y: 0 }}
           className="flex justify-between items-center mb-6">
           <h1 className="font-tech text-2xl text-white tracking-[0.15em] select-none">
-            > SYSTEM_LOGS
+            {' > SYSTEM_LOGS'}
           </h1>
           <motion.button
             whileHover={{ scale: 1.05 }}
