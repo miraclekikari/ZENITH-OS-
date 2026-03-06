@@ -11,6 +11,7 @@ import {
   Settings,
   HelpCircle,
   Shield,        // Admin
+  Search,        // Search
 } from 'lucide-react';
 import { useUser } from '../context/UserContext';
 import { formatAvatar } from '../utils/avatar';
@@ -22,6 +23,7 @@ const Sidebar: React.FC = () => {
   const mainLinks = [
     { to: '/', icon: BookOpen, label: 'Academy' },
     { to: '/feed', icon: Rss, label: 'Feed' },
+    { to: '/search', icon: Search, label: 'Search' },
     { to: '/community', icon: Users, label: 'Community' },
     { to: '/chat', icon: MessageCircle, label: 'Chat' },
     { to: '/studio', icon: Palette, label: 'Studio' },
@@ -87,7 +89,7 @@ const Sidebar: React.FC = () => {
               </div>
             </div>
             <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0a0a0a]" />
-            <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">Profil</div>
+            <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-rap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">Profil</div>
           </NavLink>
         )}
       </div>
