@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Post, Story } from '../types';
 import { getPosts, togglePostLike } from '../lib/supabaseService';
@@ -7,7 +7,7 @@ import { getUser } from '../services/storageService';
 import PostCard from '../components/PostCard';
 import CommentsDrawer from '../components/CommentsDrawer';
 import { mapSupabaseRowToPost } from '../utils/mapSupabaseRowToPost';
-import { Heart, MessageCircle, PlusSquare, Send, Command } from 'lucide-react';
+import { Bell, MessageCircle, PlusSquare, Command } from 'lucide-react';
 
 // Mock stories (structure preserved)
 const mockStories: Story[] = [
@@ -122,11 +122,11 @@ const Feed: React.FC = () => {
         <h1 className="font-tech text-xl text-white tracking-[0.15em]">ZENITH</h1>
         <div className="flex items-center gap-3">
           <button onClick={() => navigate('/studio')} className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"><PlusSquare size={22} /></button>
-          <button className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"><Heart size={22} /></button>
-          <button className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all relative">
-            <Send size={20} />
+          <button className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all"><Bell size={22} /></button>
+          <NavLink to="/chat" className="w-9 h-9 rounded-lg flex items-center justify-center text-white/40 hover:text-white/70 hover:bg-white/[0.06] transition-all relative">
+            <MessageCircle size={22} />
             <div className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
-          </button>
+          </NavLink>
         </div>
       </header>
 
