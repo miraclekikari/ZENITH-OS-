@@ -1,10 +1,10 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { UserProfile } from '../types';
 import { initUser } from '../services/storageService';
 
+// 1. DEFINING THE CONTEXT SHAPE
 interface UserContextType {
   session: Session | null;
   user: User | null;
@@ -14,65 +14,80 @@ interface UserContextType {
   logout: () => Promise<void>;
 }
 
+// 2. CREATING THE CONTEXT
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
+// 3. CREATING THE PROVIDER COMPONENT
 export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true); // Start as true
+  const [loading, setLoading] = useState(true); // Start true: app is loading until first auth check is done
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // EFFECT 1: AUTH LISTENER
+  // This effect's only job is to listen for auth changes from Supabase.
+  // It's simple and runs only once.
   useEffect(() => {
-    // onAuthStateChange is the single source of truth.
-    // It fires once on load with the initial session, and then for every auth event.
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setLoading(true);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      let userProfile: UserProfile | null = null;
-      if (currentUser) {
-        try {
-          // initUser will fetch an existing profile or create a new one.
-          // This is the only place we should be fetching profile on auth change.
-          userProfile = await initUser(currentUser);
-        } catch (error) {
-          console.error("UserProvider: Error initializing user profile on auth change:", error);
-          // The profile will be null, which is the correct state on failure.
-        }
+      setUser(session?.user ?? null);
+      // If there's no user, we can stop loading immediately.
+      // If there is a user, the next effect will handle the loading state.
+      if (!session) {
+        setLoading(false);
       }
-      
-      setProfile(userProfile);
-      setIsAdmin(userProfile?.role === 'ADMIN' || userProfile?.role === 'ROOT');
-      setLoading(false); // All auth-related loading is finished.
     });
 
-    // Cleanup subscription on unmount
+    // Cleanup on unmount
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, []); // Empty dependency array ensures this effect runs only once.
+  }, []);
 
+  // EFFECT 2: PROFILE FETCHER
+  // This effect REACTS to changes in the `user` object.
+  // This separation prevents race conditions.
+  useEffect(() => {
+    // If we have a user, fetch their profile.
+    if (user) {
+      setLoading(true); // Set loading to true while we fetch the profile
+      initUser(user)
+        .then((userProfile) => {
+          setProfile(userProfile);
+          setIsAdmin(userProfile?.role === 'ADMIN' || userProfile?.role === 'ROOT');
+        })
+        .catch((error) => {
+          console.error("UserProvider: Failed to initialize user profile:", error);
+          setProfile(null);
+          setIsAdmin(false);
+        })
+        .finally(() => {
+          setLoading(false); // We are done loading, whether it succeeded or failed
+        });
+    } else {
+      // If user is null, there is no profile to fetch.
+      setProfile(null);
+      setIsAdmin(false);
+    }
+  }, [user]); // The key: this effect runs ONLY when the user object changes.
+
+  // Logout function
   const logout = async () => {
     await supabase.auth.signOut();
-    // The onAuthStateChange listener will handle clearing the state.
+    // The auth listener will automatically handle the state changes.
   };
 
-  const value = {
-    session,
-    user,
-    profile,
-    loading,
-    isAdmin,
-    logout,
-  };
+  const value = { session, user, profile, loading, isAdmin, logout };
 
-  // Render children only when loading is false. This prevents rendering protected routes with a null user.
-  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+  return (
+    <UserContext.Provider value={value}>
+      {children}
+    </UserContext.Provider>
+  );
 };
 
+// 4. CUSTOM HOOK FOR EASY ACCESS
 export const useUser = () => {
   const context = useContext(UserContext);
   if (context === undefined) {
