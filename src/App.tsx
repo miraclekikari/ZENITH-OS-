@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { supabase } from './lib/supabaseClient';
-import { Session } from '@supabase/supabase-js';
-import { initUser, logout, isAdmin, getUser } from './services/storageService';
-import { UserProfile } from './types';
+import { useUser } from './context/UserContext';
 
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
@@ -24,60 +21,23 @@ import ResetPassword from './pages/ResetPassword';
 import VerificationBanner from './components/VerificationBanner';
 
 const AppContent: React.FC = () => {
-  const [session, setSession] = useState<Session | null>(null);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { session, profile, loading, isAdmin } = useUser();
   const location = useLocation();
-
-  useEffect(() => {
-    const getSession = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
-        if (currentSession) {
-          const profile = await initUser(currentSession.user);
-          setUser(profile);
-        } else {
-          setUser(getUser()); // Guest user for public routes
-        }
-      } catch (e) {
-        console.error("Error getting session:", e);
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setSession(session);
-      if (session) {
-        try {
-            const profile = await initUser(session.user);
-            setUser(profile);
-        } catch(e) {
-            console.error("Error initializing user on auth change:", e);
-            setUser(null)
-        }
-      } else {
-        setUser(null);
-        logout();
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   if (loading) {
     return <div className="w-full h-screen flex items-center justify-center bg-black"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zenith-primary"></div></div>;
   }
 
-  // Redirect logged-in users away from the login page
+  // Redirect logged-in users away from the login page to the feed
   if (session && location.pathname === '/login') {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/feed" replace />;
   }
   
+  // Redirect users without a profile to the profile creation page
+  if (session && !profile && location.pathname !== '/profile') {
+      return <Navigate to="/profile" replace />;
+  }
+
   const isEmailConfirmed = !!session?.user?.email_confirmed_at;
 
   const ProtectedRoute: React.FC<{ children: JSX.Element }> = ({ children }) => {
@@ -86,11 +46,10 @@ const AppContent: React.FC = () => {
 
   return (
     <>
-      {session && <VerificationBanner isConfirmed={isEmailConfirmed} />}
+      {session && !isEmailConfirmed && <VerificationBanner isConfirmed={isEmailConfirmed} />}
       <Layout>
         <Routes>
           {/* Public routes */}
-          <Route path="/live/:id" element={<Chat />} />
           <Route path="/login" element={<Login />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -106,7 +65,8 @@ const AppContent: React.FC = () => {
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
           <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
-          {isAdmin() && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
+          <Route path="/live/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+          {isAdmin && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
           
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />

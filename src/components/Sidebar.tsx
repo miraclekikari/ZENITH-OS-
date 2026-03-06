@@ -1,59 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  BookOpen,      // Changed from Home for Academy
-  MessageCircle,
-  Rss,           // Changed from ImageIcon for Feed
-  Users,         // Changed from Play for Community
+  BookOpen,      // Academy
+  MessageCircle, // Chat
+  Rss,           // Feed
+  Users,         // Community
   Palette,       // Studio
-  FlaskConical,  // Lab (Tools)
+  FlaskConical,  // Lab
   Settings,
   HelpCircle,
-  Shield,
-  User,          // Profile
+  Shield,        // Admin
 } from 'lucide-react';
-import { isAdmin } from '../services/storageService';
-import { supabase } from '../lib/supabaseClient';
-import { UserProfile } from '../types'; // Using the fuller UserProfile
+import { useUser } from '../context/UserContext';
 import { formatAvatar } from '../utils/avatar';
 
 const Sidebar: React.FC = () => {
-  const admin = isAdmin();
+  const { profile, isAdmin } = useUser();
   const location = useLocation();
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profileData, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          if (error) throw error;
-          setProfile(profileData as UserProfile);
-        }
-      } catch (error) {
-        console.error("Error fetching sidebar profile:", error);
-      }
-    };
-    fetchProfile();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        fetchProfile();
-      } else {
-        setProfile(null);
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
 
   const mainLinks = [
     { to: '/', icon: BookOpen, label: 'Academy' },
@@ -67,10 +31,11 @@ const Sidebar: React.FC = () => {
     { to: '/lab', icon: FlaskConical, label: 'Outils' },
     { to: '/settings', icon: Settings, label: 'Paramètres' },
     { to: '/support', icon: HelpCircle, label: 'Support' },
-    ...(admin ? [{ to: '/admin', icon: Shield, label: 'Admin' }] : []),
+    ...(isAdmin ? [{ to: '/admin', icon: Shield, label: 'Admin' }] : []),
   ];
 
-  const avatarUrl = profile ? formatAvatar(profile.avatar, profile.username) : formatAvatar(null, 'guest');
+  // Use profile from context, provide a fallback for username
+  const avatarUrl = formatAvatar(profile?.avatar, profile?.username || 'guest');
 
   return (
     <aside className="hidden md:flex fixed top-0 left-0 h-screen w-[68px] flex-col items-center justify-between bg-[#0a0a0a]/80 backdrop-blur-xl border-r border-white/[0.06] z-[100] py-4">
@@ -114,15 +79,17 @@ const Sidebar: React.FC = () => {
           })}
         </nav>
         <div className="w-8 h-px bg-white/10 my-1" />
-        <NavLink to="/profile" className="relative group">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-cyan-600 p-[2px]">
-            <div className="w-full h-full rounded-full bg-[#0a0a0a] flex items-center justify-center overflow-hidden">
-                <img src={avatarUrl} alt="User Avatar" className="w-full h-full object-cover" />
+        {profile && (
+          <NavLink to="/profile" className="relative group">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-600 to-cyan-600 p-[2px]">
+              <div className="w-full h-full rounded-full bg-[#0a0a0a] flex items-center justify-center overflow-hidden">
+                  <img src={avatarUrl} alt="User Avatar" className="w-full h-full object-cover" />
+              </div>
             </div>
-          </div>
-          <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0a0a0a]" />
-          <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">Profil</div>
-        </NavLink>
+            <div className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-400 border-2 border-[#0a0a0a]" />
+            <div className="absolute left-full ml-3 px-3 py-1.5 bg-[#1a1a1a] border border-white/10 rounded-lg text-xs font-medium text-white whitespace-nowrap opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity duration-150 z-50">Profil</div>
+          </NavLink>
+        )}
       </div>
     </aside>
   );
