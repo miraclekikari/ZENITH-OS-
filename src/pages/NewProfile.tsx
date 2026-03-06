@@ -260,7 +260,7 @@ const NewProfile: React.FC = () => {
                 </div>
             </FictionalModule>
 
-        </main>
+        </motion.main>
       </div>
       <style>{`.bg-grid-pattern { background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 2rem 2rem; }`}</style>
     </>
