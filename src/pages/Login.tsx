@@ -32,8 +32,8 @@ const SocialButton: React.FC<{ provider: 'google' | 'github', onError: (msg: str
 };
 
 const maskEmail = (email: string) => {
+  if (!email || !email.includes('@')) return 'invalid-email';
   const [localPart, domain] = email.split('@');
-  if (!domain) return 'invalid-email';
   const [domainName, topLevelDomain] = domain.split('.');
   if (!topLevelDomain) return `${localPart.substring(0, 2)}***@***`;
   return `${localPart.substring(0, 2)}***@${domainName.substring(0, 1)}***.${topLevelDomain}`;
@@ -65,21 +65,14 @@ const Login: React.FC = () => {
     animationControls.start({ x: 0 });
 
     try {
-      let responseError;
-      
       if (authView === 'sign-in') {
         let authEmail = '';
         if (formData.identifier.includes('@')) {
           authEmail = formData.identifier;
         } else {
           setLoadingText('VERIFYING ID...');
-          // RPC to securely get email from username server-side.
-          // This avoids exposing a public mapping of usernames to emails.
           const { data, error: rpcError } = await supabase.rpc('get_email_from_username', { p_username: formData.identifier });
-
-          if (rpcError || !data) {
-            throw new Error('ACCESS DENIED: Unknown Identity');
-          }
+          if (rpcError || !data) throw new Error('ACCESS DENIED: Unknown Identity');
           
           authEmail = data;
           const masked = maskEmail(authEmail);
@@ -88,49 +81,45 @@ const Login: React.FC = () => {
         }
 
         setLoadingText('ESTABLISHING UPLINK...');
-        const { error } = await supabase.auth.signInWithPassword({ email: authEmail, password: formData.password });
-        if (!error) {
-          setLoadingText('ACCESS GRANTED');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          navigate('/feed');
-        } else {
-          responseError = error;
-        }
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email: authEmail, password: formData.password });
+        if (signInError) throw signInError;
+
+        setLoadingText('ACCESS GRANTED');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        navigate('/feed');
 
       } else if (authView === 'sign-up') {
         setLoadingText('CREATING ID...');
         const { error } = await supabase.auth.signUp({ email: formData.email, password: formData.password });
-        if (!error) {
-          setLoadingText('ACCESS GRANTED');
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          navigate('/feed', { state: { message: 'Welcome to ZENITH! Your journey begins now.' } });
-        } else { responseError = error; }
-      } else {
+        if (error) throw error;
+        
+        setLoading(false); // Stop loading to show info message
+        setInfo('ID CREATED. A verification link has been sent to your email.');
+        
+      } else { // Magic link & Forgot password
         const emailToUse = authView === 'magic-link' || authView === 'forgot-password' ? formData.email : formData.identifier;
-        if (!emailToUse) { throw new Error('Email is required.') }
+        if (!emailToUse) throw new Error('Email is required.');
 
         if (authView === 'magic-link') {
           setLoadingText('DISPATCHING KEY...');
-          const { error } = await supabase.auth.signInWithOtp({ email: emailToUse, options: { emailRedirectTo: `${window.location.origin}/ZENITH-OS-/` }});
-          if (!error) setInfo(`Key dispatched to ${emailToUse}.`);
-          responseError = error;
+          const { error } = await supabase.auth.signInWithOtp({ email: emailToUse, options: { emailRedirectTo: `${window.location.origin}` }});
+          if (error) throw error;
+          setInfo(`Key dispatched to ${emailToUse}. Check your inbox.`);
         } else if (authView === 'forgot-password') {
           setLoadingText('DISPATCHING KEY...');
-          // Critical: Add # for HashRouter on GitHub Pages.
-          const redirectTo = `${window.location.origin}/ZENITH-OS-/#/reset-password`;
+          const redirectTo = `${window.location.origin}/#/reset-password`;
           const { error } = await supabase.auth.resetPasswordForEmail(emailToUse, { redirectTo });
-          if (!error) setInfo(`Recovery key dispatched to ${emailToUse}.`);
-          responseError = error;
+          if (error) throw error;
+          setInfo(`Recovery key dispatched to ${emailToUse}. Check your inbox.`);
         }
       }
-
-      if (responseError) throw responseError;
 
     } catch (err: any) {
       animationControls.start({ x: [-5, 5, -5, 5, 0], transition: { duration: 0.4 } });
       setError(err.message === 'ACCESS DENIED: Unknown Identity' ? err.message : getAuthErrorMessage(err));
     } finally {
-      setLoading(false);
+      // Only set loading to false if it hasn't been done already (e.g., for sign-up success)
+      if (loading) setLoading(false);
       setLoadingText('AUTHENTICATE');
     }
   };
@@ -167,7 +156,7 @@ return (
               { isEmailView || (authView === 'sign-in' && formData.identifier.includes('@')) ? <AtSign size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-emerald-400 transition-colors" /> : <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/20 group-focus-within:text-emerald-400 transition-colors" />}
               <input 
                 type={isEmailView ? "email" : "text"}
-                placeholder={isEmailView ? "Email address" : "Email or Username"}
+                placeholder={isEmailView ? "Email or Username" : "Email or Username"}
                 required 
                 className="w-full bg-white/[0.04] border border-white/[0.08] rounded-xl py-3 pl-10 pr-4 text-white text-sm placeholder-white/20 focus:outline-none focus:border-emerald-500/40 focus:bg-white/[0.06] transition-all"
                 value={isEmailView ? formData.email : formData.identifier}
