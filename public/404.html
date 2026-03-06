@@ -1,12 +1,107 @@
-<html>
-  <head>
-    <script>
-      const path = sessionStorage.getItem('zenith_spa_path');
-      if (path) {
-        sessionStorage.removeItem('zenith_spa_path');
-        window.location.replace(window.location.origin + '/?path=' + path);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Redirecting...</title>
+
+  <!--
+    This script handles the redirection for Single Page Applications (SPA) on GitHub Pages.
+    When a user navigates directly to a deep link (e.g., https://user.github.io/repo/profile),
+    GitHub Pages serves this 404.html page. This script constructs the correct hash-based
+    URL (e.g., https://user.github.io/repo/#/profile) and redirects the user,
+    allowing the SPA's router (HashRouter) to handle the request.
+  -->
+  <script type="text/javascript">
+    // The number of path segments in the repository name.
+    // For https://miraclekikari.github.io/ZENITH-OS-/, the path is /ZENITH-OS-/, so segmentCount is 1.
+    const segmentCount = 1;
+
+    const location = window.location;
+    const repoPath = location.pathname.split('/').slice(0, 1 + segmentCount).join('/');
+    const spaPath = location.pathname.slice(1).split('/').slice(segmentCount).join('/');
+
+    // Construct the new URL with a hash for the SPA router
+    const newPath = repoPath + '/#' + (spaPath ? '/' + spaPath : '') + location.search + location.hash;
+
+    // Redirect to the correct SPA path
+    location.replace(newPath);
+  </script>
+
+  <style>
+    body {
+      background-color: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'SF Mono', 'Fira Code', 'Fira Mono', 'Roboto Mono', monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      flex-direction: column;
+      text-align: center;
+      overflow: hidden;
+    }
+    .container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .message {
+      letter-spacing: 2px;
+      font-size: 1rem;
+      text-shadow: 0 0 5px rgba(0, 255, 135, 0.4);
+      animation: flicker 3s infinite alternate;
+    }
+    .loader {
+      width: 150px;
+      height: 2px;
+      background-color: rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+      border-radius: 1px;
+    }
+    .loader::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 135, 0.8), transparent);
+      animation: scan 2.5s infinite cubic-bezier(0.2, 0.8, 0.8, 0.2);
+    }
+    a {
+      /* Hide the fallback link as requested */
+      display: none;
+    }
+
+    @keyframes scan {
+      0% {
+        transform: translateX(-100%);
       }
-    </script>
-  </head>
-  <body></body>
+      100% {
+        transform: translateX(200%);
+      }
+    }
+    
+    @keyframes flicker {
+      0%, 100% {
+        opacity: 1;
+      }
+      50% {
+        opacity: 0.8;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="message">REDIRECTING TO SECURE GATEWAY...</div>
+    <div class="loader"></div>
+  </div>
+  
+  <!-- Fallback for users with JavaScript disabled -->
+  <p>If you are not redirected automatically, follow this <a href="/ZENITH-OS-/">link to ZENITH OS</a>.</p>
+</body>
 </html>
