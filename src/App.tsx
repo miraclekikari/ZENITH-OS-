@@ -20,6 +20,7 @@ const NewProfile = React.lazy(() => import('./pages/NewProfile'));
 const Support = React.lazy(() => import('./pages/Support'));
 const NotFound = React.lazy(() => import('./pages/NotFound'));
 const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
+const Diagnostic = React.lazy(() => import('./pages/Diagnostic')); // Added
 
 const LoadingFallback: React.FC = () => (
   <div className="w-full h-screen flex items-center justify-center bg-black">
@@ -58,6 +59,7 @@ const AppContent: React.FC = () => {
             {/* Public routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/diagnostic" element={<Diagnostic />} /> {/* Added */}
 
             {/* Protected routes */}
             <Route path="/" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
