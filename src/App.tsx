@@ -1,7 +1,6 @@
 import React, { Suspense } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { useUser } from './context/UserContext';
-
+import { UserProvider, useUser } from './context/UserContext'; // Import UserProvider
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
 import VerificationBanner from './components/VerificationBanner';
@@ -36,12 +35,10 @@ const AppContent: React.FC = () => {
     return <LoadingFallback />;
   }
 
-  // Redirect logged-in users away from the login page to the feed
   if (session && location.pathname === '/login') {
     return <Navigate to="/feed" replace />;
   }
   
-  // Redirect users without a profile to the profile creation page
   if (session && !profile && location.pathname !== '/profile' && location.pathname !== '/settings') {
       return <Navigate to="/profile" replace />;
   }
@@ -87,9 +84,11 @@ const AppContent: React.FC = () => {
 }
 
 const App: React.FC = () => (
-  <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+  <Router>
     <ThemeProvider>
+      <UserProvider> {/* This is the correct placement */}
         <AppContent />
+      </UserProvider>
     </ThemeProvider>
   </Router>
 )
