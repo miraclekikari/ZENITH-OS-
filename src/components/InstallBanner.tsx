@@ -2,26 +2,21 @@ import React, { useState, useEffect } from 'react';
 
 const InstallBanner: React.FC = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isAppInstalled, setIsAppInstalled] = useState(false);
-  const [isIos, setIsIos] = useState(false);
+  const [isInstallable, setIsInstallable] = useState(false);
 
   useEffect(() => {
-    // Vérifie si l'application est déjà en mode standalone
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsAppInstalled(true);
-      return;
-    }
-
-    // Détecte si l'utilisateur est sur iOS
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    setIsIos(/iphone|ipad|ipod/.test(userAgent));
-
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
+      setIsInstallable(true);
     };
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    // Hide banner if app is already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstallable(false);
+    }
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -38,38 +33,24 @@ const InstallBanner: React.FC = () => {
         console.log('User accepted the install prompt');
       }
       setDeferredPrompt(null);
-      setIsAppInstalled(true); // On suppose que l'installation réussit
+      setIsInstallable(false);
     });
   };
 
-  const handleCloseBanner = () => {
-    setDeferredPrompt(null); // Cache la bannière pour la session
-  }
-
-  if (isAppInstalled) {
-    return null;
-  }
-
-  if (isIos && !isAppInstalled) {
-    return (
-      <div className="fixed top-0 left-0 right-0 z-50 bg-emerald-500/10 p-2 text-center font-mono text-[10px] text-emerald-500">
-        <span>Pour installer ZENITH, appuyez sur 'Partager' puis 'Sur l'écran d'accueil'.</span>
-      </div>
-    );
-  }
-
-  if (!deferredPrompt) {
+  if (!isInstallable) {
     return null;
   }
 
   return (
-    <div className="fixed top-0 left-0 right-0 z-[100] bg-emerald-500/10 p-2 text-center font-mono text-[10px] text-emerald-500 animate-pulse">
-      <div className="flex justify-between items-center max-w-4xl mx-auto">
-        <span /> 
-        <button onClick={handleInstallClick} className="flex-grow text-center">
-          [ SYSTEM_READY: CLICK TO INSTALL ZENITH_OS ]
+    <div className="bg-white/[.03] backdrop-blur-md border-b border-white/10 py-1.5">
+      <div className="flex justify-between items-center max-w-4xl mx-auto px-4">
+        <p className="text-sm font-mono text-white/80">[ SYSTEM_UPDATE: APP_INSTALL_AVAILABLE ]</p>
+        <button 
+          onClick={handleInstallClick} 
+          className="text-sm font-bold text-emerald-400 hover:text-emerald-300 transition-colors"
+        >
+          [ INSTALL ]
         </button>
-        <button onClick={handleCloseBanner} className="text-xs font-bold">X</button>
       </div>
     </div>
   );
