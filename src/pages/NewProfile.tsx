@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { NavLink } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
 import { formatAvatar } from '../utils/avatar';
 import { Profile } from '../types/profile';
 import { PostgrestError } from '@supabase/supabase-js';
-import { Image, User, AtSign, Calendar, MessageSquare, Heart } from 'lucide-react';
+import { Image, User, AtSign, Calendar, MessageSquare, Heart, Settings, FlaskConical } from 'lucide-react';
 
 interface Post {
   id: string;
@@ -81,6 +82,16 @@ const NewProfile: React.FC = () => {
                     <p className="text-white/50 text-sm mt-3 max-w-md">{profile.bio || 'No bio available.'}</p>
                     <div className="flex items-center justify-center md:justify-start gap-4 text-xs text-white/40 mt-4">
                         <span className="flex items-center gap-1.5"><Calendar size={14} /> Joined {new Date(profile.created_at).toLocaleDateString()}</span>
+                    </div>
+                    <div className="mt-4 flex gap-4 justify-center md:justify-start">
+                        <NavLink to="/lab" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white/80 font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+                            <FlaskConical size={16} />
+                            Outils
+                        </NavLink>
+                        <NavLink to="/settings" className="flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white/80 font-semibold py-2 px-4 rounded-lg transition-colors duration-200">
+                            <Settings size={16} />
+                            Paramètres
+                        </NavLink>
                     </div>
                 </div>
             </div>

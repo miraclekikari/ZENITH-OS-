@@ -1,14 +1,15 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, MessageCircle, Search, User } from 'lucide-react';
+import { Home, Search, User, Palette, BookOpen } from 'lucide-react';
 
 const BottomNavBar: React.FC = () => {
   const location = useLocation();
 
   const navLinks = [
+    { to: '/', icon: BookOpen, label: 'Academy' },
     { to: '/feed', icon: Home, label: 'Feed' },
     { to: '/search', icon: Search, label: 'Search' },
-    { to: '/chat', icon: MessageCircle, label: 'Chat' },
+    { to: '/studio', icon: Palette, label: 'Studio' },
     { to: '/profile', icon: User, label: 'Profile' },
   ];
 
@@ -16,7 +17,7 @@ const BottomNavBar: React.FC = () => {
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0a0a]/90 backdrop-blur-xl border-t border-white/[0.06] z-50 safe-area-bottom">
       <div className="flex justify-around items-center h-16">
         {navLinks.map((link) => {
-          const isActive = location.pathname === link.to || (link.to !== '/feed' && location.pathname.startsWith(link.to));
+          const isActive = location.pathname === link.to || (link.to === '/feed' && location.pathname === '/') || (link.to !== '/' && link.to !== '/feed' && location.pathname.startsWith(link.to));
           const Icon = link.icon;
 
           return (
