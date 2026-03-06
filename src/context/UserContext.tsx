@@ -58,7 +58,7 @@ export const UserProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         })
         .catch((error) => {
           // This error is critical for debugging profile initialization issues.
-          console.error("UserProvider: Failed to initialize user profile:", error);
+          // console.error("UserProvider: Failed to initialize user profile:", error);
           setProfile(null);
           setIsAdmin(false);
         })
