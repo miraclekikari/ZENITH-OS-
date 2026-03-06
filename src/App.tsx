@@ -1,31 +1,39 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useUser } from './context/UserContext';
 
 import { ThemeProvider } from './context/ThemeContext';
 import Layout from './components/Layout';
-import Login from './pages/Login';
-import Academy from './pages/Academy';
-import Chat from './pages/Chat';
-import Feed from './pages/Feed';
-import CommunityPage from './pages/Community';
-import Studio from './pages/Studio';
-import Publish from './pages/Publish';
-import Lab from './pages/Lab';
-import Settings from './pages/Settings';
-import Admin from './pages/Admin';
-import NewProfile from './pages/NewProfile';
-import Support from './pages/Support';
-import NotFound from './pages/NotFound';
-import ResetPassword from './pages/ResetPassword';
 import VerificationBanner from './components/VerificationBanner';
+
+// --- Lazy Loading Pages ---
+const Login = React.lazy(() => import('./pages/Login'));
+const Academy = React.lazy(() => import('./pages/Academy'));
+const Chat = React.lazy(() => import('./pages/Chat'));
+const Feed = React.lazy(() => import('./pages/Feed'));
+const CommunityPage = React.lazy(() => import('./pages/Community'));
+const Studio = React.lazy(() => import('./pages/Studio'));
+const Publish = React.lazy(() => import('./pages/Publish'));
+const Lab = React.lazy(() => import('./pages/Lab'));
+const Settings = React.lazy(() => import('./pages/Settings'));
+const Admin = React.lazy(() => import('./pages/Admin'));
+const NewProfile = React.lazy(() => import('./pages/NewProfile'));
+const Support = React.lazy(() => import('./pages/Support'));
+const NotFound = React.lazy(() => import('./pages/NotFound'));
+const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
+
+const LoadingFallback: React.FC = () => (
+  <div className="w-full h-screen flex items-center justify-center bg-black">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zenith-primary"></div>
+  </div>
+);
 
 const AppContent: React.FC = () => {
   const { session, profile, loading, isAdmin } = useUser();
   const location = useLocation();
 
   if (loading) {
-    return <div className="w-full h-screen flex items-center justify-center bg-black"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-zenith-primary"></div></div>;
+    return <LoadingFallback />;
   }
 
   // Redirect logged-in users away from the login page to the feed
@@ -34,7 +42,7 @@ const AppContent: React.FC = () => {
   }
   
   // Redirect users without a profile to the profile creation page
-  if (session && !profile && location.pathname !== '/profile') {
+  if (session && !profile && location.pathname !== '/profile' && location.pathname !== '/settings') {
       return <Navigate to="/profile" replace />;
   }
 
@@ -48,29 +56,31 @@ const AppContent: React.FC = () => {
     <>
       {session && !isEmailConfirmed && <VerificationBanner isConfirmed={isEmailConfirmed} />}
       <Layout>
-        <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<Login />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
-          {/* Protected routes */}
-          <Route path="/" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
-          <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-          <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-          <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
-          <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
-          <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
-          <Route path="/publish" element={<ProtectedRoute><Publish /></ProtectedRoute>} />
-          <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-          <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
-          <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
-          <Route path="/live/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
-          {isAdmin && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
-          
-          {/* Catch-all */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+            {/* Protected routes */}
+            <Route path="/" element={<ProtectedRoute><Academy /></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/chat/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            <Route path="/feed" element={<ProtectedRoute><Feed /></ProtectedRoute>} />
+            <Route path="/community" element={<ProtectedRoute><CommunityPage /></ProtectedRoute>} />
+            <Route path="/studio" element={<ProtectedRoute><Studio /></ProtectedRoute>} />
+            <Route path="/publish" element={<ProtectedRoute><Publish /></ProtectedRoute>} />
+            <Route path="/lab" element={<ProtectedRoute><Lab /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><NewProfile /></ProtectedRoute>} />
+            <Route path="/support" element={<ProtectedRoute><Support /></ProtectedRoute>} />
+            <Route path="/live/:id" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
+            {isAdmin && <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />}
+            
+            {/* Catch-all */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </Layout>
     </>
   );
@@ -79,7 +89,7 @@ const AppContent: React.FC = () => {
 const App: React.FC = () => (
   <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
     <ThemeProvider>
-      <AppContent />
+        <AppContent />
     </ThemeProvider>
   </Router>
 )
