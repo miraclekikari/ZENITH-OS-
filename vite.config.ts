@@ -7,7 +7,7 @@ import path from 'path';
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '');
   return {
-    base: '/ZENITH-OS/',
+    base: '/ZENITH-OS-/',
     plugins: [
       react(),
       VitePWA({
