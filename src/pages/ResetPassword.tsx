@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import { motion } from 'framer-motion';
+import { ShieldCheck, Lock, Eye, EyeOff } from 'lucide-react';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -8,10 +10,9 @@ const ResetPassword = () => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
-
-  // The user is automatically authenticated when they land on this page
-  // from the password reset link. We just need to capture the new password.
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +37,7 @@ const ResetPassword = () => {
     if (updateError) {
       setError(`Failed to reset password: ${updateError.message}. Please try requesting a new link.`);
     } else {
-      setMessage("Your password has been reset successfully! Redirecting to login...");
+      setMessage("SECURITY CORE UPDATED. YOUR PASSWORD HAS BEEN RESET.");
       setTimeout(() => {
         navigate('/login');
       }, 3000);
@@ -44,48 +45,86 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4">
-      <div className="w-full max-w-md p-8 space-y-6 bg-gray-800 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold text-center text-zenith-primary">Reset Your Password</h2>
-        <p className="text-center text-gray-400">You are authenticated. Enter your new password below.</p>
-        
-        <form onSubmit={handlePasswordReset} className="space-y-4">
-          <div>
-            <label className="text-sm font-medium text-gray-400">New Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-zenith-primary"
-              placeholder="Enter new password"
-            />
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4"
+    >
+      <div className="w-full max-w-md p-8 space-y-8 bg-gray-800 rounded-lg shadow-lg">
+        <div className="text-center">
+          <ShieldCheck className="mx-auto h-12 w-12 text-emerald-400" />
+          <h2 className="mt-6 text-3xl font-extrabold text-center text-white">Secure Gateway</h2>
+          <p className="mt-2 text-center text-sm text-gray-400">Update your password</p>
+        </div>
+
+        <form className="mt-8 space-y-6" onSubmit={handlePasswordReset}>
+          <div className="rounded-md shadow-sm -space-y-px">
+            <div className="relative">
+              <Lock className="absolute top-3.5 left-3 h-5 w-5 text-gray-400" />
+              <input
+                id="password"
+                name="password"
+                type={showPassword ? 'text' : 'password'}
+                required
+                className="appearance-none rounded-none relative block w-full px-10 py-3 border border-gray-700 bg-gray-900 placeholder-gray-500 text-white rounded-t-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm"
+                placeholder="New password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute top-3.5 right-3 h-5 w-5 text-gray-400"
+              >
+                {showPassword ? <EyeOff /> : <Eye />}
+              </button>
+            </div>
+            <div className="relative">
+              <Lock className="absolute top-3.5 left-3 h-5 w-5 text-gray-400" />
+              <input
+                id="confirm-password"
+                name="confirm-password"
+                type={showConfirmPassword ? 'text' : 'password'}
+                required
+                className="appearance-none rounded-none relative block w-full px-10 py-3 border border-gray-700 bg-gray-900 placeholder-gray-500 text-white rounded-b-md focus:outline-none focus:ring-emerald-500 focus:border-emerald-500 focus:z-10 sm:text-sm"
+                placeholder="Confirm new password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+               <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute top-3.5 right-3 h-5 w-5 text-gray-400"
+              >
+                {showConfirmPassword ? <EyeOff /> : <Eye />}
+              </button>
+            </div>
           </div>
+
           <div>
-            <label className="text-sm font-medium text-gray-400">Confirm New Password</label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              className="w-full px-3 py-2 mt-1 text-white bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-zenith-primary"
-              placeholder="Confirm new password"
-            />
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-gradient-to-r from-emerald-500 to-cyan-500 hover:from-emerald-600 hover:to-cyan-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-cyan-500 disabled:opacity-50"
+            >
+              {loading ? 'UPDATING...' : 'Reset Password'}
+            </button>
           </div>
-          
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 font-semibold text-white bg-zenith-primary rounded-md hover:bg-zenith-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zenith-primary disabled:opacity-50"
-          >
-            {loading ? 'Resetting...' : 'Reset Password'}
-          </button>
         </form>
 
-        {error && <p className="mt-4 text-sm text-center text-red-500">{error}</p>}
-        {message && <p className="mt-4 text-sm text-center text-green-500">{message}</p>}
+        {error && (
+          <div className="p-4 mt-4 text-sm text-red-400 bg-red-900 bg-opacity-50 rounded-md">
+            {error}
+          </div>
+        )}
+        {message && (
+          <div className="p-4 mt-4 text-sm text-emerald-400 bg-emerald-900 bg-opacity-50 rounded-md">
+            {message}
+          </div>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 };
 
