@@ -1,494 +1,89 @@
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Rajdhani:wght@400;600;700&display=swap');
+@import "tailwindcss";
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Variables CSS personnalisées - Thème par défaut */
 :root {
-  /* Couleurs principales */
-  --z-primary: #10b981;
-  --z-secondary: #06b6d4;
-  --z-background: #0a0a0a;
-  --z-surface: #111111;
-  --z-surface-light: rgba(17, 17, 17, 0.8);
-  --z-border: rgba(255, 255, 255, 0.06);
-  --z-green: #10b981;
-  --z-green-dim: rgba(16, 185, 129, 0.15);
-  --z-dim: #666666;
-  --z-text: #ffffff;
+  --background: oklch(0.12 0.04 270);
+  --card: oklch(0.17 0.05 270);
+  --muted: oklch(0.24 0.07 270);
+  --primary: oklch(0.55 0.22 275);
+  --primary-glow: oklch(0.68 0.20 280);
+  --foreground: oklch(0.97 0.01 270);
+  --muted-foreground: oklch(0.72 0.03 270);
+  --border: oklch(1 0 0 / 8%);
+  --destructive: oklch(0.65 0.24 25);
   
-  /* Variables du systeme de theme */
-  --z-bg: #0a0a0a;
-  --z-glass: rgba(17, 17, 17, 0.8);
-  --z-primary-dim: rgba(16, 185, 129, 0.15);
-  --z-gradient: linear-gradient(135deg, #10b981, #06b6d4);
-  --z-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
-  --animation-speed: 0.3s;
+  --gradient-primary: linear-gradient(135deg, var(--primary), var(--primary-glow));
+  --shadow-glow: 0 20px 60px -20px color-mix(in oklab, var(--primary) 45%, transparent);
   
-  /* Application automatique du theme */
-  background-color: var(--z-bg);
-  color: var(--z-text);
+  --font-display: "Space Grotesk", sans-serif;
+  --font-sans: "DM Sans", sans-serif;
 }
 
-/* CORRECTION RESPONSIVE : On force le respect de la largeur écran */
-html, body {
-  background-color: #0a0a0a !important;
-  color: #ffffff !important;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden; /* EMPÊCHE LE SITE DE GLISSER SUR LES CÔTÉS */
-  min-height: 100vh;
-  font-family: 'Rajdhani', sans-serif;
-  -webkit-text-size-adjust: 100%; /* Évite le zoom automatique du texte sur iPhone */
-  scroll-behavior: smooth;
-}
-
-/* Optimisations mobile */
-@media (max-width: 768px) {
-  html, body {
-    font-size: 14px;
-  }
+@theme {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-primary: var(--primary);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
   
-  .glass-card {
-    margin: 0.5rem;
-    border-radius: 0.75rem;
+  --animate-fade-up: fade-up 0.5s ease-out forwards;
+  --animate-pulse-halo: pulse-halo 4s infinite;
+  --animate-like-bounce: like-bounce 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes pulse-halo {
+    0%, 100% {
+      box-shadow: 0 0 0 0px color-mix(in oklab, var(--primary) 30%, transparent);
+    }
+    50% {
+      box-shadow: 0 0 0 15px color-mix(in oklab, var(--primary) 0%, transparent);
+    }
+  }
+
+  @keyframes like-bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.4); }
   }
 }
 
-@media (max-width: 480px) {
-  html, body {
-    font-size: 12px;
+@layer base {
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    margin: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
-  
-  .glass-card {
-    margin: 0.25rem;
-    padding: 0.75rem;
-  }
-}
 
-/* Scanlines optimisées avec GPU acceleration et réduction d'impact */
-.scanlines {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  background: linear-gradient(
-    to bottom,
-    transparent 50%,
-    rgba(0, 0, 0, 0.1) 50%
-  );
-  background-size: 100% 4px;
-  z-index: 9999;
-  pointer-events: none;
-  will-change: opacity;
-  transform: translateZ(0);
-  backface-visibility: hidden;
-  opacity: 0.3;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .scanlines {
-    display: none;
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+    font-weight: 600;
   }
 }
 
-/* On s'assure que le container React ne déborde jamais */
-#root {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 100%;
-}
-
-/* CORRECTION : On s'assure que les cartes ne cassent pas le layout sur petit écran */
-.glass-card {
-  background: rgba(17, 17, 17, 0.8);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 0.75rem;
-  max-width: 100%; /* Important pour mobile */
-  word-wrap: break-word; /* Évite que le texte ne pousse les murs */
-  overflow-wrap: break-word;
-  hyphens: auto;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-}
-
-.glass-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-}
-
-/* Optimisations pour les images */
-img {
-  max-width: 100%;
-  height: auto;
-  object-fit: cover;
-  loading: lazy;
-}
-
-/* Optimisations pour les vidéos */
-video, iframe {
-  max-width: 100%;
-  height: auto;
-  border-radius: 0.5rem;
-}
-
-.font-tech {
-  font-family: 'Orbitron', monospace;
-}
-
-.font-terminal {
-  font-family: 'Rajdhani', monospace;
-}
-
-/* Animations optimisées */
-@keyframes scale-up {
-  from { 
-    transform: scale(0.8) translateZ(0);
-    opacity: 0; 
-  }
-  to { 
-    transform: scale(1) translateZ(0);
-    opacity: 1; 
-  }
-}
-
-@keyframes expand-line {
-  from { 
-    width: 0%;
-    transform: translateZ(0);
-  }
-  to { 
-    width: 100%;
-    transform: translateZ(0);
-  }
-}
-
-@keyframes typingDots {
-  0%, 20% { opacity: 0; }
-  50% { opacity: 1; }
-  100% { opacity: 0; }
-}
-
-@keyframes pulse-glow {
-  0%, 100% { 
-    box-shadow: 0 0 5px rgba(0, 255, 136, 0.5);
-  }
-  50% { 
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
-  }
-}
-
-.typing-dots::after {
-  content: '...';
-  animation: typingDots 1.5s infinite;
-  will-change: opacity;
-}
-
-.animate-scale-up {
-  animation: scale-up 0.5s ease-out;
-  will-change: transform, opacity;
-}
-
-.animate-expand-line {
-  animation: expand-line 1s ease-out;
-  will-change: transform, width;
-}
-
-.animate-pulse-fast {
-  animation: pulse-glow 2s infinite;
-  will-change: box-shadow;
-}
-
-/* Animations supplémentaires pour une interface vivante */
-@keyframes slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
-@keyframes bounce-gentle {
-  0%, 100% {
-    transform: translateY(0);
-  }
-  50% {
-    transform: translateY(-5px);
-  }
-}
-
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes pulse-slow {
-  0%, 100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
-}
-
-@keyframes glow-pulse {
-  0%, 100% {
-    box-shadow: 0 0 5px currentColor;
-  }
-  50% {
-    box-shadow: 0 0 20px currentColor, 0 0 30px currentColor;
-  }
-}
-
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200% center;
-  }
-  100% {
-    background-position: 200% center;
-  }
-}
-
-/* Classes d'animation utilitaires */
-.animate-slide-in {
-  animation: slide-in 0.3s ease-out;
-}
-
-.animate-bounce-gentle {
-  animation: bounce-gentle 2s infinite;
-}
-
-.animate-spin-slow {
-  animation: spin-slow 3s linear infinite;
-}
-
-.animate-pulse-slow {
-  animation: pulse-slow 2s infinite;
-}
-
-.animate-glow-pulse {
-  animation: glow-pulse 2s infinite;
-}
-
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
-
-.animate-shimmer {
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite;
-}
-
-/* Toggle checkbox personnalisé */
-.toggle-checkbox {
-  appearance: none;
-  width: 48px;
-  height: 24px;
-  background: #374151;
-  border-radius: 12px;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.toggle-checkbox:checked {
-  background: var(--z-primary, #00ff88);
-}
-
-.toggle-checkbox::after {
-  content: '';
-  position: absolute;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: white;
-  top: 2px;
-  left: 2px;
-  transition: all 0.3s ease;
-}
-
-.toggle-checkbox:checked::after {
-  left: 26px;
-}
-
-/* Effet de transition de thème */
-.theme-transition-wrapper {
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.theme-transitioning {
-  opacity: 0.8;
-  transform: scale(0.98);
-}
-
-/* Boutons avec effets avancés */
-.btn-glow {
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-glow::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.5s;
-}
-
-.btn-glow:hover::before {
-  left: 100%;
-}
-
-/* Cards avec effets de survol */
-.card-hover {
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.card-hover:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 20px 40px rgba(0, 255, 136, 0.3);
-}
-
-/* Loading states animés */
-.loading-skeleton {
-  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
-
-/* Notifications animées */
-.notification-enter {
-  animation: slide-in 0.3s ease-out;
-}
-
-.notification-exit {
-  animation: slide-in 0.3s ease-out reverse;
-}
-
-/* Effets de focus améliorés */
-.focus-glow:focus {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--z-primary), 0 0 20px rgba(0, 255, 136, 0.5);
-}
-
-/* Scrollbar animée */
-.scrollbar-animated::-webkit-scrollbar-thumb {
-  background: linear-gradient(45deg, var(--z-primary), var(--z-secondary));
-  animation: glow-pulse 2s infinite;
-}
-
-/* Texte avec effet de néon */
-.text-neon {
-  text-shadow: 0 0 10px currentColor, 0 0 20px currentColor, 0 0 30px currentColor;
-}
-
-/* Badges animés */
-.badge-pulse {
-  animation: pulse-glow 2s infinite;
-}
-
-/* Indicateurs de chargement */
-.loading-dots {
-  display: inline-flex;
-  gap: 4px;
-}
-
-.loading-dots span {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--z-primary);
-  animation: bounce-gentle 1.4s infinite ease-in-out both;
-}
-
-.loading-dots span:nth-child(1) {
-  animation-delay: -0.32s;
-}
-
-.loading-dots span:nth-child(2) {
-  animation-delay: -0.16s;
-}
-
-/* Scrollbar personnalisée optimisée */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* Scrollbar pour Firefox */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
-}
-
-/* Optimisations de performance */
-* {
-  box-sizing: border-box;
-}
-
-/* Réduction des mouvements pour l'accessibilité */
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
+@layer components {
+  .hover-lift {
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   }
   
-  .scanlines {
-    display: none;
-  }
-}
-
-/* Mode sombre amélioré */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --z-background: #030303;
-    --z-surface: rgba(3, 3, 3, 0.9);
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
   }
 }

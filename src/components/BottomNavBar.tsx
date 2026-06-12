@@ -1,42 +1,46 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Search, User, Palette, BookOpen } from 'lucide-react';
+import { Home, Hash, Bell, Mail, User, Plus } from 'lucide-react';
 
 const BottomNavBar: React.FC = () => {
   const location = useLocation();
 
   const navLinks = [
-    { to: '/', icon: BookOpen, label: 'Academy' },
-    { to: '/feed', icon: Home, label: 'Feed' },
-    { to: '/search', icon: Search, label: 'Search' },
-    { to: '/studio', icon: Palette, label: 'Studio' },
-    { to: '/profile', icon: User, label: 'Profile' },
+    { to: '/feed', icon: Home, label: 'Accueil' },
+    { to: '/search', icon: Hash, label: 'Explorer' },
+    { to: '/notifications', icon: Bell, label: 'Notifications' },
+    { to: '/chat', icon: Mail, label: 'Messages' },
+    { to: '/profile', icon: User, label: 'Profil' },
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-[#0a0a0a]/90 backdrop-blur-xl border-t border-white/[0.06] z-50 safe-area-bottom">
-      <div className="flex justify-around items-center h-16">
-        {navLinks.map((link) => {
-          const isActive = location.pathname === link.to || (link.to === '/feed' && location.pathname === '/') || (link.to !== '/' && link.to !== '/feed' && location.pathname.startsWith(link.to));
-          const Icon = link.icon;
+    <>
+      {/* Floating Action Button */}
+      <button className="md:hidden fixed right-4 bottom-20 w-14 h-14 rounded-full bg-[var(--gradient-primary)] shadow-[var(--shadow-glow)] flex items-center justify-center text-white animate-pulse-halo z-50">
+        <Plus size={32} />
+      </button>
 
-          return (
-            <NavLink
-              key={link.to}
-              to={link.to}
-              className="flex flex-col items-center justify-center w-full h-full gap-1"
-            >
-              <div className={`relative flex items-center justify-center transition-colors duration-200 ${isActive ? 'text-emerald-400' : 'text-white/40'}`}>
-                <Icon size={22} strokeWidth={isActive ? 2.2 : 1.6} />
-                {isActive && (
-                  <div className="absolute -top-1 w-1 h-1 rounded-full bg-emerald-400" />
-                )}
-              </div>
-            </NavLink>
-          );
-        })}
-      </div>
-    </nav>
+      {/* Bottom Nav Bar */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-card/80 backdrop-blur-xl border-t border-border z-50 pb-safe">
+        <div className="flex justify-around items-center h-16">
+          {navLinks.map((link) => {
+            const isActive = location.pathname === link.to;
+            const Icon = link.icon;
+            return (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
+                  isActive ? 'text-primary' : 'text-muted-foreground'
+                }`}
+              >
+                <Icon size={24} strokeWidth={isActive ? 2.5 : 2} />
+              </NavLink>
+            );
+          })}
+        </div>
+      </nav>
+    </>
   );
 };
 
